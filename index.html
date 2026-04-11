@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>라이트너 스케줄러</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Pretendard', 'Noto Sans KR', -apple-system, sans-serif;
+  background: #f5f5f3;
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 1.5rem 1rem;
+}
+
+.app { width: 100%; max-width: 1100px; }
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* ── Import 화면 ── */
+.import-wrap { max-width: 480px; margin: 0 auto; }
+.brand { text-align: center; margin-bottom: 2rem; }
+.brand-name { font-size: 22px; font-weight: 700; color: #0f1117; letter-spacing: -0.03em; }
+.brand-sub { font-size: 13px; color: #888; margin-top: 4px; }
+.drop-zone {
+  border: 1.5px dashed #ccc; border-radius: 16px;
+  padding: 3rem 1.5rem; text-align: center;
+  background: #fff; cursor: pointer; transition: all 0.15s;
+}
+.drop-zone:hover, .drop-zone.over { border-color: #1D9E75; background: #f0faf6; }
+.drop-icon { font-size: 32px; margin-bottom: 12px; }
+.drop-text { font-size: 16px; font-weight: 600; color: #0f1117; margin-bottom: 6px; }
+.drop-sub { font-size: 13px; color: #999; margin-bottom: 20px; }
+.drop-btn {
+  display: inline-block; padding: 10px 24px; border-radius: 8px;
+  border: 1px solid #ddd; background: #f5f5f3;
+  font-size: 14px; font-weight: 500; color: #333; cursor: pointer;
+}
+.drop-btn:hover { background: #eee; }
+.status-bar { margin: 10px 0; padding: 11px 16px; border-radius: 10px; font-size: 13px; display: none; }
+.status-bar.loading { background: #e8f4fd; color: #1565c0; display: block; }
+.status-bar.error   { background: #fdecea; color: #c62828; display: block; }
+.notice {
+  margin-top: 1.5rem; background: #fff; border-radius: 12px;
+  padding: 14px 16px; font-size: 12px; color: #999; line-height: 1.8; border: 1px solid #eee;
+}
+.notice strong { color: #555; }
+
+/* ── 학습 화면 레이아웃 ── */
+.study-layout {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  height: calc(100vh - 3rem);
+  max-height: 720px;
+}
+
+/* 카드 영역 */
+.study-col {
+  flex: 0 0 480px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* 연습장 영역 */
+.notepad-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #fff;
+  border: 1px solid #e8e8e6;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  transition: all 0.3s ease;
+}
+.notepad-col.collapsed { flex: 0 0 44px; min-width: 44px; }
+
+.notepad-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid #f0f0ee;
+  background: #fafaf8;
+  flex-shrink: 0;
+  cursor: pointer;
+  user-select: none;
+}
+.notepad-title {
+  font-size: 12px; font-weight: 600; color: #888;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+.notepad-toggle {
+  font-size: 14px; color: #bbb;
+  transition: transform 0.3s;
+  flex-shrink: 0;
+}
+.notepad-col.collapsed .notepad-toggle { transform: rotate(180deg); }
+
+.notepad-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #f0f0ee;
+  background: #fafaf8;
+  flex-shrink: 0;
+}
+.tool-btn {
+  padding: 4px 10px; border-radius: 6px; border: 1px solid #e0e0e0;
+  background: #fff; font-size: 12px; font-weight: 500; color: #555;
+  cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.tool-btn:hover { background: #f0f0ee; }
+.tool-btn.active { background: #1D9E75; color: #fff; border-color: #1D9E75; }
+.tool-sep { width: 1px; height: 18px; background: #e8e8e6; margin: 0 2px; }
+.color-dot {
+  width: 20px; height: 20px; border-radius: 50%; cursor: pointer;
+  border: 2px solid transparent; transition: all 0.15s; flex-shrink: 0;
+}
+.color-dot.selected { border-color: #333; transform: scale(1.15); }
+.pen-size {
+  display: flex; align-items: center; gap: 4px; font-size: 11px; color: #aaa;
+}
+.pen-size input { width: 48px; cursor: pointer; }
+.clear-btn {
+  margin-left: auto; padding: 4px 10px; border-radius: 6px;
+  border: 1px solid #ffc9c9; background: #fff1f0;
+  font-size: 12px; font-weight: 500; color: #c62828; cursor: pointer;
+}
+.clear-btn:hover { background: #ffe0e0; }
+
+.notepad-body {
+  flex: 1; min-height: 0; position: relative; overflow: hidden;
+}
+.notepad-col.collapsed .notepad-tools,
+.notepad-col.collapsed .notepad-body { display: none; }
+
+/* 텍스트 모드 */
+.notepad-textarea {
+  width: 100%; height: 100%; border: none; outline: none; resize: none;
+  padding: 1rem; font-size: 14px; line-height: 1.75; color: #333;
+  background: #fff; font-family: inherit;
+}
+.notepad-textarea::placeholder { color: #ccc; }
+
+/* 드로잉 캔버스 */
+.notepad-canvas {
+  position: absolute; top: 0; left: 0;
+  width: 100%; height: 100%;
+  cursor: crosshair; touch-action: none;
+  background: #fff;
+}
+
+/* ── 카드 스타일 ── */
+.study-header {
+  display: flex; justify-content: space-between;
+  align-items: center; margin-bottom: 10px; flex-shrink: 0;
+}
+.deck-name {
+  font-size: 13px; font-weight: 600; color: #555;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 55%;
+}
+.header-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.progress-text { font-size: 13px; color: #aaa; }
+
+.timer-ring { position: relative; width: 34px; height: 34px; flex-shrink: 0; cursor: pointer; }
+.timer-ring svg { transform: rotate(-90deg); }
+.timer-bg { fill: none; stroke: #e8e8e6; stroke-width: 3; }
+.timer-fill { fill: none; stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset 0.9s linear, stroke 0.3s; }
+.timer-label {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  font-size: 11px; font-weight: 600; color: #555;
+}
+
+.progress-track {
+  height: 3px; background: #e8e8e6; border-radius: 2px;
+  margin-bottom: 12px; overflow: hidden; flex-shrink: 0;
+}
+.progress-fill { height: 100%; background: #1D9E75; border-radius: 2px; transition: width 0.35s ease; }
+
+.card-shell {
+  flex: 1; min-height: 0; background: #fff;
+  border: 1px solid #e8e8e6; border-radius: 16px;
+  display: flex; flex-direction: column; overflow: hidden;
+  margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.card-scroll {
+  flex: 1; min-height: 0; overflow-y: auto;
+  padding: 1.5rem; display: flex; flex-direction: column; gap: 14px;
+}
+.card-scroll::-webkit-scrollbar { width: 3px; }
+.card-scroll::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
+
+.block { display: flex; flex-direction: column; gap: 6px; }
+.block-label { font-size: 10px; font-weight: 700; color: #bbb; letter-spacing: 0.1em; text-transform: uppercase; }
+.block-body { font-size: 15px; color: #1a1a1a; line-height: 1.75; }
+.block-body img { max-width: 100%; border-radius: 8px; margin-top: 8px; }
+
+.c-divider { height: 1px; background: #f0f0ee; flex-shrink: 0; }
+.card-footer {
+  padding: 10px 1.5rem; display: flex; justify-content: space-between;
+  align-items: center; border-top: 1px solid #f0f0ee;
+  flex-shrink: 0; background: #fafaf8;
+}
+.footer-level { font-size: 12px; color: #aaa; }
+.footer-year {
+  font-size: 11px; color: #888; background: #f0f0ee;
+  padding: 2px 8px; border-radius: 4px;
+  max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.btn-area { flex-shrink: 0; }
+.main-btn {
+  width: 100%; padding: 14px; border-radius: 12px;
+  font-size: 15px; font-weight: 600; cursor: pointer;
+  background: #f5f5f3; border: 1px solid #ddd; color: #333; transition: all 0.15s;
+}
+.main-btn:hover { background: #ebebea; }
+.main-btn:active { transform: scale(0.98); }
+
+.action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.btn-x {
+  background: #fff1f0; border: 1px solid #ffc9c9; color: #c62828;
+  border-radius: 12px; padding: 13px; font-size: 20px; font-weight: 700;
+  cursor: pointer; transition: all 0.15s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn-o {
+  background: #f0faf6; border: 1px solid #9fe1cb; color: #0F6E56;
+  border-radius: 12px; padding: 13px; font-size: 20px; font-weight: 700;
+  cursor: pointer; transition: all 0.15s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn-x:hover { background: #ffe0e0; }
+.btn-o:hover { background: #dcf5ec; }
+.btn-x:active, .btn-o:active { transform: scale(0.97); }
+.key-badge {
+  font-size: 11px; font-weight: 600; background: rgba(0,0,0,0.07);
+  padding: 2px 6px; border-radius: 4px; opacity: 0.7;
+}
+.shortcut-guide { text-align: center; margin-top: 7px; font-size: 11px; color: #aaa; display: none; }
+
+/* ── 완료 화면 ── */
+.done-wrap { max-width: 480px; margin: 0 auto; }
+.done-screen {
+  background: #fff; border-radius: 20px; padding: 3rem 2rem;
+  text-align: center; border: 1px solid #eee;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.done-icon { font-size: 48px; margin-bottom: 1rem; }
+.done-title { font-size: 22px; font-weight: 700; color: #0f1117; margin-bottom: 8px; letter-spacing: -0.02em; }
+.done-sub { font-size: 14px; color: #999; margin-bottom: 2rem; }
+.done-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 2rem; }
+.done-stat { background: #f5f5f3; border-radius: 12px; padding: 16px; }
+.done-stat-num { font-size: 32px; font-weight: 700; letter-spacing: -0.02em; }
+.done-stat-num.pass { color: #1D9E75; }
+.done-stat-num.fail { color: #e53935; }
+.done-stat-label { font-size: 12px; color: #aaa; margin-top: 4px; }
+.restart-btn {
+  width: 100%; padding: 14px; border-radius: 12px;
+  background: #1D9E75; border: none; color: white;
+  font-size: 15px; font-weight: 600; cursor: pointer; margin-bottom: 10px;
+}
+.restart-btn:hover { background: #0F6E56; }
+.back-btn {
+  width: 100%; padding: 12px; border-radius: 12px;
+  background: #f5f5f3; border: 1px solid #ddd;
+  color: #666; font-size: 14px; font-weight: 500; cursor: pointer;
+}
+.back-btn:hover { background: #ebebea; }
+
+.hidden { display: none; }
+.fade-in { animation: fi 0.2s ease; }
+@keyframes fi { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+
+/* ── 반응형: 모바일에서 연습장 숨김 ── */
+@media (max-width: 700px) {
+  body { padding: 1rem 0.75rem; }
+  .study-layout { flex-direction: column; height: auto; max-height: none; }
+  .study-col { flex: none; width: 100%; height: calc(100vh - 2rem); max-height: 680px; }
+  .notepad-col { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Import 화면 -->
+  <div class="screen active" id="screen-import">
+    <div class="import-wrap">
+      <div class="brand">
+        <div class="brand-name">라이트너 스케줄러</div>
+        <div class="brand-sub">Leitner Scheduler · ANKI 호환 · v4</div>
+      </div>
+      <div class="drop-zone" id="drop-zone"
+        ondragover="event.preventDefault();this.classList.add('over')"
+        ondragleave="this.classList.remove('over')"
+        ondrop="handleDrop(event)">
+        <div class="drop-icon">📂</div>
+        <div class="drop-text">ANKI .apkg 파일 불러오기</div>
+        <div class="drop-sub">Front · Hint · Back · Year 필드 자동 인식</div>
+        <label class="drop-btn">파일 선택
+          <input type="file" accept=".apkg" style="display:none" onchange="handleFile(this.files[0])">
+        </label>
+      </div>
+      <div class="status-bar" id="status-bar"></div>
+      <div class="notice">
+        <strong>💡 내보내기 설정</strong><br>
+        ANKI → 내보내기 → <strong>Support older Anki versions</strong> 체크 후 저장<br><br>
+        <strong>⌨️ 단축키</strong><br>
+        Space = 다음 단계 &nbsp;·&nbsp; ← = X (틀림) &nbsp;·&nbsp; → = O (맞음)<br><br>
+        <strong>⏱️ 자동 타이머</strong><br>
+        문제 10초 → 자동 정답 보기 &nbsp;·&nbsp; 정답 10초 → 자동 X<br>
+        힌트/정답 보기 클릭 시 타이머 정지 · 타이머 원 클릭 = 일시정지<br><br>
+        <strong>📝 연습장</strong><br>
+        PC/태블릿에서 우측에 연습장 패널 표시 (타이핑 + 드로잉)
+      </div>
+    </div>
+  </div>
+
+  <!-- 학습 화면 -->
+  <div class="screen" id="screen-study">
+    <div class="study-layout">
+
+      <!-- 카드 컬럼 -->
+      <div class="study-col">
+        <div class="study-header">
+          <span class="deck-name" id="deck-name"></span>
+          <div class="header-right">
+            <div class="timer-ring" id="timer-ring" onclick="togglePause()" title="클릭 = 일시정지/재개">
+              <svg width="34" height="34" viewBox="0 0 34 34">
+                <circle class="timer-bg" cx="17" cy="17" r="14"/>
+                <circle class="timer-fill" id="timer-arc" cx="17" cy="17" r="14"
+                  stroke="#1D9E75" stroke-dasharray="87.96" stroke-dashoffset="0"/>
+              </svg>
+              <div class="timer-label" id="timer-label">10</div>
+            </div>
+            <span class="progress-text" id="progress-text">0 / 0</span>
+          </div>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+        </div>
+        <div class="card-shell">
+          <div class="card-scroll" id="card-scroll">
+            <div class="block" id="block-front">
+              <div class="block-label">문제</div>
+              <div class="block-body" id="content-front"></div>
+            </div>
+            <div class="c-divider hidden" id="div-hint"></div>
+            <div class="block hidden" id="block-hint">
+              <div class="block-label">힌트</div>
+              <div class="block-body" id="content-hint"></div>
+            </div>
+            <div class="c-divider hidden" id="div-back"></div>
+            <div class="block hidden" id="block-back">
+              <div class="block-label">정답</div>
+              <div class="block-body" id="content-back"></div>
+            </div>
+            <div class="block hidden" id="block-year">
+              <span style="font-size:11px;color:#999;background:#f0f0ee;padding:2px 8px;border-radius:4px;" id="content-year"></span>
+            </div>
+          </div>
+          <div class="card-footer">
+            <span class="footer-level" id="footer-level">1단계</span>
+            <span class="footer-year" id="footer-year"></span>
+          </div>
+        </div>
+        <div class="btn-area">
+          <button class="main-btn hidden" id="main-btn">정답 보기</button>
+          <div class="action-row hidden" id="action-row">
+            <button class="btn-x" onclick="handleResult(false)">
+              <span class="key-badge">←</span><span>✕</span>
+            </button>
+            <button class="btn-o" onclick="handleResult(true)">
+              <span>○</span><span class="key-badge">→</span>
+            </button>
+          </div>
+          <div class="shortcut-guide" id="shortcut-guide">
+            Space = 다음 단계 &nbsp;·&nbsp; ← = 틀림 &nbsp;·&nbsp; → = 맞음
+          </div>
+        </div>
+      </div>
+
+      <!-- 연습장 컬럼 -->
+      <div class="notepad-col" id="notepad-col">
+        <div class="notepad-header" onclick="toggleNotepad()">
+          <span class="notepad-title">✏️ 연습장</span>
+          <span class="notepad-toggle" id="notepad-toggle">◀</span>
+        </div>
+        <div class="notepad-tools" id="notepad-tools">
+          <button class="tool-btn active" id="btn-text" onclick="setMode('text')">텍스트</button>
+          <button class="tool-btn" id="btn-draw" onclick="setMode('draw')">펜</button>
+          <button class="tool-btn" id="btn-erase" onclick="setMode('erase')">지우개</button>
+          <div class="tool-sep"></div>
+          <div class="color-dot selected" style="background:#1a1a1a" onclick="setColor('#1a1a1a')" id="c1"></div>
+          <div class="color-dot" style="background:#e53935" onclick="setColor('#e53935')" id="c2"></div>
+          <div class="color-dot" style="background:#1D9E75" onclick="setColor('#1D9E75')" id="c3"></div>
+          <div class="color-dot" style="background:#1565c0" onclick="setColor('#1565c0')" id="c4"></div>
+          <div class="tool-sep"></div>
+          <div class="pen-size">
+            <span>굵기</span>
+            <input type="range" min="1" max="20" value="3" id="pen-size" oninput="penSize=+this.value">
+          </div>
+          <button class="clear-btn" onclick="clearNotepad()">전체 지우기</button>
+        </div>
+        <div class="notepad-body" id="notepad-body">
+          <textarea class="notepad-textarea" id="notepad-textarea"
+            placeholder="여기에 답을 적어보세요...&#10;&#10;다음 문제로 넘어가면 자동으로 초기화됩니다."></textarea>
+          <canvas class="notepad-canvas hidden" id="notepad-canvas"></canvas>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 완료 화면 -->
+  <div class="screen" id="screen-done">
+    <div class="done-wrap">
+      <div class="done-screen">
+        <div class="done-icon">🎉</div>
+        <div class="done-title">학습 완료!</div>
+        <div class="done-sub" id="done-sub"></div>
+        <div class="done-stats">
+          <div class="done-stat"><div class="done-stat-num pass" id="pass-count">0</div><div class="done-stat-label">○ 맞음</div></div>
+          <div class="done-stat"><div class="done-stat-num fail" id="fail-count">0</div><div class="done-stat-label">✕ 틀림</div></div>
+        </div>
+        <button class="restart-btn" onclick="restartStudy()">다시 학습하기</button>
+        <button class="back-btn" onclick="goImport()">다른 파일 불러오기</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js"></script>
+<script>
+// ── 앱 상태 ──
+let SQL=null, cards=[], mediaMap={}, zipRef=null;
+let cur=0, passCount=0, failCount=0;
+let deckFileName='';
+let timerInterval=null, timerSec=0, timerPaused=false;
+let cardPhase='question';
+const TIMER_SEC=10;
+const CIRCUMFERENCE=2*Math.PI*14;
+
+// ── 연습장 상태 ──
+let notepadMode='text'; // 'text' | 'draw' | 'erase'
+let penColor='#1a1a1a';
+let penSize=3;
+let isDrawing=false;
+let lastX=0, lastY=0;
+let notepadOpen=true;
+
+// ── 유틸 ──
+function setStatus(msg,type){
+  const el=document.getElementById('status-bar');
+  el.textContent=msg; el.className='status-bar '+(msg?type:'');
+}
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function show(id){const el=document.getElementById(id);el.classList.remove('hidden');el.classList.add('fade-in');}
+function hide(id){const el=document.getElementById(id);el.classList.add('hidden');el.classList.remove('fade-in');}
+
+// ── 파일 처리 ──
+function handleDrop(e){
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('over');
+  const f=e.dataTransfer.files[0];
+  if(f&&f.name.endsWith('.apkg'))handleFile(f);
+  else setStatus('.apkg 파일만 가능합니다.','error');
+}
+
+async function handleFile(file){
+  if(!file)return;
+  deckFileName=file.name.replace(/\.apkg$/i,'');
+  setStatus('파일 읽는 중...','loading');
+  try{
+    if(!SQL){
+      setStatus('초기화 중... (최초 1회)','loading');
+      SQL=await initSqlJs({locateFile:f=>`https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/${f}`});
+    }
+    const zip=await JSZip.loadAsync(file);
+    zipRef=zip; mediaMap={};
+    const mFile=zip.file('media');
+    if(mFile){try{const j=JSON.parse(await mFile.async('string'));Object.entries(j).forEach(([k,v])=>mediaMap[v]=k);}catch(e){}}
+    const dbFile=zip.file('collection.anki21')||zip.file('collection.anki2');
+    if(!dbFile){setStatus('구버전 호환 포맷 필요: "Support older Anki versions" 체크 후 저장','error');return;}
+    setStatus('카드 불러오는 중...','loading');
+    const buf=await dbFile.async('arraybuffer');
+    const db=new SQL.Database(new Uint8Array(buf));
+    const res=db.exec("SELECT flds, tags FROM notes");
+    if(!res.length){setStatus('카드가 없습니다.','error');return;}
+    cards=res[0].values.map(([flds,tags])=>{
+      const p=flds.split('\x1f');
+      return{front:p[0]||'',hint:(p[1]||'').trim(),back:p[2]||'',year:(p[3]||'').trim(),tags:(tags||'').trim()};
+    });
+    db.close();
+    cards=shuffle(cards); cur=0; passCount=0; failCount=0;
+    setStatus('','');
+    document.getElementById('deck-name').textContent=deckFileName;
+    showScreen('screen-study');
+    initCanvas();
+    loadCard();
+  }catch(err){setStatus('오류: '+err.message,'error');}
+}
+
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}
+  return arr;
+}
+
+// ── 카드 로딩 ──
+async function loadCard(){
+  if(cur>=cards.length){showDone();return;}
+  stopTimer(); clearNotepad(); cardPhase='question';
+  const c=cards[cur];
+  document.getElementById('content-front').innerHTML=await resolveMedia(c.front);
+  document.getElementById('content-hint').innerHTML=await resolveMedia(c.hint);
+  document.getElementById('content-back').innerHTML=await resolveMedia(c.back);
+  ['block-hint','div-hint','block-back','div-back','block-year'].forEach(hide);
+  document.getElementById('action-row').classList.add('hidden');
+  document.getElementById('shortcut-guide').style.display='none';
+  document.getElementById('card-scroll').scrollTop=0;
+  const fyEl=document.getElementById('footer-year');
+  fyEl.textContent=c.year; fyEl.style.display=c.year?'inline-block':'none';
+  document.getElementById('footer-level').textContent='1단계';
+  const btn=document.getElementById('main-btn');
+  btn.classList.remove('hidden');
+  if(c.hint){btn.textContent='힌트 보기';btn.onclick=showHint;}
+  else{btn.textContent='정답 보기';btn.onclick=showAnswer;}
+  const total=cards.length;
+  document.getElementById('progress-fill').style.width=Math.round((cur/total)*100)+'%';
+  document.getElementById('progress-text').textContent=`${cur+1} / ${total}`;
+  startTimer(TIMER_SEC,()=>showAnswer());
+}
+
+function showHint(){
+  stopTimer(); cardPhase='hint';
+  show('div-hint');show('block-hint');
+  const btn=document.getElementById('main-btn');
+  btn.textContent='정답 보기'; btn.onclick=showAnswer;
+  scrollBottom();
+}
+
+function showAnswer(){
+  stopTimer(); cardPhase='answer';
+  show('div-back');show('block-back');
+  if(cards[cur].year)show('block-year');
+  document.getElementById('main-btn').classList.add('hidden');
+  document.getElementById('action-row').classList.remove('hidden');
+  document.getElementById('shortcut-guide').style.display='block';
+  scrollBottom();
+  startTimer(TIMER_SEC,()=>handleResult(false));
+}
+
+function scrollBottom(){
+  const s=document.getElementById('card-scroll');
+  setTimeout(()=>s.scrollTo({top:s.scrollHeight,behavior:'smooth'}),60);
+}
+
+function handleResult(pass){
+  if(pass)passCount++;else failCount++;
+  cur++; loadCard();
+}
+
+function showDone(){
+  stopTimer();
+  document.getElementById('pass-count').textContent=passCount;
+  document.getElementById('fail-count').textContent=failCount;
+  const pct=Math.round((passCount/cards.length)*100);
+  document.getElementById('done-sub').textContent=`${cards.length}장 완료 · 정답률 ${pct}%`;
+  document.getElementById('progress-fill').style.width='100%';
+  showScreen('screen-done');
+}
+
+function restartStudy(){
+  cards=shuffle(cards); cur=0; passCount=0; failCount=0;
+  showScreen('screen-study'); loadCard();
+}
+
+function goImport(){
+  stopTimer(); cards=[]; zipRef=null; mediaMap={};
+  setStatus('',''); showScreen('screen-import');
+}
+
+// ── 타이머 ──
+function startTimer(sec,onEnd){
+  stopTimer(); timerSec=sec; timerPaused=false;
+  updateTimerUI(timerSec,sec);
+  timerInterval=setInterval(()=>{
+    if(timerPaused)return;
+    timerSec--; updateTimerUI(timerSec,sec);
+    if(timerSec<=0){stopTimer();onEnd();}
+  },1000);
+}
+function stopTimer(){
+  if(timerInterval){clearInterval(timerInterval);timerInterval=null;}
+  timerPaused=false; updateTimerUI(TIMER_SEC,TIMER_SEC);
+}
+function togglePause(){
+  if(!timerInterval)return;
+  timerPaused=!timerPaused; updateTimerUI(timerSec,TIMER_SEC);
+}
+function updateTimerUI(remaining,total){
+  const arc=document.getElementById('timer-arc');
+  const label=document.getElementById('timer-label');
+  const ratio=Math.max(0,remaining/total);
+  arc.style.strokeDashoffset=CIRCUMFERENCE*(1-ratio);
+  if(timerPaused){arc.style.stroke='#aaa';label.style.color='#aaa';label.textContent='⏸';}
+  else if(remaining<=3){arc.style.stroke='#e53935';label.style.color='#e53935';label.textContent=Math.max(0,remaining);}
+  else if(remaining<=6){arc.style.stroke='#EF9F27';label.style.color='#EF9F27';label.textContent=Math.max(0,remaining);}
+  else{arc.style.stroke='#1D9E75';label.style.color='#555';label.textContent=Math.max(0,remaining);}
+}
+
+// ── 단축키 ──
+document.addEventListener('keydown',(e)=>{
+  const studyActive=document.getElementById('screen-study').classList.contains('active');
+  if(!studyActive)return;
+  // 연습장 텍스트 입력 중일 때는 단축키 무시
+  if(document.activeElement===document.getElementById('notepad-textarea'))return;
+  if(e.key==='ArrowLeft'){e.preventDefault();if(cardPhase==='answer')handleResult(false);}
+  else if(e.key==='ArrowRight'){e.preventDefault();if(cardPhase==='answer')handleResult(true);}
+  else if(e.key===' '){e.preventDefault();const btn=document.getElementById('main-btn');if(!btn.classList.contains('hidden'))btn.click();}
+});
+
+// ── 연습장 ──
+function toggleNotepad(){
+  const col=document.getElementById('notepad-col');
+  notepadOpen=!notepadOpen;
+  col.classList.toggle('collapsed',!notepadOpen);
+  resizeCanvas();
+}
+
+function setMode(mode){
+  notepadMode=mode;
+  ['text','draw','erase'].forEach(m=>{
+    document.getElementById('btn-'+m).classList.toggle('active',m===mode);
+  });
+  const textarea=document.getElementById('notepad-textarea');
+  const canvas=document.getElementById('notepad-canvas');
+  const colorDots=document.querySelectorAll('.color-dot');
+  const sizeInput=document.getElementById('pen-size');
+
+  if(mode==='text'){
+    textarea.classList.remove('hidden');
+    canvas.classList.add('hidden');
+    colorDots.forEach(d=>d.style.opacity='0.3');
+    sizeInput.style.opacity='0.3';
+  }else{
+    textarea.classList.add('hidden');
+    canvas.classList.remove('hidden');
+    colorDots.forEach(d=>d.style.opacity='1');
+    sizeInput.style.opacity=mode==='erase'?'0.3':'1';
+    resizeCanvas();
+  }
+}
+
+function setColor(color){
+  penColor=color;
+  document.querySelectorAll('.color-dot').forEach(d=>{
+    d.classList.toggle('selected',d.style.background===color||d.style.backgroundColor===color);
+  });
+  if(notepadMode==='erase')setMode('draw');
+}
+
+function clearNotepad(){
+  document.getElementById('notepad-textarea').value='';
+  const canvas=document.getElementById('notepad-canvas');
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+}
+
+// ── 캔버스 드로잉 ──
+function initCanvas(){
+  const canvas=document.getElementById('notepad-canvas');
+  resizeCanvas();
+
+  function getPos(e){
+    const rect=canvas.getBoundingClientRect();
+    const scaleX=canvas.width/rect.width;
+    const scaleY=canvas.height/rect.height;
+    if(e.touches){
+      return{x:(e.touches[0].clientX-rect.left)*scaleX,y:(e.touches[0].clientY-rect.top)*scaleY};
+    }
+    return{x:(e.clientX-rect.left)*scaleX,y:(e.clientY-rect.top)*scaleY};
+  }
+
+  function startDraw(e){
+    if(notepadMode==='text')return;
+    e.preventDefault(); isDrawing=true;
+    const pos=getPos(e); lastX=pos.x; lastY=pos.y;
+  }
+  function doDraw(e){
+    if(!isDrawing||notepadMode==='text')return;
+    e.preventDefault();
+    const ctx=canvas.getContext('2d');
+    const pos=getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(lastX,lastY);
+    ctx.lineTo(pos.x,pos.y);
+    ctx.strokeStyle=notepadMode==='erase'?'#ffffff':penColor;
+    ctx.lineWidth=notepadMode==='erase'?penSize*5:penSize;
+    ctx.lineCap='round'; ctx.lineJoin='round';
+    ctx.stroke();
+    lastX=pos.x; lastY=pos.y;
+  }
+  function endDraw(){isDrawing=false;}
+
+  canvas.addEventListener('mousedown',startDraw);
+  canvas.addEventListener('mousemove',doDraw);
+  canvas.addEventListener('mouseup',endDraw);
+  canvas.addEventListener('mouseleave',endDraw);
+  canvas.addEventListener('touchstart',startDraw,{passive:false});
+  canvas.addEventListener('touchmove',doDraw,{passive:false});
+  canvas.addEventListener('touchend',endDraw);
+}
+
+function resizeCanvas(){
+  const canvas=document.getElementById('notepad-canvas');
+  const body=document.getElementById('notepad-body');
+  if(!body||canvas.classList.contains('hidden'))return;
+  const ctx=canvas.getContext('2d');
+  const imageData=ctx.getImageData(0,0,canvas.width,canvas.height);
+  canvas.width=body.offsetWidth;
+  canvas.height=body.offsetHeight;
+  ctx.putImageData(imageData,0,0);
+}
+
+window.addEventListener('resize',resizeCanvas);
+
+// ── 미디어 처리 ──
+async function resolveMedia(html){
+  if(!html||!zipRef)return html;
+  const tags=html.match(/src="([^"]+)"/g)||[];
+  for(const m of tags){
+    const fname=m.replace('src="','').replace('"','');
+    const key=mediaMap[fname];
+    if(key){const f=zipRef.file(key);if(f){const blob=await f.async('blob');html=html.replace(`src="${fname}"`,`src="${URL.createObjectURL(blob)}"`)}}
+  }
+  return html;
+}
+</script>
+</body>
+</html>

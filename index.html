@@ -336,7 +336,7 @@ body {
     <div class="import-wrap">
       <div class="brand">
         <div class="brand-name">암기도우미</div>
-        <div class="brand-sub">Leitner Scheduler · ANKI 호환 · v6.7.3</div>
+        <div class="brand-sub">암기도우미 · ANKI 호환 · v7.0</div>
       </div>
       <div style="display:flex;gap:8px;margin-bottom:10px;">
         <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;border-radius:10px;border:1.5px solid #1D9E75;background:#f0faf6;font-size:13px;font-weight:600;color:#0F6E56;cursor:pointer;">
@@ -1145,7 +1145,7 @@ function updateSelectedBtn(){
 
 function startSelectedCards(){
   if(selectedCards.size===0) return;
-  filteredCards=allCards.filter(c=>selectedCards.has(c.id));
+  filteredCards=shuffle(allCards.filter(c=>selectedCards.has(c.id)));
   cur=0;passCount=0;failCount=0;
   showScreen('screen-study');initCanvas();loadCard();
 }

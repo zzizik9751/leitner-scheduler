@@ -857,10 +857,11 @@ document.addEventListener('webkitfullscreenchange', updateFsBtn);
 document.addEventListener('mozfullscreenchange', updateFsBtn);
 function addDays(d,n){const dt=new Date(d);dt.setDate(dt.getDate()+n);return dt.toISOString().slice(0,10);}
 function getProgress(id){if(!progressData[id])progressData[id]={level:1,nextReview:today()};return progressData[id];}
-function isDueToday(id){return getProgress(id).nextReview<=today();}
+function peekProgress(id){return progressData[id]||null;} // 진도 없으면 null 반환 (자동생성 안 함)
+function isDueToday(id){const p=peekProgress(id);return p?p.nextReview<=today():false;}
 function isNewCard(id){return !progressData[id];}
 
-function setStatus(msg,type){const el=document.getElementById('status-bar');el.textContent=msg;el.className='status-bar '+(msg?type:'');}
+function setStatus(msg,type){const el=document.getElementById('status-bar');if(!el)return;el.textContent=msg;el.className='status-bar '+(msg?type:'');}
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
 function show(id){const el=document.getElementById(id);el.classList.remove('hidden');el.classList.add('fade-in');}
 function hide(id){const el=document.getElementById(id);el.classList.add('hidden');el.classList.remove('fade-in');}
@@ -887,7 +888,7 @@ function applyFilter(){
   const base=allCards.filter(c=>{if(isHeart(c.star))return false;if(starFilter>0&&countStars(c.star)<starFilter)return false;return true;});
   buildTodayDeck(base);filteredCards=todayDeck;
   const filteredTotal=allCards.filter(c=>{if(isHeart(c.star))return false;if(starFilter>0&&countStars(c.star)<starFilter)return false;return true;}).length;
-  document.getElementById('filter-count').textContent=starFilter>0?filteredTotal+'장':'';
+  const fcEl=document.getElementById('filter-count');if(fcEl)fcEl.textContent=starFilter>0?filteredTotal+'장':'';
   if(document.getElementById('screen-study').classList.contains('active')){cur=0;passCount=0;failCount=0;loadCard();}
 }
 function setFilter(stars){
@@ -901,7 +902,7 @@ function handleDrop(e){
   if(f&&f.name.endsWith('.apkg'))handleFile(f);
   else setStatus('.apkg 파일만 가능합니다.','error');
 }
-async function handleFile(file){
+async function handleFile(file, hasProgress=false){
   if(!file)return;
   deckFileName=file.name.replace(/\.apkg$/i,'');
   setStatus('파일 읽는 중...','loading');
@@ -923,7 +924,13 @@ async function handleFile(file){
     });
     db.close();setStatus('','');
     document.getElementById('deck-name').textContent=deckFileName;
-    showScreen('screen-list');openListScreen();
+    if(hasProgress){
+      applyFilter();
+      cur=0;passCount=0;failCount=0;
+      showScreen('screen-study');initCanvas();loadCard();
+    } else {
+      showScreen('screen-list');openListScreen(); // 진도 없음: 카드 선택
+    }
   }catch(err){setStatus('오류: '+err.message,'error');}
 }
 
@@ -945,7 +952,7 @@ async function handleCombinedFiles(files) {
       r.readAsText(jsonFile);
     });
   }
-  if(apkgFile) await handleFile(apkgFile);
+  if(apkgFile) await handleFile(apkgFile, !!jsonFile);
   if(jsonFile&&!apkgFile) setStatus('APKG 파일도 선택해주세요.','error');
 }
 
@@ -1003,7 +1010,7 @@ function renderList(){
   }
 
   matched.forEach(c=>{
-    const prog=getProgress(c.id);const isNew=isNewCard(c.id);
+    const prog=peekProgress(c.id);const isNew=isNewCard(c.id);
     const ft=stripHtml(c.front);const df=kw?highlight(ft,kw):ft;
     const star=(c.star.match(/★+/g)||[]).join('');
     const isSelected=selectedCards.has(c.id);
@@ -1017,7 +1024,7 @@ function renderList(){
       `<div class="list-card-body">`+
         `<div class="list-card-front">${df}</div>`+
         `<div class="list-card-meta">`+
-          `<span class="list-badge ${isNew?'list-badge-new':'list-badge-level'}">${isNew?'신규':prog.level+'단계'}</span>`+
+          `<span class="list-badge ${isNew?'list-badge-new':'list-badge-level'}">${isNew?'신규':(prog?prog.level+'단계':'1단계')}</span>`+
           (c.분류?`<span class="list-badge list-badge-분류">${c.분류}</span>`:'')+
           (c.C==='Y'?`<span class="list-badge list-badge-calc">계산</span>`:'')+
           (star?`<span class="list-star">${star}</span>`:'')+
@@ -1035,14 +1042,6 @@ function renderList(){
   updateSelectedBtn();
 }
 
-function jumpToCard(cardId){
-  const idx=filteredCards.findIndex(c=>c.id===cardId);
-  if(idx!==-1){ cur=idx;showScreen('screen-study');loadCard(); }
-  else if(confirm('오늘 학습 목록에 없는 카드입니다.\n임시로 추가해서 보시겠습니까?')){
-    const card=allCards.find(c=>c.id===cardId);
-    if(card){ filteredCards.splice(cur,0,card);showScreen('screen-study');loadCard(); }
-  }
-}
 function jumpToCard(cardId){
   const idx=filteredCards.findIndex(c=>c.id===cardId);
   if(idx!==-1){ cur=idx;showScreen('screen-study');loadCard(); }

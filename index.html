@@ -165,6 +165,7 @@ body {
   padding: 2px 6px; border-radius: 4px; opacity: 0.7;
 }
 .shortcut-guide { text-align: center; margin-top: 7px; font-size: 11px; color: #aaa; display: none; }
+.btn-tts-active { background: #fff8e1 !important; border-color: #f4a623 !important; color: #e65100 !important; }
 
 /* ── 연습장 ── */
 .notepad-col {
@@ -334,7 +335,7 @@ body {
   <div class="screen active" id="screen-import">
     <div class="import-wrap">
       <div class="brand">
-        <div class="brand-name">라이트너 스케줄러</div>
+        <div class="brand-name">암기도우미</div>
         <div class="brand-sub">Leitner Scheduler · ANKI 호환 · v6.7.3</div>
       </div>
       <div style="display:flex;gap:8px;margin-bottom:10px;">
@@ -405,6 +406,7 @@ body {
             <button onclick="openList()" style="padding:5px 10px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="카드 목록/검색">🔍</button>
             <button onclick="saveProgress()" style="padding:5px 10px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="진도 저장">💾</button>
             <button id="btn-fullscreen" onclick="toggleFullscreen()" style="padding:5px 10px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="전체화면 (F11)">⛶</button>
+            <button id="btn-tts" onclick="toggleTTS()" style="padding:5px 10px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="TTS 음성 읽기 켜기/끄기">🔇</button>
             <div class="timer-ring" id="timer-ring" onclick="togglePause()" title="클릭 = 일시정지/재개">
               <svg width="34" height="34" viewBox="0 0 34 34">
                 <circle class="timer-bg" cx="17" cy="17" r="14"/>
@@ -1164,6 +1166,7 @@ function loadProgressFile(file){
 
 async function loadCard(){
   if(cur>=filteredCards.length){showDone();return;}
+  ttsStop();
   stopTimer();clearNotepad();cardPhase='question';autoTimerCard=false;updateQuotaBar();
   const c=filteredCards[cur];
   const prog=getProgress(c.id);
@@ -1185,34 +1188,59 @@ async function loadCard(){
   else{btn.textContent='정답 보기';btn.onclick=()=>showAnswer(false);}
   document.getElementById('progress-fill').style.width=Math.round((cur/filteredCards.length)*100)+'%';
   document.getElementById('progress-text').textContent=`${cur+1} / ${filteredCards.length}`;
-  if(TIMER_SEC>0)startTimer(TIMER_SEC,()=>showHint(true));
-  else updateTimerUI(0,1);
+  if(TIMER_SEC>0){
+    if(ttsEnabled){
+      // TTS가 읽는 동안 타이머 정지, 완료 후 타이머 시작
+      ttsRead(c.front, ()=>{ ttsPendingTimer=setTimeout(()=>startTimer(TIMER_SEC,()=>showHint(true)),300); });
+    } else {
+      startTimer(TIMER_SEC,()=>showHint(true));
+    }
+  } else {
+    updateTimerUI(0,1);
+    if(ttsEnabled) ttsRead(c.front, null);
+  }
 }
 
 function showHint(autoByTimer){
-  stopTimer();cardPhase='hint';
+  stopTimer(); ttsStop(); cardPhase='hint';
   const c=filteredCards[cur];
   if(!c.hint&&autoByTimer){showAnswer(true);return;}
   show('div-hint');show('block-hint');
   const btn=document.getElementById('main-btn');
   btn.textContent='정답 보기';btn.onclick=()=>showAnswer(false);
   scrollBottom();
-  if(autoByTimer&&TIMER_SEC>0)startTimer(TIMER_SEC,()=>showAnswer(true));
+  if(ttsEnabled){
+    ttsRead(c.hint, ()=>{
+      if(autoByTimer&&TIMER_SEC>0)
+        ttsPendingTimer=setTimeout(()=>startTimer(TIMER_SEC,()=>showAnswer(true)),300);
+    });
+  } else {
+    if(autoByTimer&&TIMER_SEC>0)startTimer(TIMER_SEC,()=>showAnswer(true));
+  }
 }
 function showAnswer(autoByTimer){
-  stopTimer();cardPhase='answer';autoTimerCard=!!autoByTimer;
+  stopTimer(); ttsStop(); cardPhase='answer'; autoTimerCard=!!autoByTimer;
   show('div-back');show('block-back');
   if(filteredCards[cur].year)show('block-year');
   document.getElementById('main-btn').classList.add('hidden');
   document.getElementById('action-row').classList.remove('hidden');
   document.getElementById('shortcut-guide').style.display='block';
   scrollBottom();
-  if(autoByTimer&&TIMER_SEC>0)startTimer(TIMER_SEC,()=>skipCard());
+  const c=filteredCards[cur];
+  if(ttsEnabled){
+    ttsRead(c.back, ()=>{
+      if(autoByTimer&&TIMER_SEC>0)
+        ttsPendingTimer=setTimeout(()=>startTimer(TIMER_SEC,()=>skipCard()),300);
+    });
+  } else {
+    if(autoByTimer&&TIMER_SEC>0)startTimer(TIMER_SEC,()=>skipCard());
+  }
 }
 function scrollBottom(){const s=document.getElementById('card-scroll');setTimeout(()=>s.scrollTo({top:s.scrollHeight,behavior:'smooth'}),60);}
 
 function skipCard(){cur++;loadCard();}
 function handleResult(pass){
+  ttsStop();
   const c=filteredCards[cur];const prog=getProgress(c.id);
   if(!autoTimerCard){
     if(pass){prog.level=Math.min(5,prog.level+1);prog.nextReview=addDays(today(),LEITNER_DAYS[prog.level]);passCount++;}
@@ -1260,6 +1288,75 @@ document.addEventListener('keydown',(e)=>{
   else if(e.key==='ArrowRight'){e.preventDefault();if(cardPhase==='answer')handleResult(true);}
   else if(e.key===' '){e.preventDefault();const btn=document.getElementById('main-btn');if(!btn.classList.contains('hidden'))btn.click();}
 });
+
+/* ── TTS ── */
+let ttsEnabled = false;
+let ttsUtter = null;
+let ttsPendingTimer = null; // TTS 완료 후 타이머 재개용
+let ttsTimerBackup = 0;    // TTS 끌 때 원래 타이머값 복원용
+const TTS_TIMER_SEC = 5;   // TTS 켤 때 자동 적용 타이머
+
+function toggleTTS(){
+  ttsEnabled = !ttsEnabled;
+  const btn = document.getElementById('btn-tts');
+  if(ttsEnabled){
+    btn.textContent = '🔊';
+    btn.classList.add('btn-tts-active');
+    btn.title = 'TTS 켜짐 (클릭하면 끄기)';
+    // 타이머가 5초 초과면 자동으로 5초로 줄이기
+    if(TIMER_SEC === 0 || TIMER_SEC > TTS_TIMER_SEC){
+      ttsTimerBackup = TIMER_SEC;
+      changeTimerSec(TTS_TIMER_SEC);
+      // import 화면 select도 동기화
+      const sel = document.getElementById('timer-select-import');
+      if(sel) sel.value = TTS_TIMER_SEC;
+    }
+  } else {
+    btn.textContent = '🔇';
+    btn.classList.remove('btn-tts-active');
+    btn.title = 'TTS 음성 읽기 켜기/끄기';
+    ttsStop();
+    // 원래 타이머값 복원
+    if(ttsTimerBackup !== TIMER_SEC){
+      changeTimerSec(ttsTimerBackup);
+      const sel = document.getElementById('timer-select-import');
+      if(sel) sel.value = ttsTimerBackup;
+    }
+  }
+}
+
+function ttsStop(){
+  if(ttsPendingTimer){ clearTimeout(ttsPendingTimer); ttsPendingTimer=null; }
+  window.speechSynthesis.cancel();
+  ttsUtter = null;
+}
+
+function ttsRead(text, onDone){
+  if(!ttsEnabled || !text) { if(onDone) onDone(); return; }
+  ttsStop();
+  const clean = text.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').replace(/\s+/g,' ').trim();
+  if(!clean){ if(onDone) onDone(); return; }
+
+  ttsUtter = new SpeechSynthesisUtterance(clean);
+  ttsUtter.lang = 'ko-KR';
+  ttsUtter.rate = 1.1;   // 약간 빠르게 — 공부용
+  ttsUtter.pitch = 1.0;
+
+  // 한국어 목소리 우선 선택
+  const voices = window.speechSynthesis.getVoices();
+  const koVoice = voices.find(v => v.lang === 'ko-KR') || voices.find(v => v.lang.startsWith('ko'));
+  if(koVoice) ttsUtter.voice = koVoice;
+
+  ttsUtter.onend = () => { ttsUtter=null; if(onDone) onDone(); };
+  ttsUtter.onerror = () => { ttsUtter=null; if(onDone) onDone(); };
+  window.speechSynthesis.speak(ttsUtter);
+}
+
+// 목소리 목록 미리 로딩 (브라우저 초기화 지연 대응)
+if(window.speechSynthesis){
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.addEventListener('voiceschanged', ()=>window.speechSynthesis.getVoices());
+}
 
 function toggleNotepad(){notepadOpen=!notepadOpen;document.getElementById('notepad-col').classList.toggle('collapsed',!notepadOpen);resizeCanvas();}
 function setMode(mode){

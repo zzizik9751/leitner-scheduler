@@ -584,7 +584,8 @@ body {
           <div class="done-stat"><div class="done-stat-num fail" id="fail-count">0</div><div class="done-stat-label">✕ 틀림</div></div>
         </div>
         <button class="restart-btn" onclick="saveProgress()" style="background:#1565c0;margin-bottom:10px;">💾 진도 저장하기</button>
-        <button class="restart-btn" onclick="restartStudy()">다시 학습하기</button>
+        <button class="restart-btn" id="btn-retry-fail" onclick="retryFailed()" style="background:#e53935;margin-bottom:10px;display:none;">✕ 틀린 문제만 다시 풀기</button>
+        <button class="restart-btn" onclick="restartStudy()">↺ 다시 학습하기</button>
         <button class="back-btn" onclick="goImport()">다른 파일 불러오기</button>
       </div>
     </div>
@@ -1248,27 +1249,40 @@ function showAnswer(autoByTimer){
 function scrollBottom(){const s=document.getElementById('card-scroll');setTimeout(()=>s.scrollTo({top:s.scrollHeight,behavior:'smooth'}),60);}
 
 function skipCard(){cur++;loadCard();}
+
+let failedCards = []; // 틀린 카드 누적
+
 function handleResult(pass){
   ttsStop();
   const c=filteredCards[cur];const prog=getProgress(c.id);
   if(!autoTimerCard){
     if(pass){prog.level=Math.min(5,prog.level+1);prog.nextReview=addDays(today(),LEITNER_DAYS[prog.level]);passCount++;}
-    else{prog.level=1;prog.nextReview=addDays(today(),LEITNER_DAYS[1]);failCount++;}
+    else{prog.level=1;prog.nextReview=addDays(today(),LEITNER_DAYS[1]);failCount++;failedCards.push(c);}
     progressData[c.id]=prog;
   }
   autoTimerCard=false;cur++;loadCard();
 }
 function showDone(){
-  stopTimer();
+  stopTimer();ttsStop();
   document.getElementById('pass-count').textContent=passCount;
   document.getElementById('fail-count').textContent=failCount;
   const pct=Math.round((passCount/filteredCards.length)*100);
   document.getElementById('done-sub').textContent=`${filteredCards.length}장 완료 · 정답률 ${pct}%`;
   document.getElementById('progress-fill').style.width='100%';
+  // 틀린 문제 있으면 버튼 표시
+  const retryBtn=document.getElementById('btn-retry-fail');
+  if(retryBtn) retryBtn.style.display=failedCards.length>0?'block':'none';
   showScreen('screen-done');
 }
-function restartStudy(){applyFilter();cur=0;passCount=0;failCount=0;showScreen('screen-study');loadCard();}
-function goImport(){stopTimer();allCards=[];filteredCards=[];zipRef=null;mediaMap={};setStatus('','');showScreen('screen-import');}
+function retryFailed(){
+  if(failedCards.length===0) return;
+  filteredCards=shuffle([...failedCards]);
+  failedCards=[];
+  cur=0;passCount=0;failCount=0;
+  showScreen('screen-study');loadCard();
+}
+function restartStudy(){failedCards=[];applyFilter();cur=0;passCount=0;failCount=0;showScreen('screen-study');loadCard();}
+function goImport(){stopTimer();ttsStop();failedCards=[];allCards=[];filteredCards=[];zipRef=null;mediaMap={};setStatus('','');showScreen('screen-import');}
 
 function startTimer(sec,onEnd){
   stopTimer();timerSec=sec;timerPaused=false;updateTimerUI(timerSec,sec);

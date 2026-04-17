@@ -336,7 +336,7 @@ body {
     <div class="import-wrap">
       <div class="brand">
         <div class="brand-name">Memorization Helper</div>
-        <div class="brand-sub">암기도우미 · ANKI 호환 · v7.0</div>
+        <div class="brand-sub">암기도우미 · ANKI 호환 · v8.0</div>
       </div>
       <div style="display:flex;gap:8px;margin-bottom:10px;">
         <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;border-radius:10px;border:1.5px solid #1D9E75;background:#f0faf6;font-size:13px;font-weight:600;color:#0F6E56;cursor:pointer;">
@@ -358,7 +358,31 @@ body {
       <div style="margin-top:4px;">
         <span id="progress-file-name" style="font-size:12px;color:#1D9E75;font-weight:600;"></span>
       </div>
-      <div style="margin-top:12px;background:#fff;border-radius:12px;padding:14px 16px;border:1px solid #eee;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <!-- TTS 설정 패널 -->
+      <div style="margin-top:8px;background:#fff;border-radius:12px;padding:12px 16px;border:1px solid #eee;">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span style="font-size:12px;font-weight:600;color:#555;">🔊 TTS 설정</span>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#777;cursor:pointer;">
+            <input type="checkbox" id="tts-enable-import" onchange="onTTSImportToggle(this.checked)" style="accent-color:#1D9E75;width:14px;height:14px;">
+            음성 읽기 켜기
+          </label>
+          <div id="tts-options" style="display:none;align-items:center;gap:10px;flex-wrap:wrap;">
+            <label style="font-size:12px;color:#777;display:flex;align-items:center;gap:5px;">목소리
+              <select id="tts-voice-select" onchange="ttsVoiceIdx=+this.value"
+                style="max-width:180px;padding:3px 6px;border:1px solid #ddd;border-radius:6px;font-size:12px;background:#fff;cursor:pointer;">
+                <option value="-1">기본</option>
+              </select>
+            </label>
+            <label style="font-size:12px;color:#777;display:flex;align-items:center;gap:5px;">속도
+              <input type="range" id="tts-rate-range" min="0.5" max="2.0" step="0.1" value="1.1"
+                oninput="ttsRate=+this.value;document.getElementById('tts-rate-val').textContent=ttsRate.toFixed(1)+'x'"
+                style="width:70px;cursor:pointer;">
+              <span id="tts-rate-val" style="font-size:12px;color:#1D9E75;font-weight:600;min-width:32px;">1.1x</span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:8px;background:#fff;border-radius:12px;padding:14px 16px;border:1px solid #eee;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
         <span style="font-size:12px;font-weight:600;color:#555;">오늘 목표</span>
         <label style="font-size:12px;color:#777;display:flex;align-items:center;gap:5px;">신규
           <input type="number" id="daily-new" value="20" min="0" max="200" style="width:52px;padding:3px 6px;border:1px solid #ddd;border-radius:6px;font-size:13px;text-align:center;">장
@@ -414,7 +438,9 @@ body {
           <span class="deck-name" id="deck-name"></span>
           <div class="header-right">
             <button onclick="openList()" style="padding:5px 10px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="카드 목록/검색">🔍</button>
-            <button onclick="saveProgress()" style="padding:5px 10px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="진도 저장">💾</button>
+            <button onclick="goToPrev()" id="btn-prev" style="padding:5px 10px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;opacity:0.35;" title="이전 카드 보기">◀</button>
+            <button onclick="openEditModal()" style="padding:5px 10px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="카드 텍스트 편집">✏️</button>
+            <button onclick="saveProgress()" style="padding:5px 10px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="진도 저장 (ZIP)">💾</button>
             <button id="btn-fullscreen" onclick="toggleFullscreen()" style="padding:5px 10px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="전체화면 (F11)">⛶</button>
             <button id="btn-tts" onclick="toggleTTS()" style="padding:5px 10px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="TTS 음성 읽기 켜기/끄기">🔇</button>
             <div class="timer-ring" id="timer-ring" onclick="togglePause()" title="클릭 = 일시정지/재개">
@@ -572,6 +598,36 @@ body {
     </div>
   </div>
 
+
+  <!-- 카드 편집 모달 -->
+  <div id="edit-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
+    <div style="background:#fff;border-radius:18px;padding:1.5rem;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+        <div style="font-size:16px;font-weight:700;color:#0f1117;">✏️ 카드 편집</div>
+        <button onclick="closeEditModal()" style="padding:4px 10px;border-radius:6px;border:1px solid #ddd;background:#f5f5f3;font-size:13px;color:#888;cursor:pointer;">✕ 닫기</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <label style="font-size:12px;font-weight:600;color:#888;">문제
+          <textarea id="edit-front" rows="3" style="display:block;width:100%;margin-top:4px;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;font-family:inherit;line-height:1.6;resize:vertical;outline:none;box-sizing:border-box;"></textarea>
+        </label>
+        <label style="font-size:12px;font-weight:600;color:#888;">힌트
+          <textarea id="edit-hint" rows="2" style="display:block;width:100%;margin-top:4px;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;font-family:inherit;line-height:1.6;resize:vertical;outline:none;box-sizing:border-box;"></textarea>
+        </label>
+        <label style="font-size:12px;font-weight:600;color:#888;">정답
+          <textarea id="edit-back" rows="4" style="display:block;width:100%;margin-top:4px;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;font-family:inherit;line-height:1.6;resize:vertical;outline:none;box-sizing:border-box;"></textarea>
+        </label>
+        <label style="font-size:12px;font-weight:600;color:#888;">메모 (법규·노트)
+          <textarea id="edit-note" rows="2" style="display:block;width:100%;margin-top:4px;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;font-family:inherit;line-height:1.6;resize:vertical;outline:none;box-sizing:border-box;"></textarea>
+        </label>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:1.2rem;">
+        <button onclick="saveEditModal()" style="flex:1;padding:12px;border-radius:10px;border:none;background:#1D9E75;color:#fff;font-size:14px;font-weight:700;cursor:pointer;">저장</button>
+        <button onclick="closeEditModal()" style="padding:12px 20px;border-radius:10px;border:1px solid #ddd;background:#f5f5f3;color:#666;font-size:14px;cursor:pointer;">취소</button>
+      </div>
+      <div style="margin-top:8px;font-size:11px;color:#bbb;text-align:center;">HTML 원본 그대로 표시됩니다 · 이미지 태그(&lt;img&gt;)는 건드리지 마세요 · 텍스트만 수정하세요</div>
+    </div>
+  </div>
+
   <!-- 완료 -->
   <div class="screen" id="screen-done">
     <div class="done-wrap">
@@ -583,10 +639,12 @@ body {
           <div class="done-stat"><div class="done-stat-num pass" id="pass-count">0</div><div class="done-stat-label">○ 맞음</div></div>
           <div class="done-stat"><div class="done-stat-num fail" id="fail-count">0</div><div class="done-stat-label">✕ 틀림</div></div>
         </div>
-        <button class="restart-btn" onclick="saveProgress()" style="background:#1565c0;margin-bottom:10px;">💾 진도 저장하기</button>
+        <button class="restart-btn" onclick="saveProgress()" style="background:#1565c0;margin-bottom:10px;">💾 진도 저장 (ZIP)</button>
         <button class="restart-btn" id="btn-retry-fail" onclick="retryFailed()" style="background:#e53935;margin-bottom:10px;display:none;">✕ 틀린 문제만 다시 풀기</button>
         <button class="restart-btn" onclick="restartStudy()">↺ 다시 학습하기</button>
         <button class="back-btn" onclick="goImport()">다른 파일 불러오기</button>
+        <!-- 학습 결과 리스트 -->
+        <div id="done-card-list" style="margin-top:1.2rem;text-align:left;"></div>
       </div>
     </div>
   </div>
@@ -607,15 +665,7 @@ body {
   window.addEventListener('orientationchange', function(){ setTimeout(setVh, 300); });
 })();
 </script>
-<script>
-(function(){
-  var EXPIRE = '2026-04-30';
-  var today = new Date().toISOString().slice(0,10);
-  if(today > EXPIRE){
-    document.body.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;background:#f5f5f3;text-align:center;gap:16px;padding:2rem;"><div style="font-size:48px;">⏰</div><div style="font-size:22px;font-weight:700;color:#0f1117;">사용 기한이 만료되었습니다</div><div style="font-size:14px;color:#999;">이 프로그램의 사용 기한은 ' + EXPIRE + '까지입니다.</div></div>';
-  }
-})();
-</script>
+
 <script>/*!
 
 JSZip v3.10.1 - A JavaScript class for generating and reading zip files
@@ -832,6 +882,7 @@ else if (typeof exports === 'object'){
 <script>
 const LEITNER_DAYS=[0,1,2,4,9,14];
 let SQL=null,allCards=[],filteredCards=[],mediaMap={},zipRef=null;
+let sessionLog=[], cardEdited=false, ttsRate=1.1, ttsVoiceIdx=-1;
 let cur=0,passCount=0,failCount=0,deckFileName='';
 let timerInterval=null,timerSec=0,timerPaused=false,TIMER_SEC=20;
 let cardPhase='question',starFilter=0;
@@ -910,10 +961,10 @@ function setFilter(stars){
 function handleDrop(e){
   e.preventDefault();document.getElementById('drop-zone').classList.remove('over');
   const f=e.dataTransfer.files[0];
-  if(f&&f.name.endsWith('.apkg'))handleFile(f);
-  else setStatus('.apkg 파일만 가능합니다.','error');
+  if(f&&(f.name.endsWith('.apkg')||f.name.endsWith('.zip')))handleFile(f);
+  else setStatus('.apkg 또는 저장된 .zip 파일만 가능합니다.','error');
 }
-async function handleFile(file, hasProgress=false){
+async function handleApkg(file, hasProgress=false){
   if(!file)return;
   deckFileName=file.name.replace(/\.apkg$/i,'');
   setStatus('파일 읽는 중...','loading');
@@ -945,9 +996,46 @@ async function handleFile(file, hasProgress=false){
   }catch(err){setStatus('오류: '+err.message,'error');}
 }
 
-function saveProgress(){
-  const blob=new Blob([JSON.stringify({deckName:deckFileName,savedAt:today(),version:'6.1',cards:progressData},null,2)],{type:'application/json'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`progress_${deckFileName}.json`;a.click();
+async function saveProgress(){
+  // v8: 진도 + 카드 텍스트 수정 → ZIP 통합 저장
+  if(!zipRef){
+    // ZIP 없을 때(진도만 있을 때) 기존 JSON 저장으로 폴백
+    const blob=new Blob([JSON.stringify({deckName:deckFileName,savedAt:today(),version:'8.0',cards:progressData},null,2)],{type:'application/json'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`progress_${deckFileName}.json`;a.click();
+    return;
+  }
+  try{
+    // 기존 ZIP 복제
+    const newZip = new JSZip();
+    const files = zipRef.files;
+    for(const fname in files){
+      const f=zipRef.file(fname);
+      if(!f)continue;
+      if(fname==='cards_edited.json') continue; // 교체 예정
+      const buf=await f.async('arraybuffer');
+      newZip.file(fname,buf);
+    }
+    // 수정된 카드 데이터 삽입
+    if(cardEdited){
+      const cardsJson=JSON.stringify(allCards.map(c=>({
+        id:c.id,front:c.front,hint:c.hint,back:c.back,
+        star:c.star,year:c.year,분류:c.분류,C:c.C,tags:c.tags
+      })),null,2);
+      newZip.file('cards_edited.json',cardsJson);
+    }
+    // 진도 데이터 삽입
+    const progressJson=JSON.stringify({deckName:deckFileName,savedAt:today(),version:'8.0',cards:progressData},null,2);
+    newZip.file('progress.json',progressJson);
+    // ZIP 생성 및 다운로드
+    const blob=await newZip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=`${deckFileName}_saved_${today()}.zip`;
+    a.click();
+    cardEdited=false;
+  }catch(err){
+    alert('저장 오류: '+err.message);
+  }
 }
 async function handleCombinedFiles(files) {
   if(!files||files.length===0) return;
@@ -963,7 +1051,7 @@ async function handleCombinedFiles(files) {
       r.readAsText(jsonFile);
     });
   }
-  if(apkgFile) await handleFile(apkgFile, !!jsonFile);
+  if(apkgFile) await handleApkg(apkgFile, !!jsonFile);
   if(jsonFile&&!apkgFile) setStatus('APKG 파일도 선택해주세요.','error');
 }
 
@@ -1200,7 +1288,6 @@ async function loadCard(){
   document.getElementById('progress-text').textContent=`${cur+1} / ${filteredCards.length}`;
   if(TIMER_SEC>0){
     if(ttsEnabled){
-      // TTS가 읽는 동안 타이머 정지, 완료 후 타이머 시작
       ttsRead(c.front, ()=>{ ttsPendingTimer=setTimeout(()=>startTimer(TIMER_SEC,()=>showHint(true)),300); });
     } else {
       startTimer(TIMER_SEC,()=>showHint(true));
@@ -1209,6 +1296,7 @@ async function loadCard(){
     updateTimerUI(0,1);
     if(ttsEnabled) ttsRead(c.front, null);
   }
+  updatePrevBtn();
 }
 
 function showHint(autoByTimer){
@@ -1259,6 +1347,8 @@ function handleResult(pass){
     if(pass){prog.level=Math.min(5,prog.level+1);prog.nextReview=addDays(today(),LEITNER_DAYS[prog.level]);passCount++;}
     else{prog.level=1;prog.nextReview=addDays(today(),LEITNER_DAYS[1]);failCount++;failedCards.push(c);}
     progressData[c.id]=prog;
+    // v8: 세션 로그 기록
+    sessionLog.push({card:c, pass:pass, level:prog.level});
   }
   autoTimerCard=false;cur++;loadCard();
 }
@@ -1269,11 +1359,14 @@ function showDone(){
   const pct=Math.round((passCount/filteredCards.length)*100);
   document.getElementById('done-sub').textContent=`${filteredCards.length}장 완료 · 정답률 ${pct}%`;
   document.getElementById('progress-fill').style.width='100%';
-  // 틀린 문제 있으면 버튼 표시
   const retryBtn=document.getElementById('btn-retry-fail');
   if(retryBtn) retryBtn.style.display=failedCards.length>0?'block':'none';
+  // v8: 세션 결과 리스트 렌더링
+  renderDoneList();
   showScreen('screen-done');
 }
+
+
 function retryFailed(){
   if(failedCards.length===0) return;
   filteredCards=shuffle([...failedCards]);
@@ -1281,8 +1374,8 @@ function retryFailed(){
   cur=0;passCount=0;failCount=0;
   showScreen('screen-study');loadCard();
 }
-function restartStudy(){failedCards=[];applyFilter();cur=0;passCount=0;failCount=0;showScreen('screen-study');loadCard();}
-function goImport(){stopTimer();ttsStop();failedCards=[];allCards=[];filteredCards=[];zipRef=null;mediaMap={};setStatus('','');showScreen('screen-import');}
+function restartStudy(){sessionLog=[];failedCards=[];applyFilter();cur=0;passCount=0;failCount=0;showScreen('screen-study');loadCard();}
+function goImport(){stopTimer();ttsStop();sessionLog=[];failedCards=[];cardEdited=false;allCards=[];filteredCards=[];zipRef=null;mediaMap={};setStatus('','');showScreen('screen-import');}
 
 function startTimer(sec,onEnd){
   stopTimer();timerSec=sec;timerPaused=false;updateTimerUI(timerSec,sec);
@@ -1315,9 +1408,10 @@ document.addEventListener('keydown',(e)=>{
 /* ── TTS ── */
 let ttsEnabled = false;
 let ttsUtter = null;
-let ttsPendingTimer = null; // TTS 완료 후 타이머 재개용
-let ttsTimerBackup = 0;    // TTS 끌 때 원래 타이머값 복원용
-const TTS_TIMER_SEC = 5;   // TTS 켤 때 자동 적용 타이머
+let ttsPendingTimer = null;
+let ttsTimerBackup = 0;
+const TTS_TIMER_SEC = 5;
+
 
 function toggleTTS(){
   ttsEnabled = !ttsEnabled;
@@ -1339,13 +1433,16 @@ function toggleTTS(){
     btn.classList.remove('btn-tts-active');
     btn.title = 'TTS 음성 읽기 켜기/끄기';
     ttsStop();
-    // 원래 타이머값 복원
     if(ttsTimerBackup !== TIMER_SEC){
       changeTimerSec(ttsTimerBackup);
       const sel = document.getElementById('timer-select-import');
       if(sel) sel.value = ttsTimerBackup;
     }
   }
+  // v8: 첫화면 체크박스 동기화
+  const chk=document.getElementById('tts-enable-import');if(chk)chk.checked=ttsEnabled;
+  const opts=document.getElementById('tts-options');if(opts)opts.style.display=ttsEnabled?'flex':'none';
+  if(ttsEnabled)populateTTSVoices();
 }
 
 function ttsStop(){
@@ -1354,21 +1451,92 @@ function ttsStop(){
   ttsUtter = null;
 }
 
+function ttsClean(text){
+  // 1) HTML 태그 제거
+  let s = text.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ');
+  // 2) 단위 기호 → 읽을 수 있는 한국어 (단독 V/A 포함)
+  s = s
+    // 단독 V (볼트): 숫자 뒤 또는 단독
+    .replace(/(\d)\s*V/g, '$1볼트')
+    .replace(/V/g, '볼트')
+    // 단독 A (암페어)
+    .replace(/(\d)\s*A/g, '$1암페어')
+    .replace(/A/g, '암페어')
+    // 단독 W (와트)
+    .replace(/(\d)\s*W/g, '$1와트')
+    .replace(/W/g, '와트')
+    // 단독 Ω (옴)
+    .replace(/(\d)\s*Ω/g, '$1옴')
+    .replace(/Ω/g, '옴')
+    // 단독 Hz
+    .replace(/(\d)\s*Hz/g, '$1헤르츠')
+    .replace(/Hz/g, '헤르츠')
+    // 단독 kV, kA, MW 등 복합단위
+    .replace(/(\d)\s*kV/g, '$1킬로볼트')
+    .replace(/(\d)\s*kA/g, '$1킬로암페어')
+    .replace(/(\d)\s*kW/g, '$1킬로와트')
+    .replace(/(\d)\s*MW/g, '$1메가와트')
+    .replace(/(\d)\s*mA/g, '$1밀리암페어')
+    // 속도/단위 복합
+    .replace(/(\d)\s*m\/s²/g, '$1미터퍼세크제곱')
+    .replace(/(\d)\s*m\/s/g, '$1미터퍼세크')
+    .replace(/\bm\/s²/g, '미터퍼세크제곱')
+    .replace(/\bm\/s/g, '미터퍼세크')
+    .replace(/(\d)\s*km\/h/g, '$1킬로미터퍼아워')
+    .replace(/\bkm\/h/g, '킬로미터퍼아워')
+    .replace(/(\d)\s*m²/g, '$1제곱미터')
+    .replace(/(\d)\s*m³/g, '$1세제곱미터')
+    .replace(/(\d)\s*cm/g, '$1센티미터')
+    .replace(/(\d)\s*mm/g, '$1밀리미터')
+    .replace(/(\d)\s*km/g, '$1킬로미터')
+    .replace(/(\d)\s*kg/g, '$1킬로그램')
+    .replace(/(\d)\s*g\b/g, '$1그램')
+    // 사칙연산 기호
+    .replace(/×/g, '곱하기')
+    .replace(/÷/g, '나누기')
+    .replace(/\+/g, '더하기')
+    .replace(/−/g, '빼기')   // 수학 마이너스 부호
+    // 특수기호
+    .replace(/※/g, '')
+    .replace(/°/g, '도')
+    .replace(/%/g, '퍼센트')
+    // 원문자 숫자 ①~⑩
+    .replace(/①/g,'1').replace(/②/g,'2').replace(/③/g,'3')
+    .replace(/④/g,'4').replace(/⑤/g,'5').replace(/⑥/g,'6')
+    .replace(/⑦/g,'7').replace(/⑧/g,'8').replace(/⑨/g,'9')
+    .replace(/⑩/g,'10')
+    // 구두점 → 휴지 조절
+    .replace(/,,/g, '. ')       // ,, → 마침표로 긴 쉬기
+    .replace(/:/g, ', ')        // : → 쉼표로 짧은 쉬기
+    .replace(/；/g, '. ')       // 전각 세미콜론 → 긴 쉬기
+    .replace(/;/g, ', ')        // ; → 짧은 쉬기
+    // 공백 정리
+    .replace(/\s+/g,' ').trim();
+  return s;
+}
+
 function ttsRead(text, onDone){
   if(!ttsEnabled || !text) { if(onDone) onDone(); return; }
   ttsStop();
-  const clean = text.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').replace(/\s+/g,' ').trim();
+  const clean = ttsClean(text);
   if(!clean){ if(onDone) onDone(); return; }
 
   ttsUtter = new SpeechSynthesisUtterance(clean);
   ttsUtter.lang = 'ko-KR';
-  ttsUtter.rate = 1.1;   // 약간 빠르게 — 공부용
+  ttsUtter.rate = ttsRate;
   ttsUtter.pitch = 1.0;
 
-  // 한국어 목소리 우선 선택
+  // 목소리 선택: Google 한국어 우선 → ko-KR → ko
   const voices = window.speechSynthesis.getVoices();
-  const koVoice = voices.find(v => v.lang === 'ko-KR') || voices.find(v => v.lang.startsWith('ko'));
-  if(koVoice) ttsUtter.voice = koVoice;
+  if(ttsVoiceIdx >= 0 && voices[ttsVoiceIdx]) {
+    ttsUtter.voice = voices[ttsVoiceIdx];
+  } else {
+    const koVoice =
+      voices.find(v => v.name.includes('Google') && v.lang === 'ko-KR') ||
+      voices.find(v => v.lang === 'ko-KR') ||
+      voices.find(v => v.lang.startsWith('ko'));
+    if(koVoice) ttsUtter.voice = koVoice;
+  }
 
   ttsUtter.onend = () => { ttsUtter=null; if(onDone) onDone(); };
   ttsUtter.onerror = () => { ttsUtter=null; if(onDone) onDone(); };
@@ -1404,11 +1572,183 @@ function initCanvas(){
 function resizeCanvas(){const cv=document.getElementById('notepad-canvas'),body=document.getElementById('notepad-body');if(!body||cv.classList.contains('hidden'))return;const ctx=cv.getContext('2d'),img=ctx.getImageData(0,0,cv.width,cv.height);cv.width=body.offsetWidth;cv.height=body.offsetHeight;ctx.putImageData(img,0,0);}
 window.addEventListener('resize',resizeCanvas);
 
+
+/* ── v8: ZIP 저장본 불러오기 ── */
+async function handleZip(file){
+  try{
+    setStatus('저장 파일 불러오는 중...','loading');
+    if(!SQL){setStatus('초기화 중...','loading');SQL=await initSqlJs({wasmBinary:window.__sqlWasmBinary});}
+    const zip=await JSZip.loadAsync(file);zipRef=zip;mediaMap={};
+    // 진도 복원
+    const pf=zip.file('progress.json');
+    if(pf){const pd=JSON.parse(await pf.async('string'));if(pd.cards){progressData=pd.cards;document.getElementById('progress-file-name').textContent='✓ 진도 복원됨';}}
+    // 수정 카드 로드
+    let editedMap={};
+    const ef=zip.file('cards_edited.json');
+    if(ef){const arr=JSON.parse(await ef.async('string'));arr.forEach(c=>editedMap[c.id]=c);}
+    // media 맵
+    const mFile=zip.file('media');
+    if(mFile){try{const j=JSON.parse(await mFile.async('string'));Object.entries(j).forEach(([k,v])=>mediaMap[v]=k);}catch(e){}}
+    // ANKI DB
+    const dbFile=zip.file('collection.anki21')||zip.file('collection.anki2');
+    if(!dbFile){setStatus('ZIP 안에 ANKI 데이터 없음. APKG를 포함한 ZIP이어야 합니다.','error');return;}
+    const buf=await dbFile.async('arraybuffer');
+    const db=new SQL.Database(new Uint8Array(buf));
+    const res=db.exec('SELECT id, flds, tags FROM notes');
+    if(!res.length){setStatus('카드가 없습니다.','error');return;}
+    allCards=res[0].values.map(([id,flds,tags])=>{
+      const p=flds.split('');
+      const base={id:String(id),front:p[0]||'',hint:(p[1]||'').trim(),back:p[2]||'',star:(p[3]||'').trim(),year:(p[4]||'').trim(),분류:stripHtml(p[5]||'').trim(),C:stripHtml(p[6]||'').trim(),tags:(tags||'').trim()};
+      return editedMap[base.id]?Object.assign(base,editedMap[base.id]):base;
+    });
+    db.close();setStatus('','');
+    deckFileName=file.name.replace(/_saved_\d{4}-\d{2}-\d{2}\.zip$/,'').replace(/\.zip$/,'');
+    document.getElementById('deck-name').textContent=deckFileName;
+    applyFilter();cur=0;passCount=0;failCount=0;
+    showScreen('screen-study');initCanvas();loadCard();
+  }catch(err){setStatus('오류: '+err.message,'error');}
+}
+
+/* ── v8: handleFile — apkg/zip 분기 (재귀 없음) ── */
+async function handleFile(file, hasProgress=false){
+  if(!file)return;
+  if(file.name.endsWith('.zip')){
+    await handleZip(file);
+  } else {
+    await handleApkg(file, hasProgress);
+  }
+}
+
 async function resolveMedia(html){
   if(!html||!zipRef)return html;
   const tags=html.match(/src="([^"]+)"/g)||[];
   for(const m of tags){const fname=m.replace('src="','').replace('"','');const key=mediaMap[fname];if(key){const f=zipRef.file(key);if(f){const blob=await f.async('blob');html=html.replace(`src="${fname}"`,`src="${URL.createObjectURL(blob)}"`);}}}
   return html;
 }
+
+/* ── v8 추가 기능 패치 ── */
+
+/* 이전 카드 보기 */
+function goToPrev(){
+  if(cur<=0)return;
+  ttsStop();stopTimer();
+  cur--;
+  loadCard();
+}
+function updatePrevBtn(){
+  const btn=document.getElementById('btn-prev');
+  if(!btn)return;
+  btn.style.opacity=cur>0?'1':'0.35';
+  btn.style.cursor=cur>0?'pointer':'default';
+}
+
+/* 카드 편집 모달 */
+function openEditModal(){
+  if(!filteredCards||filteredCards.length===0)return;
+  const idx=Math.min(cur,filteredCards.length-1);
+  const c=filteredCards[idx];if(!c)return;
+  // 원본 HTML 그대로 표시 (이미지 태그 등 보존)
+  document.getElementById('edit-front').value=c.front||'';
+  document.getElementById('edit-hint').value=c.hint||'';
+  document.getElementById('edit-back').value=c.back||'';
+  document.getElementById('edit-note').value=c.note||'';
+  const modal=document.getElementById('edit-modal');
+  modal.style.display='flex';
+  setTimeout(()=>document.getElementById('edit-front').focus(),100);
+}
+function closeEditModal(){
+  document.getElementById('edit-modal').style.display='none';
+}
+function saveEditModal(){
+  if(!filteredCards||filteredCards.length===0){closeEditModal();return;}
+  const idx=Math.min(cur,filteredCards.length-1);
+  const c=filteredCards[idx];if(!c){closeEditModal();return;}
+  const target=allCards.find(a=>a.id===c.id);
+  const nf=document.getElementById('edit-front').value.trim();
+  const nh=document.getElementById('edit-hint').value.trim();
+  const nb=document.getElementById('edit-back').value.trim();
+  const nn=document.getElementById('edit-note').value.trim();
+  if(target){target.front=nf;target.hint=nh;target.back=nb;target.note=nn;}
+  c.front=nf;c.hint=nh;c.back=nb;c.note=nn;
+  cardEdited=true;
+  closeEditModal();
+  loadCard();
+}
+document.getElementById('edit-modal').addEventListener('click',function(e){
+  if(e.target===this)closeEditModal();
+});
+
+/* TTS 첫화면 토글 */
+function onTTSImportToggle(checked){
+  ttsEnabled=checked;
+  const opts=document.getElementById('tts-options');
+  opts.style.display=checked?'flex':'none';
+  if(checked){
+    populateTTSVoices();
+    if(TIMER_SEC===0||TIMER_SEC>TTS_TIMER_SEC){
+      ttsTimerBackup=TIMER_SEC;
+      changeTimerSec(TTS_TIMER_SEC);
+      const sel=document.getElementById('timer-select-import');
+      if(sel)sel.value=TTS_TIMER_SEC;
+    }
+    const btn=document.getElementById('btn-tts');
+    if(btn){btn.textContent='🔊';btn.classList.add('btn-tts-active');}
+  } else {
+    ttsStop();
+    if(ttsTimerBackup!==TIMER_SEC){changeTimerSec(ttsTimerBackup);const sel=document.getElementById('timer-select-import');if(sel)sel.value=ttsTimerBackup;}
+    const btn=document.getElementById('btn-tts');
+    if(btn){btn.textContent='🔇';btn.classList.remove('btn-tts-active');}
+  }
+}
+function populateTTSVoices(){
+  const sel=document.getElementById('tts-voice-select');if(!sel)return;
+  const voices=window.speechSynthesis.getVoices();
+  sel.innerHTML='<option value="-1">기본 (한국어)</option>';
+  voices.forEach((v,i)=>{
+    const opt=document.createElement('option');
+    opt.value=i;opt.textContent=v.name+' ('+v.lang+')';
+    if(v.lang==='ko-KR'||v.lang.startsWith('ko'))opt.style.fontWeight='600';
+    sel.appendChild(opt);
+  });
+  sel.value=ttsVoiceIdx;
+}
+
+/* 학습화면 TTS 버튼과 첫화면 체크박스 동기화 */
+
+
+/* 완료 리스트 렌더링 */
+function renderDoneList(){
+  const el=document.getElementById('done-card-list');
+  if(!el||sessionLog.length===0){if(el)el.innerHTML='';return;}
+  let html='<div style="font-size:12px;font-weight:700;color:#888;margin-bottom:8px;border-top:1px solid #eee;padding-top:12px;">학습한 카드 목록</div>';
+  sessionLog.forEach((entry)=>{
+    const ft=stripHtml(entry.card.front);
+    const preview=ft.length>55?ft.slice(0,55)+'…':ft;
+    const col=entry.pass?'#1D9E75':'#e53935';
+    const mark=entry.pass?'○':'✕';
+    const bg=entry.pass?'#f0faf6':'#fff5f5';
+    const border=entry.pass?'#c8eed8':'#ffd0d0';
+    html+='<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;background:'+bg+';margin-bottom:5px;border:1px solid '+border+';">'
+      +'<span style="font-size:14px;font-weight:700;color:'+col+';flex-shrink:0;">'+mark+'</span>'
+      +'<span style="font-size:12px;color:#333;flex:1;line-height:1.4;">'+preview+'</span>'
+      +'<span style="font-size:10px;color:#aaa;flex-shrink:0;">'+entry.level+'단계</span>'
+      +'</div>';
+  });
+  el.innerHTML=html;
+}
+
+
+
+/* 목소리 목록 & 드롭존 안내 초기화 */
+window.addEventListener('DOMContentLoaded',()=>{
+  if(window.speechSynthesis){
+    window.speechSynthesis.addEventListener('voiceschanged',()=>{if(ttsEnabled)populateTTSVoices();});
+  }
+  const sub=document.querySelector('.drop-sub');
+  if(sub)sub.textContent='Front · Hint · Back · Year · ★ 필드 자동 인식 · 저장된 ZIP도 가능';
+  const inp=document.querySelector('#drop-zone input[type=file]');
+  if(inp)inp.accept='.apkg,.zip';
+});
+
 </script>
 </body>

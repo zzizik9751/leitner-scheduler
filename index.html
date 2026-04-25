@@ -707,6 +707,7 @@ body {
         <div class="done-icon">🎉</div>
         <div class="done-title">학습 완료!</div>
         <div class="done-sub" id="done-sub"></div>
+        <div id="done-time" style="font-size:12px;color:#888;margin:6px 0 2px;line-height:1.8;"></div>
         <div class="done-stats">
           <div class="done-stat"><div class="done-stat-num pass" id="pass-count">0</div><div class="done-stat-label">○ 맞음</div></div>
           <div class="done-stat"><div class="done-stat-num fail" id="fail-count">0</div><div class="done-stat-label">✕ 틀림</div></div>
@@ -1423,7 +1424,7 @@ function startSelectedCards(){
     .map(el=>allCards.find(c=>c.id===el.dataset.id))
     .filter(c=>c&&selectedCards.has(c.id));
   filteredCards=isRandomMode()?shuffle(cards):[...cards];
-  cur=0;passCount=0;failCount=0;sessionLog=[];failedCards=[];
+  cur=0;passCount=0;failCount=0;sessionLog=[];failedCards=[];studyStartTime=new Date();
   showScreen('screen-study');initCanvas();loadCard();
 }
 
@@ -1448,7 +1449,7 @@ function startAllCards(){
     return parseInt(pa[1]||0)-parseInt(pb[1]||0);
   });
   filteredCards=isRandomMode()?shuffle(source):[...source];
-  cur=0;passCount=0;failCount=0;sessionLog=[];failedCards=[];
+  cur=0;passCount=0;failCount=0;sessionLog=[];failedCards=[];studyStartTime=new Date();
   showScreen('screen-study');initCanvas();loadCard();
 }
 
@@ -1602,12 +1603,24 @@ function handleResult(pass){
   }
   autoTimerCard=false;cur++;loadCard();
 }
+let studyStartTime=null;
 function showDone(){
   stopTimer();ttsStop();
+  const endTime=new Date();
   document.getElementById('pass-count').textContent=passCount;
   document.getElementById('fail-count').textContent=failCount;
   const pct=Math.round((passCount/filteredCards.length)*100);
   document.getElementById('done-sub').textContent=`${filteredCards.length}장 완료 · 정답률 ${pct}%`;
+  // 시간 표시
+  const fmt=d=>`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  const diffMs=endTime-(studyStartTime||endTime);
+  const diffMin=Math.floor(diffMs/60000);
+  const diffSec=Math.floor((diffMs%60000)/1000);
+  const elapsed=diffMin>0?`${diffMin}분 ${diffSec}초`:`${diffSec}초`;
+  const timeEl=document.getElementById('done-time');
+  if(timeEl&&studyStartTime){
+    timeEl.innerHTML=`시작 ${fmt(studyStartTime)} · 종료 ${fmt(endTime)} · 경과 <strong>${elapsed}</strong>`;
+  }
   document.getElementById('progress-fill').style.width='100%';
   const retryBtn=document.getElementById('btn-retry-fail');
   if(retryBtn) retryBtn.style.display=failedCards.length>0?'block':'none';
@@ -1624,7 +1637,7 @@ function retryFailed(){
   cur=0;passCount=0;failCount=0;
   showScreen('screen-study');loadCard();
 }
-function restartStudy(){sessionLog=[];failedCards=[];applyFilter();cur=0;passCount=0;failCount=0;showScreen('screen-study');loadCard();}
+function restartStudy(){sessionLog=[];failedCards=[];applyFilter();cur=0;passCount=0;failCount=0;studyStartTime=new Date();showScreen('screen-study');loadCard();}
 function goImport(){stopTimer();ttsStop();sessionLog=[];failedCards=[];cardEdited=false;allCards=[];filteredCards=[];zipRef=null;mediaMap={};_maxNew=0;_maxReview=0;updateQuotaLabels();setStatus('','');showScreen('screen-import');}
 
 function startTimer(sec,onEnd){

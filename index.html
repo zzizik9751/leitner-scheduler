@@ -608,38 +608,62 @@ body {
         </button>
       </div>
 
-      <!-- 소트/필터 바 -->
-      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;flex-wrap:wrap;margin-bottom:8px;">
-        <span style="font-size:11px;color:#aaa;font-weight:500;">정렬</span>
-        <button class="list-filter-btn active" id="lf-all"    onclick="setListFilter('all')">전체</button>
-        <button class="list-filter-btn" id="lf-star3"  onclick="setListFilter('star3')">★★★ 이상</button>
-        <button class="list-filter-btn" id="lf-star2"  onclick="setListFilter('star2')">★★ 이상</button>
-        <div style="width:1px;height:16px;background:#e0e0e0;margin:0 2px;"></div>
-        <button class="list-filter-btn" id="lf-calc"   onclick="setListFilter('calc')">계산문제</button>
-        <div style="width:1px;height:16px;background:#e0e0e0;margin:0 2px;"></div>
-        <select id="lf-category" onchange="setListFilter('category')"
-          style="font-size:12px;border:1px solid #ddd;border-radius:20px;padding:4px 10px;background:#fff;color:#555;cursor:pointer;outline:none;">
-          <option value="">분류 전체</option>
-          <option value="I">I 분류</option>
-          <option value="II">II 분류</option>
-          <option value="III">III 분류</option>
-          <option value="IV">IV 분류</option>
-          <option value="V">V 분류</option>
-          <option value="VI">VI 분류</option>
-        </select>
-        <div style="width:1px;height:16px;background:#e0e0e0;margin:0 2px;"></div>
-        <!-- 전체선택/해제 -->
-        <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#888;cursor:pointer;margin-left:auto;">
-          <input type="checkbox" id="chk-all" onchange="toggleSelectAll(this.checked)"
-            style="accent-color:#1D9E75;width:14px;height:14px;">
-          전체선택
-        </label>
-      </div>
+      <!-- 필터/정렬 바 -->
+      <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;margin-bottom:8px;">
 
-      <!-- 검색 -->
-      <input id="search-input" type="text" placeholder="🔍  검색... (문제 / 힌트 / 정답)"
-        oninput="renderList()"
-        style="width:100%;padding:9px 14px;border:1.5px solid #ddd;border-radius:10px;font-size:13px;outline:none;margin-bottom:8px;flex-shrink:0;font-family:inherit;box-sizing:border-box;">
+        <!-- 1행: 필터 드롭다운들 -->
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <span style="font-size:11px;color:#aaa;font-weight:500;flex-shrink:0;">필터</span>
+
+          <!-- 출제빈도 -->
+          <select id="lf-star" onchange="setListDropFilter('star',this.value)"
+            style="font-size:12px;border:1px solid #ddd;border-radius:20px;padding:4px 10px;background:#fff;color:#555;cursor:pointer;outline:none;">
+            <option value="">출제빈도 전체</option>
+            <option value="3">★★★ 이상</option>
+            <option value="2">★★ 이상</option>
+            <option value="1">★ 이상</option>
+          </select>
+
+          <!-- 문제유형 -->
+          <select id="lf-type" onchange="setListDropFilter('type',this.value)"
+            style="font-size:12px;border:1px solid #ddd;border-radius:20px;padding:4px 10px;background:#fff;color:#555;cursor:pointer;outline:none;">
+            <option value="">문제유형 전체</option>
+          </select>
+
+          <!-- 분류 -->
+          <select id="lf-category" onchange="setListDropFilter('category',this.value)"
+            style="font-size:12px;border:1px solid #ddd;border-radius:20px;padding:4px 10px;background:#fff;color:#555;cursor:pointer;outline:none;">
+            <option value="">분류 전체</option>
+          </select>
+
+          <!-- 검색 (인라인) -->
+          <input id="search-input" type="text" placeholder="🔍 검색..."
+            oninput="renderList()"
+            style="flex:1;min-width:100px;padding:4px 12px;border:1px solid #ddd;border-radius:20px;font-size:12px;outline:none;font-family:inherit;box-sizing:border-box;color:#555;">
+        </div>
+
+        <!-- 2행: 정렬 + 랜덤 + 전체선택 -->
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <span style="font-size:11px;color:#aaa;font-weight:500;flex-shrink:0;">정렬</span>
+          <button class="list-filter-btn active" id="ls-order"   onclick="setListSort('order')">순서</button>
+          <button class="list-filter-btn"        id="ls-star"    onclick="setListSort('star')">출제빈도↓</button>
+          <button class="list-filter-btn"        id="ls-alpha"   onclick="setListSort('alpha')">가나다</button>
+          <button class="list-filter-btn"        id="ls-cat"     onclick="setListSort('cat')">분류순</button>
+          <div style="width:1px;height:16px;background:#e0e0e0;margin:0 2px;flex-shrink:0;"></div>
+          <!-- 랜덤 체크박스 -->
+          <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#888;cursor:pointer;flex-shrink:0;">
+            <input type="checkbox" id="chk-random" style="accent-color:#1D9E75;width:14px;height:14px;">
+            🔀 랜덤
+          </label>
+          <div style="width:1px;height:16px;background:#e0e0e0;margin:0 2px;flex-shrink:0;"></div>
+          <!-- 전체선택 -->
+          <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#888;cursor:pointer;margin-left:auto;flex-shrink:0;">
+            <input type="checkbox" id="chk-all" onchange="toggleSelectAll(this.checked)"
+              style="accent-color:#1D9E75;width:14px;height:14px;">
+            전체선택
+          </label>
+        </div>
+      </div>
 
       <!-- 카드 목록 -->
       <div id="card-list" style="flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:5px;"></div>
@@ -1045,7 +1069,8 @@ function buildTodayDeck(cards){
   updateQuotaLabels();
   todayReviewCount=Math.min(rev.length,maxReview);
   todayNewCount=Math.min(nw.length,maxNew);
-  todayDeck=[...shuffle(rev.slice(0,maxReview)),...shuffle(nw.slice(0,maxNew))];
+  const rnd=isRandomMode();
+  todayDeck=[...(rnd?shuffle(rev.slice(0,maxReview)):rev.slice(0,maxReview)),...(rnd?shuffle(nw.slice(0,maxNew)):nw.slice(0,maxNew))];
   updateQuotaBar();
 }
 function updateQuotaBar(){
@@ -1188,15 +1213,12 @@ function renderList(){
   const listEl=document.getElementById('card-list');
   const statsEl=document.getElementById('list-stats');
 
-  // 필터 적용
+  // 드롭다운 필터 적용
   let source=allCards.filter(c=>!isHeart(c.star));
-  if(listFilter==='star3') source=source.filter(c=>countStars(c.star)>=3);
-  else if(listFilter==='star2') source=source.filter(c=>countStars(c.star)>=2);
-  else if(listFilter==='calc') source=source.filter(c=>c.C==='Y');
-  else if(listFilter==='category'){
-    const cat=document.getElementById('lf-category').value;
-    if(cat) source=source.filter(c=>c.분류.split('•')[0]===cat);
-  }
+  const {star:sf, type:tf, category:cf}=listDropFilters;
+  if(sf)  source=source.filter(c=>countStars(c.star)>=parseInt(sf));
+  if(tf)  source=source.filter(c=>detectCardType(c)===tf);
+  if(cf)  source=source.filter(c=>c.분류.split('•')[0]===cf);
 
   // 검색
   const matched=source.filter(c=>{
@@ -1205,16 +1227,20 @@ function renderList(){
     return f.includes(kw)||h.includes(kw)||b.includes(kw);
   });
 
-  // 분류 정렬 (카테고리 필터 시 소분류 순 정렬)
-  const ROMAN_ORDER_R={'I':1,'II':2,'III':3,'IV':4,'V':5,'VI':6,'VII':7,'VIII':8};
-  if(listFilter==='category'||listFilter==='all'){
+  // 정렬
+  if(listSort==='star'){
+    matched.sort((a,b)=>countStars(b.star)-countStars(a.star));
+  } else if(listSort==='alpha'){
+    matched.sort((a,b)=>stripHtml(a.front).localeCompare(stripHtml(b.front),'ko'));
+  } else if(listSort==='cat'){
     matched.sort((a,b)=>{
       const pa=a.분류.split('•'),pb=b.분류.split('•');
-      const ra=(ROMAN_ORDER_R[pa[0]]||99),rb=(ROMAN_ORDER_R[pb[0]]||99);
+      const ra=(ROMAN_ORDER[pa[0]]||99),rb=(ROMAN_ORDER[pb[0]]||99);
       if(ra!==rb) return ra-rb;
       return parseInt(pa[1]||0)-parseInt(pb[1]||0);
     });
   }
+  // 'order' = 원본 allCards 순서 유지 (기본값, 별도 정렬 불필요)
 
   const calcCount=matched.filter(c=>c.C==='Y').length;
   statsEl.textContent=kw
@@ -1271,59 +1297,85 @@ function jumpToCard(cardId){
 
 
 // ── 카드 목록 화면 관련 ──
-let listFilter='all';
+let listFilter='all'; // 하위 호환
+let listDropFilters={star:'', type:'', category:''};
+let listSort='order'; // 'order'|'star'|'alpha'|'cat'
 let selectedCards=new Set();
 
+const ROMAN_ORDER={'I':1,'II':2,'III':3,'IV':4,'V':5,'VI':6,'VII':7,'VIII':8};
+const CATEGORY_NAME={
+  'I':'Ⅰ. 산업안전관리 계획수립',
+  'II':'Ⅱ. 기계·작업장 안전관리',
+  'III':'Ⅲ. 전기 및 화재안전관리',
+  'IV':'Ⅳ. 화공안전관리',
+  'V':'Ⅴ. 보호장구 및 안전보건표지',
+  'VI':'Ⅵ. 건설현장 안전관리',
+};
+
+// 문제 유형 감지 — tags 또는 C 필드 기반 + 텍스트 휴리스틱
+function detectCardType(c){
+  if(c.C==='Y') return '계산';
+  const t=(c.tags||'').toLowerCase();
+  if(t.includes('빈칸')||t.includes('fill')) return '빈칸';
+  if(t.includes('서술')||t.includes('essay')) return '서술형';
+  if(t.includes('단답')||t.includes('short')) return '단답형';
+  // 텍스트 휴리스틱
+  const front=stripHtml(c.front||'');
+  if(/\(\s*\)/.test(front)||/\[\s*\]/.test(front)||/빈\s*칸/.test(front)) return '빈칸';
+  if(/서술/.test(front)) return '서술형';
+  return '단답형'; // 기본
+}
+
 function openListScreen(){
-  listFilter='all';
+  listDropFilters={star:'', type:'', category:''};
+  listSort='order';
   selectedCards.clear();
   document.getElementById('list-deck-name').textContent=deckFileName;
   document.getElementById('search-input').value='';
 
-  // 분류 셀렉트 동적 생성 — • 앞부분이 대분류
-  const ROMAN_ORDER={'I':1,'II':2,'III':3,'IV':4,'V':5,'VI':6,'VII':7,'VIII':8};
-  const CATEGORY_NAME={
-    'I':'Ⅰ. 산업안전관리 계획수립',
-    'II':'Ⅱ. 기계·작업장 안전관리',
-    'III':'Ⅲ. 전기 및 화재안전관리',
-    'IV':'Ⅳ. 화공안전관리',
-    'V':'Ⅴ. 보호장구 및 안전보건표지',
-    'VI':'Ⅵ. 건설현장 안전관리',
-  };
-  const sel=document.getElementById('lf-category');
+  // 정렬 버튼 초기화
+  ['ls-order','ls-star','ls-alpha','ls-cat'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.classList.toggle('active', id==='ls-order');
+  });
+
+  // 분류 셀렉트 동적 생성
+  const catSel=document.getElementById('lf-category');
   const prefixes=[...new Set(
     allCards.map(c=>c.분류.includes('•')?c.분류.split('•')[0]:'').filter(Boolean)
   )].sort((a,b)=>(ROMAN_ORDER[a]||99)-(ROMAN_ORDER[b]||99));
-  // 장수 카운트
   const catCount={};
   allCards.forEach(c=>{const p=c.분류.includes('•')?c.분류.split('•')[0]:'';if(p)catCount[p]=(catCount[p]||0)+1;});
-  sel.innerHTML='<option value="">분류 전체</option>'+
-    prefixes.map(p=>`<option value="${p}">${CATEGORY_NAME[p]||p}  (${catCount[p]||0}장)</option>`).join('');
-  sel.value='';
+  catSel.innerHTML='<option value="">분류 전체</option>'+
+    prefixes.map(p=>`<option value="${p}">${CATEGORY_NAME[p]||p} (${catCount[p]||0}장)</option>`).join('');
+  catSel.value='';
 
-  ['lf-all','lf-star3','lf-star2','lf-calc'].forEach(id=>{
-    document.getElementById(id).classList.toggle('active',id==='lf-all');
-  });
+  // 문제유형 셀렉트 동적 생성
+  const typeSel=document.getElementById('lf-type');
+  const types=[...new Set(allCards.filter(c=>!isHeart(c.star)).map(c=>detectCardType(c)))].sort();
+  const typeCount={};
+  allCards.filter(c=>!isHeart(c.star)).forEach(c=>{const t=detectCardType(c);typeCount[t]=(typeCount[t]||0)+1;});
+  typeSel.innerHTML='<option value="">문제유형 전체</option>'+
+    types.map(t=>`<option value="${t}">${t} (${typeCount[t]||0}장)</option>`).join('');
+  typeSel.value='';
+
   renderList();
 }
 
-function setListFilter(f){
-  listFilter=f;
-  // 버튼 active 상태
-  ['lf-all','lf-star3','lf-star2','lf-calc'].forEach(id=>{
-    document.getElementById(id).classList.remove('active');
-  });
-  if(f==='category'){
-    // 셀렉트에 값이 없으면 전체로
-    const cat=document.getElementById('lf-category').value;
-    if(!cat){ listFilter='all'; document.getElementById('lf-all').classList.add('active'); }
-  } else {
-    const btn=document.getElementById('lf-'+f);
-    if(btn) btn.classList.add('active');
-    // 분류 셀렉트 초기화
-    document.getElementById('lf-category').value='';
-  }
+function setListDropFilter(key, val){
+  listDropFilters[key]=val;
   selectedCards.clear();
+  renderList();
+}
+
+function setListFilter(f){ /* 하위호환 — 사용 안 함 */ }
+
+function setListSort(s){
+  listSort=s;
+  ['ls-order','ls-star','ls-alpha','ls-cat'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.classList.toggle('active', id==='ls-'+s);
+  });
   renderList();
 }
 
@@ -1361,16 +1413,42 @@ function updateSelectedBtn(){
   }
 }
 
+function isRandomMode(){ return document.getElementById('chk-random')?.checked||false; }
+
 function startSelectedCards(){
   if(selectedCards.size===0) return;
-  filteredCards=shuffle(allCards.filter(c=>selectedCards.has(c.id)));
-  cur=0;passCount=0;failCount=0;
+  // 현재 리스트 DOM 순서에서 선택된 것만 추출 → 정렬 순서 보존
+  const items=[...document.querySelectorAll('.list-card-item')];
+  let cards=items
+    .map(el=>allCards.find(c=>c.id===el.dataset.id))
+    .filter(c=>c&&selectedCards.has(c.id));
+  filteredCards=isRandomMode()?shuffle(cards):[...cards];
+  cur=0;passCount=0;failCount=0;sessionLog=[];failedCards=[];
   showScreen('screen-study');initCanvas();loadCard();
 }
 
 function startAllCards(){
-  applyFilter();
-  cur=0;passCount=0;failCount=0;
+  // 현재 리스트에 보이는 순서대로 (필터+정렬 반영), 랜덤 여부 적용
+  const kw=(document.getElementById('search-input')?.value||'').trim().toLowerCase();
+  let source=allCards.filter(c=>!isHeart(c.star));
+  const {star:sf,type:tf,category:cf}=listDropFilters;
+  if(sf) source=source.filter(c=>countStars(c.star)>=parseInt(sf));
+  if(tf) source=source.filter(c=>detectCardType(c)===tf);
+  if(cf) source=source.filter(c=>c.분류.split('•')[0]===cf);
+  if(kw) source=source.filter(c=>{
+    const f=stripHtml(c.front).toLowerCase(),h=stripHtml(c.hint).toLowerCase(),b=stripHtml(c.back).toLowerCase();
+    return f.includes(kw)||h.includes(kw)||b.includes(kw);
+  });
+  if(listSort==='star') source.sort((a,b)=>countStars(b.star)-countStars(a.star));
+  else if(listSort==='alpha') source.sort((a,b)=>stripHtml(a.front).localeCompare(stripHtml(b.front),'ko'));
+  else if(listSort==='cat') source.sort((a,b)=>{
+    const pa=a.분류.split('•'),pb=b.분류.split('•');
+    const ra=(ROMAN_ORDER[pa[0]]||99),rb=(ROMAN_ORDER[pb[0]]||99);
+    if(ra!==rb) return ra-rb;
+    return parseInt(pa[1]||0)-parseInt(pb[1]||0);
+  });
+  filteredCards=isRandomMode()?shuffle(source):[...source];
+  cur=0;passCount=0;failCount=0;sessionLog=[];failedCards=[];
   showScreen('screen-study');initCanvas();loadCard();
 }
 
@@ -1541,7 +1619,7 @@ function showDone(){
 
 function retryFailed(){
   if(failedCards.length===0) return;
-  filteredCards=shuffle([...failedCards]);
+  filteredCards=isRandomMode()?shuffle([...failedCards]):[...failedCards];
   failedCards=[];
   cur=0;passCount=0;failCount=0;
   showScreen('screen-study');loadCard();

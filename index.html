@@ -1142,10 +1142,10 @@ async function handleApkg(file, hasProgress=false){
 }
 
 async function saveProgress(){
-  // v8: 진도 + 카드 텍스트 수정 → ZIP 통합 저장
+  // v9: 진도 + 카드 텍스트 수정 → ZIP 통합 저장
   if(!zipRef){
     // ZIP 없을 때(진도만 있을 때) 기존 JSON 저장으로 폴백
-    const blob=new Blob([JSON.stringify({deckName:deckFileName,savedAt:today(),version:'8.0',cards:progressData},null,2)],{type:'application/json'});
+    const blob=new Blob([JSON.stringify({deckName:deckFileName,savedAt:today(),version:'9.0',cards:progressData},null,2)],{type:'application/json'});
     const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`progress_${deckFileName}.json`;a.click();
     return;
   }
@@ -1169,7 +1169,7 @@ async function saveProgress(){
       newZip.file('cards_edited.json',cardsJson);
     }
     // 진도 데이터 삽입
-    const progressJson=JSON.stringify({deckName:deckFileName,savedAt:today(),version:'8.0',cards:progressData},null,2);
+    const progressJson=JSON.stringify({deckName:deckFileName,savedAt:today(),version:'9.0',cards:progressData},null,2);
     newZip.file('progress.json',progressJson);
     // ZIP 생성 및 다운로드
     const blob=await newZip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}});
@@ -1598,7 +1598,7 @@ function handleResult(pass){
     if(pass){prog.level=Math.min(5,prog.level+1);prog.nextReview=addDays(today(),LEITNER_DAYS[prog.level]);passCount++;}
     else{prog.level=1;prog.nextReview=addDays(today(),LEITNER_DAYS[1]);failCount++;failedCards.push(c);}
     progressData[c.id]=prog;
-    // v8: 세션 로그 기록
+    // v9: 세션 로그 기록
     sessionLog.push({card:c, pass:pass, level:prog.level});
   }
   autoTimerCard=false;cur++;loadCard();
@@ -1624,7 +1624,7 @@ function showDone(){
   document.getElementById('progress-fill').style.width='100%';
   const retryBtn=document.getElementById('btn-retry-fail');
   if(retryBtn) retryBtn.style.display=failedCards.length>0?'block':'none';
-  // v8: 세션 결과 리스트 렌더링
+  // v9: 세션 결과 리스트 렌더링
   renderDoneList();
   showScreen('screen-done');
 }
@@ -1702,7 +1702,7 @@ function toggleTTS(){
       if(sel) sel.value = ttsTimerBackup;
     }
   }
-  // v8: 첫화면 체크박스 동기화
+  // v9: 첫화면 체크박스 동기화
   const chk=document.getElementById('tts-enable-import');if(chk)chk.checked=ttsEnabled;
   const opts=document.getElementById('tts-options');if(opts)opts.style.display=ttsEnabled?'flex':'none';
   if(ttsEnabled)populateTTSVoices();
@@ -1864,7 +1864,7 @@ function resizeCanvas(){const cv=document.getElementById('notepad-canvas'),body=
 window.addEventListener('resize',resizeCanvas);
 
 
-/* ── v8: ZIP 저장본 불러오기 ── */
+/* ── v9: ZIP 저장본 불러오기 ── */
 async function handleZip(file){
   try{
     setStatus('저장 파일 불러오는 중...','loading');
@@ -1912,7 +1912,7 @@ async function handleZip(file){
   }catch(err){setStatus('오류: '+err.message,'error');}
 }
 
-/* ── v8: handleFile — apkg/zip 분기 (재귀 없음) ── */
+/* ── v9: handleFile — apkg/zip 분기 (재귀 없음) ── */
 async function handleFile(file, hasProgress=false){
   if(!file)return;
   if(file.name.endsWith('.zip')){
@@ -1929,7 +1929,7 @@ async function resolveMedia(html){
   return html;
 }
 
-/* ── v8 추가 기능 패치 ── */
+/* ── v9 추가 기능 패치 ── */
 
 /* 이전 카드 보기 */
 function goToPrev(){

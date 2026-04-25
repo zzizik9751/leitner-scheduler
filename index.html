@@ -338,28 +338,66 @@ body {
         <div class="brand-name">Memorization Helper</div>
         <div class="brand-sub">암기도우미 · ANKI 호환 · v8.0</div>
       </div>
-      <div style="display:flex;gap:8px;margin-bottom:10px;">
-        <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;border-radius:10px;border:1.5px solid #1D9E75;background:#f0faf6;font-size:13px;font-weight:600;color:#0F6E56;cursor:pointer;">
-          📊 진도 + APKG 같이 불러오기
-          <input type="file" accept=".json,.apkg" multiple style="display:none" onchange="handleCombinedFiles(this.files)">
-        </label>
+      <!-- ① 오늘 목표 -->
+      <div style="background:#fff;border-radius:12px;padding:14px 16px;border:1px solid #eee;margin-bottom:16px;">
+        <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:10px;">🎯 오늘 목표</div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span style="font-size:12px;color:#777;">신규</span>
+            <input type="number" id="daily-new" value="20" min="0" max="9999"
+              style="width:56px;padding:3px 6px;border:1px solid #ddd;border-radius:6px;font-size:13px;text-align:center;"
+              oninput="clampQuotaInput('daily-new','_maxNew')">
+            <span style="font-size:12px;color:#aaa;" id="lbl-max-new"></span>
+            <button onclick="setMaxQuota('new')"
+              style="padding:2px 8px;border-radius:5px;border:1px solid #9fe1cb;background:#f0faf6;font-size:11px;font-weight:600;color:#0F6E56;cursor:pointer;white-space:nowrap;">최대</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span style="font-size:12px;color:#777;">복습</span>
+            <input type="number" id="daily-review" value="50" min="0" max="9999"
+              style="width:56px;padding:3px 6px;border:1px solid #ddd;border-radius:6px;font-size:13px;text-align:center;"
+              oninput="clampQuotaInput('daily-review','_maxReview')">
+            <span style="font-size:12px;color:#aaa;" id="lbl-max-review"></span>
+            <button onclick="setMaxQuota('review')"
+              style="padding:2px 8px;border-radius:5px;border:1px solid #9fe1cb;background:#f0faf6;font-size:11px;font-weight:600;color:#0F6E56;cursor:pointer;white-space:nowrap;">최대</button>
+          </div>
+          <div style="width:1px;height:20px;background:#eee;"></div>
+          <label style="font-size:12px;color:#777;display:flex;align-items:center;gap:5px;">⏱ 타이머
+            <select id="timer-select-import" onchange="changeTimerSec(+this.value)"
+              style="padding:3px 6px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:#fff;cursor:pointer;">
+              <option value="10">10초</option>
+              <option value="20" selected>20초</option>
+              <option value="30">30초</option>
+              <option value="60">60초</option>
+              <option value="0">끄기</option>
+            </select>
+          </label>
+        </div>
       </div>
-      <div class="drop-zone" id="drop-zone"
-        ondragover="event.preventDefault();this.classList.add('over')"
-        ondragleave="this.classList.remove('over')"
-        ondrop="handleDrop(event)">
-        <div class="drop-icon">📂</div>
-        <div class="drop-text">ANKI .apkg 파일만 불러오기</div>
-        <div class="drop-sub">Front · Hint · Back · Year · ★ 필드 자동 인식</div>
-        <label class="drop-btn">파일 선택
-          <input type="file" accept=".apkg" style="display:none" onchange="handleFile(this.files[0])">
-        </label>
+
+      <!-- ② 학습 순서 -->
+      <div style="background:#fff;border-radius:12px;padding:12px 16px;border:1px solid #eee;margin-bottom:16px;">
+        <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:10px;">📋 학습 순서</div>
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:#555;cursor:pointer;">
+            <input type="radio" name="study-order" value="hint" checked onchange="setStudyOrder(this.value)"
+              style="accent-color:#1D9E75;cursor:pointer;">
+            <span data-order-label="{1} → {2} → {3}">문제 → 힌트 → 정답</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:#555;cursor:pointer;">
+            <input type="radio" name="study-order" value="backhint" onchange="setStudyOrder(this.value)"
+              style="accent-color:#1D9E75;cursor:pointer;">
+            <span data-order-label="{1} → {3} → {2}">문제 → 정답 → 힌트</span><span style="font-size:11px;color:#aaa;">(해설)</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:#555;cursor:pointer;">
+            <input type="radio" name="study-order" value="nohint" onchange="setStudyOrder(this.value)"
+              style="accent-color:#1D9E75;cursor:pointer;">
+            <span data-order-label="{1} → {3}">문제 → 정답</span><span style="font-size:11px;color:#aaa;"> (힌트 생략)</span>
+          </label>
+        </div>
       </div>
-      <div style="margin-top:4px;">
-        <span id="progress-file-name" style="font-size:12px;color:#1D9E75;font-weight:600;"></span>
-      </div>
-      <!-- TTS 설정 패널 -->
-      <div style="margin-top:8px;background:#fff;border-radius:12px;padding:12px 16px;border:1px solid #eee;">
+
+      <!-- ③ TTS 설정 -->
+      <div style="background:#fff;border-radius:12px;padding:12px 16px;border:1px solid #eee;margin-bottom:8px;">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           <span style="font-size:12px;font-weight:600;color:#555;">🔊 TTS 설정</span>
           <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#777;cursor:pointer;">
@@ -382,25 +420,29 @@ body {
           </div>
         </div>
       </div>
-      <div style="margin-top:8px;background:#fff;border-radius:12px;padding:14px 16px;border:1px solid #eee;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-        <span style="font-size:12px;font-weight:600;color:#555;">오늘 목표</span>
-        <label style="font-size:12px;color:#777;display:flex;align-items:center;gap:5px;">신규
-          <input type="number" id="daily-new" value="20" min="0" max="200" style="width:52px;padding:3px 6px;border:1px solid #ddd;border-radius:6px;font-size:13px;text-align:center;">장
+
+      <!-- ④ 진도 + APKG -->
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;border-radius:10px;border:1.5px solid #1D9E75;background:#f0faf6;font-size:13px;font-weight:600;color:#0F6E56;cursor:pointer;">
+          📊 진도 + APKG 같이 불러오기
+          <input type="file" accept=".json,.apkg" multiple style="display:none" onchange="handleCombinedFiles(this.files)">
         </label>
-        <label style="font-size:12px;color:#777;display:flex;align-items:center;gap:5px;">복습 최대
-          <input type="number" id="daily-review" value="50" min="0" max="500" style="width:52px;padding:3px 6px;border:1px solid #ddd;border-radius:6px;font-size:13px;text-align:center;">장
+      </div>
+
+      <!-- ⑤ 파일 선택 (드롭존) -->
+      <div class="drop-zone" id="drop-zone"
+        ondragover="event.preventDefault();this.classList.add('over')"
+        ondragleave="this.classList.remove('over')"
+        ondrop="handleDrop(event)">
+        <div class="drop-icon">📂</div>
+        <div class="drop-text">ANKI .apkg 파일만 불러오기</div>
+        <div class="drop-sub">Front · Hint · Back · Year · ★ 필드 자동 인식</div>
+        <label class="drop-btn">파일 선택
+          <input type="file" accept=".apkg" style="display:none" onchange="handleFile(this.files[0])">
         </label>
-        <div style="width:1px;height:20px;background:#eee;margin:0 2px;"></div>
-        <label style="font-size:12px;color:#777;display:flex;align-items:center;gap:5px;">⏱ 타이머
-          <select id="timer-select-import" onchange="changeTimerSec(+this.value)"
-            style="padding:3px 6px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:#fff;cursor:pointer;">
-            <option value="10">10초</option>
-            <option value="20" selected>20초</option>
-            <option value="30">30초</option>
-            <option value="60">60초</option>
-            <option value="0">끄기</option>
-          </select>
-        </label>
+      </div>
+      <div style="margin-top:4px;">
+        <span id="progress-file-name" style="font-size:12px;color:#1D9E75;font-weight:600;"></span>
       </div>
       <div class="status-bar" id="status-bar"></div>
       <div class="notice">
@@ -474,6 +516,12 @@ body {
             <div class="block hidden" id="block-back">
               <div class="block-label">정답</div>
               <div class="block-body" id="content-back"></div>
+            </div>
+            <!-- 정답→힌트(해설) 모드용 슬롯 -->
+            <div class="c-divider hidden" id="div-hint2"></div>
+            <div class="block hidden" id="block-hint2">
+              <div class="block-label">힌트 / 해설</div>
+              <div class="block-body" id="content-hint2"></div>
             </div>
             <div class="block hidden" id="block-year">
               <span style="font-size:11px;color:#999;background:#f0f0ee;padding:2px 8px;border-radius:4px;" id="content-year"></span>
@@ -886,6 +934,30 @@ let sessionLog=[], cardEdited=false, ttsRate=1.1, ttsVoiceIdx=-1;
 let cur=0,passCount=0,failCount=0,deckFileName='';
 let timerInterval=null,timerSec=0,timerPaused=false,TIMER_SEC=20;
 let cardPhase='question',starFilter=0;
+let studyOrder='hint'; // 'hint' | 'backhint' | 'nohint'
+function setStudyOrder(val){ studyOrder=val; }
+
+// 실제 Anki 필드명 저장
+let fieldNames = ['문제', '힌트', '정답'];
+
+function updateFieldLabels(f1, f2, f3){
+  fieldNames = [f1||'문제', f2||'힌트', f3||'정답'];
+  // 카드 블록 라벨 업데이트
+  const lbls = document.querySelectorAll('#block-front .block-label');
+  lbls.forEach(el => el.textContent = fieldNames[0]);
+  document.querySelectorAll('#block-hint .block-label').forEach(el => el.textContent = fieldNames[1]);
+  document.querySelectorAll('#block-back .block-label').forEach(el => el.textContent = fieldNames[2]);
+  document.querySelectorAll('#block-hint2 .block-label').forEach(el => el.textContent = fieldNames[1]);
+  // 학습 순서 라디오 버튼 텍스트도 실제 이름으로 업데이트
+  const labels = document.querySelectorAll('[data-order-label]');
+  labels.forEach(el => {
+    const tpl = el.getAttribute('data-order-label');
+    el.textContent = tpl
+      .replace('{1}', fieldNames[0])
+      .replace('{2}', fieldNames[1])
+      .replace('{3}', fieldNames[2]);
+  });
+}
 let progressData={};
 let autoTimerCard=false;
 let todayDeck=[],todayReviewCount=0,todayNewCount=0;
@@ -931,11 +1003,46 @@ function countStars(v){return v?(v.match(/★/g)||[]).length:0;}
 function isHeart(v){return v&&v.includes('♡')&&countStars(v)===0;}
 function shuffle(arr){for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}return arr;}
 
+// 카드 로드 후 실제 신규/복습 최대치 추적
+let _maxNew=0, _maxReview=0;
+
+function updateQuotaLabels(){
+  const lblN=document.getElementById('lbl-max-new');
+  const lblR=document.getElementById('lbl-max-review');
+  if(lblN) lblN.textContent=_maxNew>0?'/ '+_maxNew+'장':'';
+  if(lblR) lblR.textContent=_maxReview>0?'/ '+_maxReview+'장':'';
+}
+function setMaxQuota(type){
+  if(type==='new'){
+    const el=document.getElementById('daily-new');
+    if(el){ el.value=_maxNew>0?_maxNew:9999; }
+  } else {
+    const el=document.getElementById('daily-review');
+    if(el){ el.value=_maxReview>0?_maxReview:9999; }
+  }
+}
+function clampQuotaInput(inputId, maxVar){
+  // 입력 시 최대치 초과 방지 (선택적 — max 속성이 있으면 브라우저가 처리)
+  // 현재는 경고 표시만
+  const el=document.getElementById(inputId);
+  if(!el) return;
+  const maxVal=(maxVar==='_maxNew'?_maxNew:_maxReview);
+  if(maxVal>0 && parseInt(el.value)>maxVal){
+    el.style.borderColor='#e65100';
+  } else {
+    el.style.borderColor='#ddd';
+  }
+}
+
 function buildTodayDeck(cards){
   const maxNew=parseInt(document.getElementById('daily-new')?.value||20);
   const maxReview=parseInt(document.getElementById('daily-review')?.value||50);
   const rev=[],nw=[];
   cards.forEach(c=>{if(isNewCard(c.id))nw.push(c);else if(isDueToday(c.id))rev.push(c);});
+  // 실제 최대치 업데이트
+  _maxNew=nw.length;
+  _maxReview=rev.length;
+  updateQuotaLabels();
   todayReviewCount=Math.min(rev.length,maxReview);
   todayNewCount=Math.min(nw.length,maxNew);
   todayDeck=[...shuffle(rev.slice(0,maxReview)),...shuffle(nw.slice(0,maxNew))];
@@ -984,6 +1091,18 @@ async function handleApkg(file, hasProgress=false){
       const p=flds.split('');
       return{id:String(id),front:p[0]||'',hint:(p[1]||'').trim(),back:p[2]||'',star:(p[3]||'').trim(),year:(p[4]||'').trim(),분류:stripHtml(p[5]||'').trim(),C:stripHtml(p[6]||'').trim(),tags:(tags||'').trim()};
     });
+    // col 테이블에서 실제 필드명 읽기
+    try{
+      const colRes=db.exec("SELECT models FROM col LIMIT 1");
+      if(colRes.length){
+        const models=JSON.parse(colRes[0].values[0][0]);
+        const firstModel=Object.values(models)[0];
+        if(firstModel&&firstModel.flds&&firstModel.flds.length>=3){
+          const f=firstModel.flds;
+          updateFieldLabels(f[0].name, f[1].name, f[2].name);
+        }
+      }
+    }catch(e){}
     db.close();setStatus('','');
     document.getElementById('deck-name').textContent=deckFileName;
     if(hasProgress){
@@ -1270,8 +1389,9 @@ async function loadCard(){
   const prog=getProgress(c.id);
   document.getElementById('content-front').innerHTML=await resolveMedia(c.front);
   document.getElementById('content-hint').innerHTML=await resolveMedia(c.hint);
+  document.getElementById('content-hint2').innerHTML=await resolveMedia(c.hint); // backhint 모드용
   document.getElementById('content-back').innerHTML=await resolveMedia(c.back);
-  ['block-hint','div-hint','block-back','div-back','block-year'].forEach(hide);
+  ['block-hint','div-hint','block-hint2','div-hint2','block-back','div-back','block-year'].forEach(hide);
   document.getElementById('action-row').classList.add('hidden');
   document.getElementById('shortcut-guide').style.display='none';
   document.getElementById('card-scroll').scrollTop=0;
@@ -1282,15 +1402,28 @@ async function loadCard(){
   const starOnly=(c.star.match(/★+/g)||[]).join('');
   const fsEl=document.getElementById('footer-star');fsEl.textContent=starOnly;fsEl.style.display=starOnly?'inline':'none';
   const btn=document.getElementById('main-btn');btn.classList.remove('hidden');
-  if(c.hint){btn.textContent='힌트 보기';btn.onclick=()=>showHint(false);}
-  else{btn.textContent='정답 보기';btn.onclick=()=>showAnswer(false);}
+  if(studyOrder==='nohint'){
+    // 문제 → 정답 (힌트 생략)
+    btn.textContent=fieldNames[2]+' 보기'; btn.onclick=()=>showAnswer(false);
+  } else if(studyOrder==='backhint'){
+    // 문제 → 정답 → 힌트(해설)
+    btn.textContent=fieldNames[2]+' 보기'; btn.onclick=()=>showAnswer(false);
+  } else {
+    // 기본: 문제 → 힌트 → 정답
+    if(c.hint){ btn.textContent=fieldNames[1]+' 보기'; btn.onclick=()=>showHint(false); }
+    else       { btn.textContent=fieldNames[2]+' 보기'; btn.onclick=()=>showAnswer(false); }
+  }
   document.getElementById('progress-fill').style.width=Math.round((cur/filteredCards.length)*100)+'%';
   document.getElementById('progress-text').textContent=`${cur+1} / ${filteredCards.length}`;
   if(TIMER_SEC>0){
+    // hint모드: 문제→(타이머)→힌트자동 / backhint·nohint모드: 문제→(타이머)→정답자동
+    const timerTarget = (studyOrder==='hint')
+      ? ()=>showHint(true)
+      : ()=>showAnswer(true);
     if(ttsEnabled){
-      ttsRead(c.front, ()=>{ ttsPendingTimer=setTimeout(()=>startTimer(TIMER_SEC,()=>showHint(true)),300); });
+      ttsRead(c.front, ()=>{ ttsPendingTimer=setTimeout(()=>startTimer(TIMER_SEC, timerTarget),300); });
     } else {
-      startTimer(TIMER_SEC,()=>showHint(true));
+      startTimer(TIMER_SEC, timerTarget);
     }
   } else {
     updateTimerUI(0,1);
@@ -1300,12 +1433,13 @@ async function loadCard(){
 }
 
 function showHint(autoByTimer){
+  // hint 모드 전용: 문제→힌트→정답
   stopTimer(); ttsStop(); cardPhase='hint';
   const c=filteredCards[cur];
   if(!c.hint&&autoByTimer){showAnswer(true);return;}
   show('div-hint');show('block-hint');
   const btn=document.getElementById('main-btn');
-  btn.textContent='정답 보기';btn.onclick=()=>showAnswer(false);
+  btn.textContent=fieldNames[2]+' 보기'; btn.onclick=()=>showAnswer(false);
   scrollBottom();
   if(ttsEnabled){
     ttsRead(c.hint, ()=>{
@@ -1313,25 +1447,63 @@ function showHint(autoByTimer){
         ttsPendingTimer=setTimeout(()=>startTimer(TIMER_SEC,()=>showAnswer(true)),300);
     });
   } else {
-    if(autoByTimer&&TIMER_SEC>0)startTimer(TIMER_SEC,()=>showAnswer(true));
+    if(autoByTimer&&TIMER_SEC>0) startTimer(TIMER_SEC,()=>showAnswer(true));
   }
 }
-function showAnswer(autoByTimer){
-  stopTimer(); ttsStop(); cardPhase='answer'; autoTimerCard=!!autoByTimer;
-  show('div-back');show('block-back');
-  if(filteredCards[cur].year)show('block-year');
+function showHintAfterAnswer(autoByTimer){
+  // backhint 모드 전용: 정답→힌트(해설)
+  stopTimer(); ttsStop(); cardPhase='hint2';
+  const c=filteredCards[cur];
+  show('div-hint2'); show('block-hint2');
+  // hint2 슬롯에 힌트 내용 표시 (이미 loadCard에서 content-hint2에 주입)
   document.getElementById('main-btn').classList.add('hidden');
   document.getElementById('action-row').classList.remove('hidden');
   document.getElementById('shortcut-guide').style.display='block';
   scrollBottom();
-  const c=filteredCards[cur];
   if(ttsEnabled){
-    ttsRead(c.back, ()=>{
+    ttsRead(c.hint, ()=>{
       if(autoByTimer&&TIMER_SEC>0)
         ttsPendingTimer=setTimeout(()=>startTimer(TIMER_SEC,()=>skipCard()),300);
     });
   } else {
-    if(autoByTimer&&TIMER_SEC>0)startTimer(TIMER_SEC,()=>skipCard());
+    if(autoByTimer&&TIMER_SEC>0) startTimer(TIMER_SEC,()=>skipCard());
+  }
+}
+function showAnswer(autoByTimer){
+  stopTimer(); ttsStop(); cardPhase='answer'; autoTimerCard=!!autoByTimer;
+  show('div-back'); show('block-back');
+  if(filteredCards[cur].year) show('block-year');
+  const c=filteredCards[cur];
+  if(studyOrder==='backhint' && c.hint){
+    // backhint 모드: 정답 공개 후 "힌트(해설) 보기" 버튼 노출
+    const btn=document.getElementById('main-btn');
+    btn.classList.remove('hidden');
+    btn.textContent=fieldNames[1]+' / 해설 보기'; btn.onclick=()=>showHintAfterAnswer(false);
+    document.getElementById('action-row').classList.add('hidden');
+    document.getElementById('shortcut-guide').style.display='none';
+    scrollBottom();
+    if(ttsEnabled){
+      ttsRead(c.back, ()=>{
+        if(autoByTimer&&TIMER_SEC>0)
+          ttsPendingTimer=setTimeout(()=>startTimer(TIMER_SEC,()=>showHintAfterAnswer(true)),300);
+      });
+    } else {
+      if(autoByTimer&&TIMER_SEC>0) startTimer(TIMER_SEC,()=>showHintAfterAnswer(true));
+    }
+  } else {
+    // nohint 또는 hint(힌트 없는 카드): 정답 공개 후 바로 ○/✕
+    document.getElementById('main-btn').classList.add('hidden');
+    document.getElementById('action-row').classList.remove('hidden');
+    document.getElementById('shortcut-guide').style.display='block';
+    scrollBottom();
+    if(ttsEnabled){
+      ttsRead(c.back, ()=>{
+        if(autoByTimer&&TIMER_SEC>0)
+          ttsPendingTimer=setTimeout(()=>startTimer(TIMER_SEC,()=>skipCard()),300);
+      });
+    } else {
+      if(autoByTimer&&TIMER_SEC>0) startTimer(TIMER_SEC,()=>skipCard());
+    }
   }
 }
 function scrollBottom(){const s=document.getElementById('card-scroll');setTimeout(()=>s.scrollTo({top:s.scrollHeight,behavior:'smooth'}),60);}
@@ -1375,7 +1547,7 @@ function retryFailed(){
   showScreen('screen-study');loadCard();
 }
 function restartStudy(){sessionLog=[];failedCards=[];applyFilter();cur=0;passCount=0;failCount=0;showScreen('screen-study');loadCard();}
-function goImport(){stopTimer();ttsStop();sessionLog=[];failedCards=[];cardEdited=false;allCards=[];filteredCards=[];zipRef=null;mediaMap={};setStatus('','');showScreen('screen-import');}
+function goImport(){stopTimer();ttsStop();sessionLog=[];failedCards=[];cardEdited=false;allCards=[];filteredCards=[];zipRef=null;mediaMap={};_maxNew=0;_maxReview=0;updateQuotaLabels();setStatus('','');showScreen('screen-import');}
 
 function startTimer(sec,onEnd){
   stopTimer();timerSec=sec;timerPaused=false;updateTimerUI(timerSec,sec);
@@ -1400,8 +1572,8 @@ document.addEventListener('keydown',(e)=>{
   if(!document.getElementById('screen-study').classList.contains('active'))return;
   const tag=document.activeElement?.tagName?.toLowerCase();
   if(tag==='input'||tag==='textarea'||tag==='select')return;
-  if(e.key==='ArrowLeft'){e.preventDefault();if(cardPhase==='answer')handleResult(false);}
-  else if(e.key==='ArrowRight'){e.preventDefault();if(cardPhase==='answer')handleResult(true);}
+  if(e.key==='ArrowLeft'){e.preventDefault();if(cardPhase==='answer'||cardPhase==='hint2')handleResult(false);}
+  else if(e.key==='ArrowRight'){e.preventDefault();if(cardPhase==='answer'||cardPhase==='hint2')handleResult(true);}
   else if(e.key===' '){e.preventDefault();const btn=document.getElementById('main-btn');if(!btn.classList.contains('hidden'))btn.click();}
 });
 
@@ -1601,6 +1773,18 @@ async function handleZip(file){
       const base={id:String(id),front:p[0]||'',hint:(p[1]||'').trim(),back:p[2]||'',star:(p[3]||'').trim(),year:(p[4]||'').trim(),분류:stripHtml(p[5]||'').trim(),C:stripHtml(p[6]||'').trim(),tags:(tags||'').trim()};
       return editedMap[base.id]?Object.assign(base,editedMap[base.id]):base;
     });
+    // col 테이블에서 실제 필드명 읽기
+    try{
+      const colRes=db.exec("SELECT models FROM col LIMIT 1");
+      if(colRes.length){
+        const models=JSON.parse(colRes[0].values[0][0]);
+        const firstModel=Object.values(models)[0];
+        if(firstModel&&firstModel.flds&&firstModel.flds.length>=3){
+          const f=firstModel.flds;
+          updateFieldLabels(f[0].name, f[1].name, f[2].name);
+        }
+      }
+    }catch(e){}
     db.close();setStatus('','');
     deckFileName=file.name.replace(/_saved_\d{4}-\d{2}-\d{2}\.zip$/,'').replace(/\.zip$/,'');
     document.getElementById('deck-name').textContent=deckFileName;

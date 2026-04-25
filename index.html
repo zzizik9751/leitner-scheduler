@@ -1499,13 +1499,13 @@ async function loadCard(){
       ? ()=>showHint(true)
       : ()=>showAnswer(true);
     if(ttsEnabled){
-      ttsRead(c.front, ()=>{ ttsPendingTimer=setTimeout(()=>startTimer(TIMER_SEC, timerTarget),300); });
+      ttsRead(c.front, ()=>{ ttsPendingTimer=setTimeout(()=>startTimer(TIMER_SEC, timerTarget),300); }, 'front');
     } else {
       startTimer(TIMER_SEC, timerTarget);
     }
   } else {
     updateTimerUI(0,1);
-    if(ttsEnabled) ttsRead(c.front, null);
+    if(ttsEnabled) ttsRead(c.front, null, 'front');
   }
   updatePrevBtn();
 }
@@ -1523,7 +1523,7 @@ function showHint(autoByTimer){
     ttsRead(c.hint, ()=>{
       if(autoByTimer&&TIMER_SEC>0)
         ttsPendingTimer=setTimeout(()=>startTimer(TIMER_SEC,()=>showAnswer(true)),300);
-    });
+    }, 'hint');
   } else {
     if(autoByTimer&&TIMER_SEC>0) startTimer(TIMER_SEC,()=>showAnswer(true));
   }
@@ -1542,7 +1542,7 @@ function showHintAfterAnswer(autoByTimer){
     ttsRead(c.hint, ()=>{
       if(autoByTimer&&TIMER_SEC>0)
         ttsPendingTimer=setTimeout(()=>startTimer(TIMER_SEC,()=>skipCard()),300);
-    });
+    }, 'hint');
   } else {
     if(autoByTimer&&TIMER_SEC>0) startTimer(TIMER_SEC,()=>skipCard());
   }
@@ -1564,7 +1564,7 @@ function showAnswer(autoByTimer){
       ttsRead(c.back, ()=>{
         if(autoByTimer&&TIMER_SEC>0)
           ttsPendingTimer=setTimeout(()=>startTimer(TIMER_SEC,()=>showHintAfterAnswer(true)),300);
-      });
+      }, 'back');
     } else {
       if(autoByTimer&&TIMER_SEC>0) startTimer(TIMER_SEC,()=>showHintAfterAnswer(true));
     }
@@ -1578,7 +1578,7 @@ function showAnswer(autoByTimer){
       ttsRead(c.back, ()=>{
         if(autoByTimer&&TIMER_SEC>0)
           ttsPendingTimer=setTimeout(()=>startTimer(TIMER_SEC,()=>skipCard()),300);
-      });
+      }, 'back');
     } else {
       if(autoByTimer&&TIMER_SEC>0) startTimer(TIMER_SEC,()=>skipCard());
     }
@@ -1701,9 +1701,37 @@ function ttsStop(){
   ttsUtter = null;
 }
 
-function ttsClean(text){
+// ㉠~㉭ 원문자 → mode별 치환
+// ㉠~㉭ : front=땡땡, back/hint=가나다
+// ㈎~㈙ : 모두 가나다 (front/back 동일)
+const TTS_CIRCLE_FRONT = {
+  '㉠':'땡땡','㉡':'땡땡','㉢':'땡땡','㉣':'땡땡','㉤':'땡땡',
+  '㉥':'땡땡','㉦':'땡땡','㉧':'땡땡','㉨':'땡땡','㉩':'땡땡',
+  '㉪':'땡땡','㉫':'땡땡','㉬':'땡땡','㉭':'땡땡',
+  '㈎':'가','㈏':'나','㈐':'다','㈑':'라','㈒':'마',
+  '㈓':'바','㈔':'사','㈕':'아','㈖':'자','㈗':'차',
+  '㈘':'카','㈙':'타',
+};
+const TTS_CIRCLE_BACK = {
+  '㉠':'가','㉡':'나','㉢':'다','㉣':'라','㉤':'마',
+  '㉥':'바','㉦':'사','㉧':'아','㉨':'자','㉩':'차',
+  '㉪':'카','㉫':'타','㉬':'파','㉭':'하',
+  '㈎':'가','㈏':'나','㈐':'다','㈑':'라','㈒':'마',
+  '㈓':'바','㈔':'사','㈕':'아','㈖':'자','㈗':'차',
+  '㈘':'카','㈙':'타',
+};
+
+function applyCircleReplace(s, map){
+  for(const [k,v] of Object.entries(map)) s=s.replaceAll(k,v);
+  return s;
+}
+
+function ttsClean(text, mode){
   // 1) HTML 태그 제거
   let s = text.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ');
+  // 2) ㉠~㉭ 원문자 — front는 "땡땡", back/hint는 "가나다"
+  if(mode==='front') s=applyCircleReplace(s, TTS_CIRCLE_FRONT);
+  else               s=applyCircleReplace(s, TTS_CIRCLE_BACK);
   // 2) 단위 기호 → 읽을 수 있는 한국어 (단독 V/A 포함)
   s = s
     // 단독 V (볼트): 숫자 뒤 또는 단독
@@ -1765,10 +1793,10 @@ function ttsClean(text){
   return s;
 }
 
-function ttsRead(text, onDone){
+function ttsRead(text, onDone, mode){
   if(!ttsEnabled || !text) { if(onDone) onDone(); return; }
   ttsStop();
-  const clean = ttsClean(text);
+  const clean = ttsClean(text, mode||'back');
   if(!clean){ if(onDone) onDone(); return; }
 
   ttsUtter = new SpeechSynthesisUtterance(clean);

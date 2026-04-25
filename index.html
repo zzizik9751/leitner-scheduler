@@ -336,7 +336,7 @@ body {
     <div class="import-wrap">
       <div class="brand">
         <div class="brand-name">Memorization Helper</div>
-        <div class="brand-sub">암기도우미 · ANKI 호환 · 260426.1</div>
+        <div class="brand-sub">암기도우미 · ANKI 호환 · 260426.2</div>
       </div>
       <!-- ① 오늘 목표 -->
       <div style="background:#fff;border-radius:12px;padding:14px 16px;border:1px solid #eee;margin-bottom:16px;">
@@ -571,6 +571,11 @@ body {
           <div class="pen-size">
             <span>굵기</span>
             <input type="range" min="1" max="20" value="3" id="pen-size-range" oninput="penSize=+this.value">
+          </div>
+          <div class="pen-size" id="text-size-ctrl">
+            <span>크기</span>
+            <input type="range" min="10" max="36" value="14" id="text-size-range"
+              oninput="document.getElementById('notepad-textarea').style.fontSize=this.value+'px'">
           </div>
           <button class="clear-btn" onclick="clearNotepad()">ALL E</button>
         </div>
@@ -1846,8 +1851,17 @@ function setMode(mode){
   ['text','draw','erase'].forEach(m=>document.getElementById('btn-'+m).classList.toggle('active',m===mode));
   const ta=document.getElementById('notepad-textarea'),cv=document.getElementById('notepad-canvas');
   const dots=document.querySelectorAll('.color-dot'),si=document.getElementById('pen-size-range');
-  if(mode==='text'){ta.classList.remove('hidden');cv.classList.add('hidden');dots.forEach(d=>d.style.opacity='0.3');si.style.opacity='0.3';}
-  else{ta.classList.add('hidden');cv.classList.remove('hidden');dots.forEach(d=>d.style.opacity='1');si.style.opacity=mode==='erase'?'0.3':'1';resizeCanvas();}
+  const tsc=document.getElementById('text-size-ctrl');
+  if(mode==='text'){
+    ta.classList.remove('hidden');cv.classList.add('hidden');
+    dots.forEach(d=>d.style.opacity='0.3');si.style.opacity='0.3';
+    if(tsc) tsc.style.display='flex';
+  } else {
+    ta.classList.add('hidden');cv.classList.remove('hidden');
+    dots.forEach(d=>d.style.opacity='1');si.style.opacity=mode==='erase'?'0.3':'1';
+    if(tsc) tsc.style.display='none';
+    resizeCanvas();
+  }
 }
 function setColor(color){penColor=color;document.querySelectorAll('.color-dot').forEach(d=>d.classList.toggle('selected',d.style.background===color||d.style.backgroundColor===color));if(notepadMode==='erase')setMode('draw');}
 function clearNotepad(){document.getElementById('notepad-textarea').value='';const cv=document.getElementById('notepad-canvas');cv.getContext('2d').clearRect(0,0,cv.width,cv.height);}

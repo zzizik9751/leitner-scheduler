@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>연차 계산기</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Apple SD Gothic Neo', '맑은 고딕', sans-serif; background: #f7f8fa; color: #222; padding: 24px 16px; }
+  h2 { font-size: 18px; font-weight: 600; margin-bottom: 20px; color: #111; }
+  .form-wrap { background: #fff; border-radius: 10px; padding: 20px; margin-bottom: 16px; border: 1px solid #e5e8ec; }
+  label { font-size: 13px; color: #666; display: block; margin-bottom: 6px; }
+  input[type="date"] { width: 100%; height: 38px; border: 1px solid #dde1e6; border-radius: 6px; padding: 0 12px; font-size: 14px; color: #222; background: #fafafa; }
+  button { margin-top: 14px; width: 100%; height: 40px; background: #03c75a; color: #fff; border: none; border-radius: 6px; font-size: 15px; font-weight: 600; cursor: pointer; }
+  button:hover { background: #02b350; }
+  .result { display: none; margin-top: 16px; }
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .card { background: #fff; border: 1px solid #e5e8ec; border-radius: 10px; padding: 18px 16px; text-align: center; }
+  .card-label { font-size: 12px; color: #888; margin-bottom: 8px; }
+  .card-days { font-size: 42px; font-weight: 700; color: #03c75a; line-height: 1; }
+  .card-unit { font-size: 13px; color: #888; margin-top: 4px; }
+  .card-desc { font-size: 11px; color: #aaa; margin-top: 10px; line-height: 1.6; }
+  .calc-note { margin-top: 14px; font-size: 11px; color: #aaa; line-height: 1.7; padding: 10px 14px; background: #f7f8fa; border-radius: 6px; }
+  .error { color: #e53e3e; font-size: 13px; margin-top: 8px; }
+
+  .divider { border: none; border-top: 1px solid #e5e8ec; margin: 28px 0; }
+  .section-title { font-size: 13px; font-weight: 600; color: #444; margin: 20px 0 8px; padding-left: 2px; }
+  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; border: 1px solid #e5e8ec; margin-bottom: 8px; }
+  th { background: #f0faf5; font-size: 12px; font-weight: 600; color: #03c75a; padding: 10px 14px; text-align: center; border-bottom: 1px solid #e5e8ec; }
+  td { font-size: 14px; padding: 10px 14px; text-align: center; border-bottom: 1px solid #f0f2f5; color: #333; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f7fdf9; }
+  .days { font-size: 16px; font-weight: 700; color: #03c75a; }
+  .badge { display: inline-block; background: #e6faf1; color: #03c75a; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; }
+  .badge-gray { background: #f0f2f5; color: #888; }
+  .table-note { font-size: 11px; color: #aaa; line-height: 1.8; padding: 12px 14px; background: #fff; border-radius: 8px; border: 1px solid #e5e8ec; margin-top: 16px; }
+  .highlight td { background: #f0faf5; }
+</style>
+</head>
+<body>
+
+<!-- ── 계산기 영역 ── -->
+<h2>📅 연차 계산기</h2>
+<div class="form-wrap">
+  <label>입사일</label>
+  <input type="date" id="join-date">
+  <div id="error" class="error"></div>
+  <button onclick="calc()">계산하기</button>
+</div>
+
+<div class="result" id="result">
+  <div class="cards">
+    <div class="card">
+      <div class="card-label">입사일 기준</div>
+      <div class="card-days" id="r-join">0</div>
+      <div class="card-unit">일</div>
+      <div class="card-desc" id="sub-join"></div>
+    </div>
+    <div class="card">
+      <div class="card-label">회계연도 기준 (1월)</div>
+      <div class="card-days" id="r-fiscal">0</div>
+      <div class="card-unit">일</div>
+      <div class="card-desc" id="sub-fiscal"></div>
+    </div>
+  </div>
+  <div class="calc-note">
+    근로기준법 제60조 기준. 1년 미만 시 월 1일(최대 11일), 1년 이상 시 15일~최대 25일 발생.<br>
+    회계연도 기준은 1월 1일 리셋 기준이며 회사 내규에 따라 다를 수 있습니다.
+  </div>
+</div>
+
+<script>
+function annualLeave(years) {
+  if (years < 1) return 0;
+  return Math.min(15 + Math.floor((years - 1) / 2), 25);
+}
+function diffMonths(from, to) {
+  return (to.getFullYear() - from.getFullYear()) * 12 + (to.getMonth() - from.getMonth());
+}
+function calc() {
+  const jd = document.getElementById('join-date').value;
+  const errEl = document.getElementById('error');
+  errEl.textContent = '';
+  if (!jd) { errEl.textContent = '입사일을 입력해주세요.'; return; }
+  const join = new Date(jd);
+  const now = new Date();
+  const thisYear = now.getFullYear();
+  if (join > now) { errEl.textContent = '입사일이 오늘 이후입니다.'; return; }
+
+  const totalMonths = diffMonths(join, now);
+  const years = Math.floor(totalMonths / 12);
+  let joinLeave, joinDesc;
+  if (totalMonths < 12) {
+    joinLeave = totalMonths;
+    joinDesc = '입사 ' + totalMonths + '개월\n→ 월 1일 적용';
+  } else {
+    joinLeave = annualLeave(years);
+    joinDesc = '근속 ' + years + '년차\n→ ' + joinLeave + '일 발생';
+  }
+
+  const fiscalStart = new Date(thisYear, 0, 1);
+  const monthsAtFiscal = diffMonths(join, fiscalStart);
+  let fiscalLeave, fiscalDesc;
+  if (monthsAtFiscal < 0) {
+    fiscalLeave = Math.min(12 - join.getMonth(), 11);
+    fiscalDesc = thisYear + '년 입사\n→ 월 1일 비례';
+  } else if (monthsAtFiscal < 12) {
+    fiscalLeave = Math.min(monthsAtFiscal, 11);
+    fiscalDesc = '회계연도 기준 ' + monthsAtFiscal + '개월\n→ ' + fiscalLeave + '일';
+  } else {
+    const y = Math.floor(monthsAtFiscal / 12);
+    fiscalLeave = annualLeave(y);
+    fiscalDesc = '회계연도 ' + y + '년차\n→ ' + fiscalLeave + '일';
+  }
+
+  document.getElementById('r-join').textContent = joinLeave;
+  document.getElementById('sub-join').textContent = joinDesc;
+  document.getElementById('r-fiscal').textContent = fiscalLeave;
+  document.getElementById('sub-fiscal').textContent = fiscalDesc;
+  document.getElementById('result').style.display = 'block';
+}
+</script>
+
+<!-- ── 대조표 영역 ── -->
+<div class="divider"></div>
+<h2>📋 연차 기준표</h2>
+
+<div class="section-title">입사 1년 미만 — 월 1일 발생 (최대 11일)</div>
+<table>
+  <thead>
+    <tr><th>근속 기간</th><th>발생 연차</th><th>비고</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>1개월</td><td class="days">1일</td><td><span class="badge-gray badge">월 1일</span></td></tr>
+    <tr><td>2개월</td><td class="days">2일</td><td><span class="badge-gray badge">월 1일</span></td></tr>
+    <tr><td>3개월</td><td class="days">3일</td><td><span class="badge-gray badge">월 1일</span></td></tr>
+    <tr><td>4개월</td><td class="days">4일</td><td><span class="badge-gray badge">월 1일</span></td></tr>
+    <tr><td>5개월</td><td class="days">5일</td><td><span class="badge-gray badge">월 1일</span></td></tr>
+    <tr><td>6개월</td><td class="days">6일</td><td><span class="badge-gray badge">월 1일</span></td></tr>
+    <tr><td>7개월</td><td class="days">7일</td><td><span class="badge-gray badge">월 1일</span></td></tr>
+    <tr><td>8개월</td><td class="days">8일</td><td><span class="badge-gray badge">월 1일</span></td></tr>
+    <tr><td>9개월</td><td class="days">9일</td><td><span class="badge-gray badge">월 1일</span></td></tr>
+    <tr><td>10개월</td><td class="days">10일</td><td><span class="badge-gray badge">월 1일</span></td></tr>
+    <tr class="highlight"><td>11개월 이상</td><td class="days">11일</td><td><span class="badge">최대치</span></td></tr>
+  </tbody>
+</table>
+
+<div class="section-title">입사 1년 이상 — 연차 발생 기준</div>
+<table>
+  <thead>
+    <tr><th>근속 연수</th><th>발생 연차</th><th>비고</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>1년차 (만 1년)</td><td class="days">15일</td><td><span class="badge-gray badge">기본</span></td></tr>
+    <tr><td>2년차</td><td class="days">15일</td><td><span class="badge-gray badge">기본</span></td></tr>
+    <tr><td>3년차</td><td class="days">16일</td><td><span class="badge">+1일</span></td></tr>
+    <tr><td>4년차</td><td class="days">16일</td><td></td></tr>
+    <tr><td>5년차</td><td class="days">17일</td><td><span class="badge">+1일</span></td></tr>
+    <tr><td>6년차</td><td class="days">17일</td><td></td></tr>
+    <tr><td>7년차</td><td class="days">18일</td><td><span class="badge">+1일</span></td></tr>
+    <tr><td>8년차</td><td class="days">18일</td><td></td></tr>
+    <tr><td>9년차</td><td class="days">19일</td><td><span class="badge">+1일</span></td></tr>
+    <tr><td>10년차</td><td class="days">19일</td><td></td></tr>
+    <tr><td>11년차</td><td class="days">20일</td><td><span class="badge">+1일</span></td></tr>
+    <tr><td>12년차</td><td class="days">20일</td><td></td></tr>
+    <tr><td>13년차</td><td class="days">21일</td><td><span class="badge">+1일</span></td></tr>
+    <tr><td>14년차</td><td class="days">21일</td><td></td></tr>
+    <tr><td>15년차</td><td class="days">22일</td><td><span class="badge">+1일</span></td></tr>
+    <tr><td>16년차</td><td class="days">22일</td><td></td></tr>
+    <tr><td>17년차</td><td class="days">23일</td><td><span class="badge">+1일</span></td></tr>
+    <tr><td>18년차</td><td class="days">23일</td><td></td></tr>
+    <tr><td>19년차</td><td class="days">24일</td><td><span class="badge">+1일</span></td></tr>
+    <tr><td>20년차</td><td class="days">24일</td><td></td></tr>
+    <tr class="highlight"><td>21년차 이상</td><td class="days">25일</td><td><span class="badge">최대치</span></td></tr>
+  </tbody>
+</table>
+
+<div class="table-note">
+  📌 근로기준법 제60조 기준입니다.<br>
+  📌 3년차부터 매 2년마다 1일씩 추가 발생 (최대 25일).<br>
+  📌 회계연도 기준(1월 리셋) 적용 시 입사일에 따라 비례 산정될 수 있습니다.<br>
+  📌 회사 내규에 따라 다를 수 있으니 인사담당자에게 확인하세요.
+</div>
+
+</body>
+</html>

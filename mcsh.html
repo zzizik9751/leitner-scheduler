@@ -7,6 +7,17 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(','\\)'], ['$','$']],
+    displayMath: [['\\[','\\]'], ['$$','$$']],
+    processEscapes: true
+  },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'맑은 고딕','Apple SD Gothic Neo',Malgun Gothic,Dotum,sans-serif;font-size:14px;background:#f0f2f5;color:#222;min-height:100vh}
@@ -679,6 +690,9 @@ function renderQuizCard() {
     btnNext.classList.remove('show');
     navL.textContent = '보기를 선택하세요';
   }
+
+  // MathJax 수식 렌더링
+  typesetQ(document.getElementById('screen-quiz'));
 }
 
 function selectOption(answerNum, displayPos, clickedBtn, order) {
@@ -884,8 +898,15 @@ function parseAns(val) {
   const m = t.match(/([1-4])/);
   return m ? parseInt(m[1]) : 0;
 }
+function preprocessLatex(html) {
+  if (!html) return html;
+  html = html.replace(/\[latex\]([\s\S]*?)\[\/latex\]/gi, '\\($1\\)');
+  html = html.replace(/\[\$\]([\s\S]*?)\[\/\$\]/gi, '\\[$1\\]');
+  return html;
+}
 function cleanHtml(html) {
   if (!html) return '';
+  html = preprocessLatex(html);
   let sanitized;
   if (typeof DOMPurify !== 'undefined') {
     sanitized = DOMPurify.sanitize(html, { USE_PROFILES: { html: true } });
@@ -902,6 +923,12 @@ function cleanHtml(html) {
     });
   }
   return sanitized;
+}
+function typesetQ(el) {
+  const target = el || document.getElementById('q-text-box') || document.body;
+  if (window.MathJax && MathJax.typesetPromise) {
+    MathJax.typesetPromise([target]).catch(e => console.warn('MathJax:', e));
+  }
 }
 function cleanText(html) {
   if (!html) return '';

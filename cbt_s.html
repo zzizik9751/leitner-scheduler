@@ -7,6 +7,17 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(','\\)'], ['$','$']],
+    displayMath: [['\\[','\\]'], ['$$','$$']],
+    processEscapes: true
+  },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'맑은 고딕','Apple SD Gothic Neo','Malgun Gothic',Dotum,sans-serif;font-size:14px;background:#e4e8f0;color:#222;min-height:100vh}
@@ -505,6 +516,7 @@ body{font-family:'맑은 고딕','Apple SD Gothic Neo','Malgun Gothic',Dotum,san
 /* ---------- STATE ---------- */
 const S = {
   dbData: null,   // { notes, deckMap, modelMap }
+  imgMap: {},     // { 파일명: blobURL }
   fm: { q:0, o1:1, o2:2, o3:3, o4:4, ans:5, exp:6, subj:7, src:8, hint:9 },
   deckGroups: [], // [{id,name,notes:[]}]
   exam: {
@@ -564,6 +576,36 @@ async function handleFile(file) {
   showLoading('Anki 덱 파일 압축 해제 중...');
   try {
     const zip = await JSZip.loadAsync(file);
+
+    /* ── 이미지 추출: media 매니페스트 + 확장자 파일 모두 blob URL 변환 ── */
+    showLoading('이미지 파일 추출 중...');
+    S.imgMap = {};
+    const mediaManifest = {};
+    const mediaFile = zip.file('media');
+    if (mediaFile) {
+      try {
+        const mediaJson = JSON.parse(await mediaFile.async('string'));
+        Object.assign(mediaManifest, mediaJson); // { "0": "image.jpg", ... }
+      } catch(e) { console.warn('media manifest:', e); }
+    }
+    const imgExts = /\.(png|jpg|jpeg|gif|svg|webp|bmp)$/i;
+    const mimeMap = { png:'image/png', jpg:'image/jpeg', jpeg:'image/jpeg',
+                      gif:'image/gif', svg:'image/svg+xml', webp:'image/webp', bmp:'image/bmp' };
+    for (const zipName of Object.keys(zip.files)) {
+      const zipEntry = zip.files[zipName];
+      if (zipEntry.dir) continue;
+      const realName = mediaManifest[zipName] || zipName;
+      if (!imgExts.test(realName)) continue;
+      try {
+        const blob = await zipEntry.async('blob');
+        const ext = realName.split('.').pop().toLowerCase();
+        const typedBlob = new Blob([blob], { type: mimeMap[ext] || 'image/png' });
+        const url = URL.createObjectURL(typedBlob);
+        S.imgMap[realName] = url;
+        if (zipName !== realName) S.imgMap[zipName] = url;
+      } catch(e) { console.warn('img extract fail:', zipName, e); }
+    }
+
     const names = ['collection.anki21','collection.anki2'];
     let buf=null;
     for (const n of names) { const f=zip.file(n); if(f){ buf=await f.async('arraybuffer'); break; } }
@@ -877,6 +919,7 @@ function renderAllQ() {
   const { qs } = S.exam;
   const sep='<hr style="border:none;border-top:1px solid #eee;margin:18px 0">';
   document.getElementById('q-area').innerHTML=qs.map((_,i)=>_buildQHtml(i)).join(sep);
+  typesetQ();
 }
 
 function renderQ(idx) {
@@ -890,6 +933,7 @@ function renderQ(idx) {
     if(el) el.scrollIntoView({behavior:'smooth',block:'nearest'});
   } else {
     document.getElementById('q-area').innerHTML=_buildQHtml(idx);
+    typesetQ();
   }
 
   const ftPage=document.getElementById('ft-page');
@@ -1140,10 +1184,40 @@ function parseAns(val) {
   return m?parseInt(m[1]):0;
 }
 
+function preprocessLatex(html) {
+  if (!html) return html;
+  // Anki [latex]...[/latex] → \(...\)
+  html = html.replace(/\[latex\]([\s\S]*?)\[\/latex\]/gi, '\\($1\\)');
+  // Anki [$]...[/$] → \[...\]
+  html = html.replace(/\[\$\]([\s\S]*?)\[\/\$\]/gi, '\\[$1\\]');
+  return html;
+}
+
 function cleanHtml(html) {
   if (!html) return '';
-  if (typeof DOMPurify!=='undefined') return DOMPurify.sanitize(html,{USE_PROFILES:{html:true}});
-  return html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi,'').replace(/on\w+="[^"]*"/gi,'');
+  html = preprocessLatex(html);
+  let sanitized;
+  if (typeof DOMPurify!=='undefined') {
+    sanitized = DOMPurify.sanitize(html,{USE_PROFILES:{html:true}});
+  } else {
+    sanitized = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi,'').replace(/on\w+="[^"]*"/gi,'');
+  }
+  // ── 이미지 src를 blob URL로 교체 ──
+  if (Object.keys(S.imgMap).length > 0) {
+    sanitized = sanitized.replace(/<img([^>]*?)src="([^"]*)"([^>]*?)>/gi, (match, pre, src, post) => {
+      const fname = src.replace(/^.*[\\/]/, '');
+      const blobUrl = S.imgMap[src] || S.imgMap[fname];
+      if (blobUrl) return `<img${pre}src="${blobUrl}"${post} style="max-width:100%;height:auto;display:block;margin:6px 0;">`;
+      return match;
+    });
+  }
+  return sanitized;
+}
+
+function typesetQ() {
+  if (window.MathJax && MathJax.typesetPromise) {
+    MathJax.typesetPromise([document.getElementById('q-area')]).catch(e=>console.warn('MathJax:', e));
+  }
 }
 
 function cleanText(html) {

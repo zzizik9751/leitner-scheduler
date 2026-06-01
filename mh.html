@@ -480,6 +480,7 @@ body {
           <span class="deck-name" id="deck-name"></span>
           <div class="header-right">
             <button onclick="openList()" style="padding:5px 10px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="카드 목록/검색">🔍</button>
+            <button onclick="askAI()" id="btn-ask-ai" style="padding:5px 10px;border-radius:6px;border:1px solid #c8eed8;background:#f0faf6;font-size:13px;cursor:pointer;line-height:1;color:#0F6E56;font-weight:600;" title="현재 문제를 Claude.ai에 질문하기">✦ AI</button>
             <button onclick="goToPrev()" id="btn-prev" style="padding:5px 10px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;opacity:0.35;" title="이전 카드 보기">◀</button>
             <button onclick="openEditModal()" style="padding:5px 10px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="카드 텍스트 편집">✏️</button>
             <button onclick="saveProgress()" style="padding:5px 10px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="진도 저장 (ZIP)">💾</button>
@@ -1213,6 +1214,105 @@ function openList(){
 }
 function closeList(){ showScreen('screen-study'); }
 function stripHtml(s){ return s?(s.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').replace(/\s+/g,' ').trim()):''; }
+
+/* ── AI 질문 기능 ── */
+function hasImage(html){
+  return /<img\b/i.test(html||'');
+}
+
+function askAI(){
+  if(!filteredCards.length || cur >= filteredCards.length) return;
+  const c = filteredCards[cur];
+
+  // 현재 단계에 따라 표시 중인 내용 파악
+  const frontHtml = c.front || '';
+  const hintHtml  = c.hint  || '';
+  const backHtml  = c.back  || '';
+
+  const q    = stripHtml(frontHtml).trim();
+  const hint = stripHtml(hintHtml).trim();
+  const back = stripHtml(backHtml).trim();
+
+  // 이미지 포함 여부 확인
+  const imgInFront = hasImage(frontHtml);
+  const imgInHint  = hasImage(hintHtml);
+  const imgInBack  = hasImage(backHtml);
+  const hasAnyImage = imgInFront || imgInHint || imgInBack;
+
+  // 과목 정보 (있는 경우)
+  const subj = (c.year||'').trim();  // year 필드에 과목/연도 저장됨
+
+  // 프롬프트 조합
+  let prompt = '';
+  if(subj) prompt += `[${subj}]\n`;
+  prompt += `다음 문제를 이해하기 쉽게 해설해 주세요.\n\n`;
+
+  if(hasAnyImage){
+    prompt += `※ 이 문제에는 이미지가 포함되어 있습니다.\n   아래 버튼으로 Claude.ai를 열고, 대화창에 이 텍스트를 붙여넣은 뒤\n   화면에서 해당 이미지를 직접 첨부해 주세요.\n\n`;
+  }
+
+  prompt += `【문제】\n${q}${imgInFront?' [이미지 참조]':''}\n\n`;
+
+  if(hint){
+    prompt += `【힌트】\n${hint}${imgInHint?' [이미지 참조]':''}\n\n`;
+  }
+  if(back){
+    prompt += `【정답/해설】\n${back}${imgInBack?' [이미지 참조]':''}\n\n`;
+  }
+
+  prompt += `위 내용을 바탕으로 핵심 개념과 정답 이유를 설명해 주세요.`;
+
+  // 클립보드 복사 후 claude.ai 새 탭
+  navigator.clipboard.writeText(prompt).then(() => {
+    const btn = document.getElementById('btn-ask-ai');
+    const orig = btn.innerHTML;
+    btn.innerHTML = hasAnyImage ? '📎 복사됨' : '✓ 복사됨';
+    btn.style.background = '#1D9E75';
+    btn.style.color = '#fff';
+    btn.style.borderColor = '#1D9E75';
+    setTimeout(() => {
+      btn.innerHTML = orig;
+      btn.style.background = '#f0faf6';
+      btn.style.color = '#0F6E56';
+      btn.style.borderColor = '#c8eed8';
+    }, 2500);
+    window.open('https://claude.ai/new', '_blank');
+
+    // 이미지 있으면 추가 안내 토스트
+    if(hasAnyImage) showToast('이미지 포함 문제입니다. Claude.ai 열리면 이미지를 직접 첨부해 주세요.', 4000);
+  }).catch(() => {
+    showAIFallback(prompt, hasAnyImage);
+  });
+}
+
+// 클립보드 실패 시 폴백 모달
+function showAIFallback(prompt, hasAnyImage){
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;';
+  overlay.innerHTML =
+    `<div style="background:#fff;border-radius:14px;padding:20px;width:100%;max-width:500px;max-height:80vh;display:flex;flex-direction:column;gap:10px;">` +
+      `<div style="font-size:14px;font-weight:700;color:#1D9E75;">📋 아래 텍스트를 복사 후 Claude.ai에 붙여넣으세요</div>` +
+      (hasAnyImage ? `<div style="font-size:12px;color:#e65100;background:#fff8e1;padding:8px 10px;border-radius:6px;">📎 이미지가 포함된 문제입니다 — Claude.ai에서 이미지를 별도로 첨부해 주세요.</div>` : '') +
+      `<textarea readonly style="flex:1;min-height:180px;font-size:12px;border:1px solid #ddd;border-radius:8px;padding:10px;resize:none;font-family:monospace;line-height:1.6;">${prompt.replace(/</g,'&lt;')}</textarea>` +
+      `<div style="display:flex;gap:8px;">` +
+        `<button onclick="this.closest('div').closest('div').remove()" style="flex:1;padding:10px;border-radius:8px;border:1px solid #ddd;background:#f5f5f3;font-size:13px;cursor:pointer;">닫기</button>` +
+        `<button onclick="window.open('https://claude.ai/new','_blank')" style="flex:1;padding:10px;border-radius:8px;border:none;background:#1D9E75;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">Claude.ai 열기 →</button>` +
+      `</div>` +
+    `</div>`;
+  overlay.querySelector('textarea').addEventListener('click', function(){ this.select(); });
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove(); });
+  setTimeout(() => overlay.querySelector('textarea').select(), 100);
+}
+
+// 토스트 메시지
+function showToast(msg, duration=2500){
+  const t = document.createElement('div');
+  t.style.cssText = `position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.78);color:#fff;padding:10px 18px;border-radius:20px;font-size:13px;z-index:9999;pointer-events:none;text-align:center;max-width:320px;line-height:1.5;`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), duration);
+}
 function highlight(text,kw){ if(!kw)return text;const e=kw.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');return text.replace(new RegExp('('+e+')','gi'),'<span class="search-highlight">$1</span>'); }
 function renderList(){
   const kw=(document.getElementById('search-input').value||'').trim().toLowerCase();

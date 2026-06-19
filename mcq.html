@@ -364,6 +364,15 @@ body {
   font-size:11px; font-weight:700; color:#aaa;
   text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px;
 }
+/* 렌더 콘텐츠(문제·보기·해설) 내 리스트 정렬 — 불릿이 박스 밖으로 나가거나 과도 들여쓰기 방지 */
+#explanation-text ul, #explanation-text ol,
+.block-body ul, .block-body ol,
+.choice-text ul, .choice-text ol {
+  padding-left: 1.5em; margin: 6px 0; list-style-position: outside; text-align: left;
+}
+#explanation-text li, .block-body li, .choice-text li { margin: 3px 0; }
+/* 보기 영역의 리스트는 블록으로 — 인라인 span 안에서 깨지지 않도록 */
+.choice-text ul, .choice-text ol { display: block; }
 
 /* 다음 카드 버튼 (결과 후) */
 .next-btn {
@@ -1137,7 +1146,8 @@ function parseCard(id, p, tags){
       star:  (p[3]||'').trim(),    // S3 = 보기③
       year:  (p[4]||'').trim(),    // S4 = 보기④
       정답:  stripHtml(p[5]||'').trim(),  // 정답 번호
-      C:     stripHtml(p[6]||'').trim(),  // 해설
+      C:     stripHtml(p[6]||'').trim(),  // 해설(텍스트) — TTS·AI프롬프트·유형감지용
+      Chtml: p[6]||'',                    // 해설(원본 HTML) — 화면 표시용
       과목:  (p[7]||'').trim(),
       회차:  (p[8]||'').trim(),
       분류:  stripHtml(p[11]||'').trim(),
@@ -1149,7 +1159,7 @@ function parseCard(id, p, tags){
     return {
       id: String(id), front:p[0]||'', hint:(p[1]||'').trim(), back:p[2]||'',
       star:(p[3]||'').trim(), year:(p[4]||'').trim(),
-      정답:stripHtml(p[5]||'').trim(), C:stripHtml(p[6]||'').trim(),
+      정답:stripHtml(p[5]||'').trim(), C:stripHtml(p[6]||'').trim(), Chtml:p[6]||'',
       과목:'', 회차:'', 분류:'', 빈도:'', tags:(tags||'').trim(),
     };
   }
@@ -1211,6 +1221,16 @@ function hide(id){const el=document.getElementById(id);el.classList.add('hidden'
 function countStars(v){return v?(v.match(/★/g)||[]).length:0;}
 function isHeart(v){return v&&v.includes('♡')&&countStars(v)===0;}
 function shuffle(arr){for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}return arr;}
+// ── MathJax 수식 렌더링 (동적 삽입 콘텐츠용) ──
+// MathJax v3는 초기 로드 시점의 DOM만 자동 변환하므로, innerHTML로 넣은 문제/보기/해설은
+// 수동으로 typeset 해야 한다. async 로드 중이면 준비될 때까지 재시도한다.
+function typesetMath(el){
+  const target = el || document.getElementById('card-scroll') || document.body;
+  if (!target) return;
+  if (!(window.MathJax && MathJax.typesetPromise)) { setTimeout(()=>typesetMath(el), 200); return; }
+  try { if (MathJax.typesetClear) MathJax.typesetClear([target]); } catch(e) {}
+  MathJax.typesetPromise([target]).catch(e=>console.warn('MathJax:', e));
+}
 
 // 카드 로드 후 실제 신규/복습 최대치 추적
 let _maxNew=0, _maxReview=0;
@@ -1675,6 +1695,12 @@ async function loadCard(){
   document.getElementById('choice-text-3').innerHTML=await resolveMedia(c.star||'(보기 없음)');
   document.getElementById('choice-text-4').innerHTML=await resolveMedia(c.year||'(보기 없음)');
 
+  // 문제·보기 수식 렌더링
+  typesetMath();
+
+  // 해설(원본 HTML) 미리 렌더 — 숨김 상태에선 typeset하지 않음(구분자 보존)
+  document.getElementById('explanation-text').innerHTML = await resolveMedia(c.Chtml||'');
+
   // UI 초기화
   document.getElementById('choices-area').style.display='flex'; // 처음부터 표시
   document.getElementById('result-banner').style.display='none';
@@ -1748,10 +1774,10 @@ function revealAnswerNoSelection(){
   banner.textContent=`⏰ 시간 초과 — 정답은 ${correctNum}번`;
   banner.style.display='block';
 
-  // 해설 표시
-  if(c.C){
-    document.getElementById('explanation-text').textContent=c.C;
+  // 해설 표시 (HTML은 loadCard에서 미리 렌더됨 → 보일 때 수식 typeset)
+  if(c.Chtml){
     document.getElementById('explanation-block').style.display='block';
+    typesetMath(document.getElementById('explanation-block'));
   }
 
   // 라이트너: 시간 초과 = 오답 처리
@@ -1802,10 +1828,10 @@ function selectChoice(num){
     :`✗ 오답 — 정답은 ${correctNum}번입니다`;
   banner.style.display='block';
 
-  // 해설 표시
-  if(c.C){
-    document.getElementById('explanation-text').textContent=c.C;
+  // 해설 표시 (HTML은 loadCard에서 미리 렌더됨 → 보일 때 수식 typeset)
+  if(c.Chtml){
     document.getElementById('explanation-block').style.display='block';
+    typesetMath(document.getElementById('explanation-block'));
   }
 
   // 라이트너 처리

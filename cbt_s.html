@@ -151,8 +151,11 @@ body{font-family:'맑은 고딕','Apple SD Gothic Neo','Malgun Gothic',Dotum,san
 .qot{flex:1;color:#111}
 .q-opt.ok .qot{color:#22aa44}
 .q-opt.bad .qot{color:#cc2233}
-.q-explain{margin-top:16px;padding:14px;background:#fffce8;border-left:4px solid #f0c000;font-size:.9em;line-height:1.8;border-radius:3px}
-.q-explain b{color:#886600}
+.q-explain{margin-top:16px;padding:14px 16px;background:#ffffff;border:1px solid #e8e8e8;border-left:4px solid #cfd6e4;font-size:.9em;line-height:1.8;border-radius:3px}
+.q-explain b{color:#555}
+/* 해설/문제 내 리스트: 전역 reset(padding:0)으로 불릿이 박스 밖으로 나가는 문제 방지 */
+.q-explain ul,.q-explain ol,.q-title ul,.q-title ol,.q-opt ul,.q-opt ol{padding-left:1.5em;margin:6px 0;list-style-position:outside}
+.q-explain li,.q-title li,.q-opt li{margin:3px 0}
 
 /* ANSWER PANEL (right) */
 .cbt-ap{width:128px;flex-shrink:0;background:#f0f0f0;border-left:1.5px solid #bbb;display:flex;flex-direction:column;overflow:hidden}
@@ -240,7 +243,9 @@ body{font-family:'맑은 고딕','Apple SD Gothic Neo','Malgun Gothic',Dotum,san
 .rv-ans{font-size:13px;color:#555;line-height:1.8}
 .rv-ans .ok{color:#145a14;font-weight:bold}
 .rv-ans .bad{color:#7a1414;font-weight:bold}
-.rv-explain{margin-top:10px;padding:10px 12px;background:#fffce8;border-radius:6px;font-size:12px;color:#666;border-left:3px solid #f0c000;line-height:1.8}
+.rv-explain{margin-top:10px;padding:10px 12px;background:#ffffff;border:1px solid #ececec;border-radius:6px;font-size:12px;color:#444;border-left:3px solid #cfd6e4;line-height:1.8}
+.rv-q ul,.rv-q ol,.rv-explain ul,.rv-explain ol{padding-left:1.5em;margin:6px 0;list-style-position:outside}
+.rv-q li,.rv-explain li{margin:3px 0}
 .result-actions{display:flex;gap:14px;justify-content:center;margin-top:28px}
 
 /* FILTER BAR for review */
@@ -349,8 +354,9 @@ body{font-family:'맑은 고딕','Apple SD Gothic Neo','Malgun Gothic',Dotum,san
     <div class="setup-section">
       <div class="section-title">시험 시간</div>
       <div class="setup-field">
-        <label>제한 시간 (분)</label>
-        <input type="number" id="time-limit" value="100" min="10" max="360">
+        <label>제한 시간 (분) — 과목당 20분 자동</label>
+        <input type="number" id="time-limit" value="20" readonly style="background:#f2f4f8;color:#444;cursor:not-allowed">
+        <div id="time-note" style="font-size:12px;color:#888;margin-top:6px">과목당 20분 × 1과목 = 20분</div>
       </div>
     </div>
     <div class="setup-actions">
@@ -783,6 +789,8 @@ function renderSetup() {
   });
 
   S.deckGroups = Object.values(groups).filter(g => g.notes.length > 0);
+  // ★ 교시 순서대로 정렬 (설정표·시험 출제 순서 일치)
+  S.deckGroups.sort((a, b) => subjectOrder(a.name) - subjectOrder(b.name));
 
   // 분류 방식 안내 표시
   const modeEl = document.getElementById('setup-group-mode');
@@ -808,10 +816,33 @@ function renderSetup() {
   updateTotal();
 }
 
+const MIN_PER_SUBJECT = 20; // 과목당 제한시간(분)
 function updateTotal() {
-  let t=0;
-  S.deckGroups.forEach((_,i)=>{ const cb=document.getElementById(`dk-cb-${i}`); const c=parseInt(document.getElementById(`dk-cnt-${i}`)?.value||0); if(cb?.checked) t+=c; });
+  let t=0, subjCount=0;
+  S.deckGroups.forEach((_,i)=>{
+    const cb=document.getElementById(`dk-cb-${i}`);
+    const c=parseInt(document.getElementById(`dk-cnt-${i}`)?.value||0);
+    if(cb?.checked && c>0){ t+=c; subjCount++; }
+  });
   document.getElementById('total-count').textContent=`총 출제 예정: ${t}문제`;
+  // ★ 제한시간 = 선택 과목 수 × 20분 (자동)
+  const mins = subjCount * MIN_PER_SUBJECT;
+  const tl = document.getElementById('time-limit');
+  if (tl) tl.value = mins;
+  const tn = document.getElementById('time-note');
+  if (tn) tn.textContent = `과목당 ${MIN_PER_SUBJECT}분 × ${subjCount}과목 = ${mins}분`;
+}
+
+/* ---------- 교시(과목) 순서 정의 ----------
+   1교시 전기철도공학 → 2교시 구조물공학 → 3교시 전기자기학 → 4교시 전력공학.
+   과목명 일부만 일치해도 인식(예: '구조물', '구조역학' 등). 미정의 과목은 맨 뒤. */
+const SUBJECT_ORDER = ['전기철도', '구조', '전기자기', '전력'];
+function subjectOrder(name) {
+  const s = (name || '').replace(/\s/g, '');
+  for (let i = 0; i < SUBJECT_ORDER.length; i++) {
+    if (s.indexOf(SUBJECT_ORDER[i]) !== -1) return i;
+  }
+  return SUBJECT_ORDER.length; // 미정의 과목은 맨 뒤
 }
 
 /* ---------- START EXAM ---------- */
@@ -824,13 +855,18 @@ function startExam() {
     const lbl=document.getElementById(`dk-lbl-${i}`).value.trim()||g.name;
     if (cnt<=0||g.notes.length===0) return;
     const sel=shuffle([...g.notes]).slice(0,Math.min(cnt,g.notes.length));
-    subs.push({ label:lbl, notes:sel });
+    subs.push({ label:lbl, name:g.name, notes:sel });
   });
   if (!subs.length) { showModal('알림','최소 하나의 과목을 선택하세요.',[{label:'확인',cls:'btn-primary'}]); return; }
 
-  const qs=shuffle(subs.flatMap(s=>s.notes.map(n=>({note:n,subject:s.label}))));
+  // ★ 교시(과목) 순서 고정: 1교시 전기철도공학 → 2교시 구조물공학 → 3교시 전기자기학 → 4교시 전력공학
+  subs.sort((a,b)=>subjectOrder(a.name)-subjectOrder(b.name));
+
+  // 과목 블록 단위로 순서 유지(과목 간 섞지 않음). 과목 내부 문제는 위에서 이미 shuffle 됨.
+  const qs=subs.flatMap(s=>s.notes.map(n=>({note:n,subject:s.label})));
   S.cfg.name=document.getElementById('cand-name').value.trim()||'수험생';
-  S.cfg.timeLimitSec=(parseInt(document.getElementById('time-limit').value)||100)*60;
+  // ★ 제한시간 = 응시 과목 수 × 20분 (4과목→80분, 1과목→20분)
+  S.cfg.timeLimitSec=subs.length*MIN_PER_SUBJECT*60;
   S.exam={ qs, answers:{}, marked:new Set(), cur:0, submitted:false };
   S.timeLeft=S.cfg.timeLimitSec;
   S.layout='single';
@@ -1122,6 +1158,12 @@ function applyFilter() {
   const items=S._rvItems||[];
   const f=S.rvFilter;
   document.getElementById('rv-items').innerHTML=items.filter(it=>f==='all'||it.status===f).map(it=>it.html).join('');
+  // ★ 목록이 보이는 상태에서만 typeset. 숨겨진(display:none) 상태에서 typeset하면
+  //   MathJax가 \(...\) 구분자를 소비해버려, 이후 펼쳐도 수식이 렌더되지 않는다.
+  const list=document.getElementById('review-list');
+  if (list && list.classList.contains('show')) {
+    typesetQ(document.getElementById('rv-items'));
+  }
 }
 
 function toggleReview() {
@@ -1129,7 +1171,10 @@ function toggleReview() {
   const btn=document.getElementById('rv-toggle');
   list.classList.toggle('show');
   btn.classList.toggle('on');
-  btn.textContent=list.classList.contains('show')?'📝 오답 확인 닫기':'📝 오답 확인 보기';
+  const shown=list.classList.contains('show');
+  btn.textContent=shown?'📝 오답 확인 닫기':'📝 오답 확인 보기';
+  // 펼칠 때 목록을 다시 생성 → 원본 \(...\) 구분자가 살아있는 상태에서 typeset 보장
+  if(shown) applyFilter();
 }
 
 /* ---------- Q-NET CBT CONTROLS ---------- */
@@ -1214,10 +1259,16 @@ function cleanHtml(html) {
   return sanitized;
 }
 
-function typesetQ() {
-  if (window.MathJax && MathJax.typesetPromise) {
-    MathJax.typesetPromise([document.getElementById('q-area')]).catch(e=>console.warn('MathJax:', e));
+function typesetQ(el) {
+  const target = el || document.getElementById('q-area');
+  if (!target) return;
+  // MathJax가 async 로드라 아직 준비 전이면 준비될 때까지 재시도
+  if (!(window.MathJax && MathJax.typesetPromise)) {
+    setTimeout(() => typesetQ(el), 200);
+    return;
   }
+  try { if (MathJax.typesetClear) MathJax.typesetClear([target]); } catch(e) {}
+  MathJax.typesetPromise([target]).catch(e=>console.warn('MathJax:', e));
 }
 
 function cleanText(html) {

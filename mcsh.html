@@ -117,6 +117,22 @@ body{font-family:'맑은 고딕','Apple SD Gothic Neo',Malgun Gothic,Dotum,sans-
 .btn-next.show{display:inline-block}
 .btn-next:hover{background:#2a7070}
 
+/* ─ 보기 아래 정답 배너 ─ */
+.answer-banner{display:none;align-items:center;justify-content:space-between;gap:16px;margin:4px 0 14px;padding:16px 22px;border-radius:12px}
+.answer-banner.show{display:flex}
+.answer-banner.ok{background:#eafff1;border:2px solid #22aa44}
+.answer-banner.bad{background:#fff2f2;border:2px solid #e53935}
+.ab-text{font-size:22px;font-weight:900;line-height:1.4}
+.answer-banner.ok .ab-text{color:#0a6e2e}
+.answer-banner.bad .ab-text{color:#c62828}
+.ab-sub{display:block;font-size:13px;font-weight:600;color:#555;margin-top:2px}
+.ab-next{background:#3a8a8a;color:#fff;border:none;border-radius:8px;padding:13px 30px;font-size:15px;font-weight:bold;cursor:pointer;font-family:inherit;transition:.15s;flex-shrink:0;white-space:nowrap}
+.ab-next:hover{background:#2a7070}
+
+/* ─ 설정: 전체 MAX 버튼 ─ */
+.btn-maxall{background:#eef3ff;color:#2a5298;border:1.5px solid #c7d6f0;border-radius:7px;padding:6px 14px;font-size:12px;font-weight:bold;cursor:pointer;font-family:inherit;margin-left:8px;transition:.15s}
+.btn-maxall:hover{background:#dde8ff}
+
 /* ─ 오답 태그 ─ */
 .wrong-tag{display:inline-block;background:#fff0f0;border:1px solid #ffc0c0;color:#c62828;border-radius:4px;padding:1px 7px;font-size:11px;font-weight:bold;margin-bottom:6px}
 .correct-tag{display:inline-block;background:#f0fff5;border:1px solid #b0e8c0;color:#0a6e2e;border-radius:4px;padding:1px 7px;font-size:11px;font-weight:bold;margin-bottom:6px}
@@ -219,7 +235,11 @@ body{font-family:'맑은 고딕','Apple SD Gothic Neo',Malgun Gothic,Dotum,sans-
       </thead>
       <tbody id="setup-tbody"></tbody>
     </table>
-    <div><span class="total-chip" id="total-chip">총 0문제</span></div>
+    <div>
+      <span class="total-chip" id="total-chip">총 0문제</span>
+      <button type="button" class="btn-maxall" onclick="setAllMax()">⬆ 전체 MAX</button>
+      <button type="button" class="btn-maxall" onclick="setAllDefault()">↺ 기본(20)</button>
+    </div>
 
     <div class="setup-opt-row">
       <label><input type="checkbox" id="opt-shuffle" checked> 문제 순서 섞기</label>
@@ -254,6 +274,11 @@ body{font-family:'맑은 고딕','Apple SD Gothic Neo',Malgun Gothic,Dotum,sans-
       <div class="q-meta" id="q-meta"></div>
       <div class="q-text-box" id="q-text-box"></div>
       <div class="opts-grid" id="opts-grid"></div>
+      <!-- 보기 바로 아래: 정답 여부 크게 + 다음 문제 -->
+      <div class="answer-banner" id="answer-banner">
+        <div class="ab-text" id="ab-text"></div>
+        <button class="ab-next" id="btn-next-top" onclick="nextCard()">다음 문제 →</button>
+      </div>
       <div class="explain-box" id="explain-box">
         <b>💡 해설</b>
         <div id="explain-text"></div>
@@ -561,6 +586,26 @@ function updateTotal() {
   document.getElementById('total-chip').textContent = `총 ${t}문제`;
 }
 
+// 모든 과목 출제 수를 전체(최대)로 설정
+function setAllMax() {
+  S.groups.forEach((g, i) => {
+    const inp = document.getElementById(`g-cnt-${i}`);
+    if (inp) inp.value = g.notes.length;
+    const cb = document.getElementById(`g-cb-${i}`);
+    if (cb) cb.checked = true;
+  });
+  updateTotal();
+}
+
+// 모든 과목 출제 수를 기본값(최대 20)으로 복원
+function setAllDefault() {
+  S.groups.forEach((g, i) => {
+    const inp = document.getElementById(`g-cnt-${i}`);
+    if (inp) inp.value = Math.min(20, g.notes.length);
+  });
+  updateTotal();
+}
+
 /* ─ 퀴즈 시작 ─ */
 function startQuiz(isRetry, retryCards) {
   let cards = [];
@@ -669,6 +714,10 @@ function renderQuizCard() {
     grid.appendChild(btn);
   });
 
+  // 정답 배너 초기화 (새 문제는 미응답 상태)
+  const ab = document.getElementById('answer-banner');
+  ab.classList.remove('show', 'ok', 'bad');
+
   // 해설 박스
   const expBox = document.getElementById('explain-box');
   if (answered && fm.exp >= 0 && note.fields[fm.exp]) {
@@ -726,6 +775,26 @@ function selectOption(answerNum, displayPos, clickedBtn, order) {
   // 모든 버튼 비활성화
   document.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
 
+  // 보기 바로 아래 정답 배너 — 정답 여부 크게 표시
+  const CIRCLES = ['①', '②', '③', '④'];
+  const ord = order || [0, 1, 2, 3];
+  const correctDisplayPos = ord.indexOf(correctAns - 1); // 화면상 정답 위치
+  const correctCircle = correctDisplayPos >= 0 ? CIRCLES[correctDisplayPos] : '';
+  const isLast = cur >= S.session.cards.length - 1;
+  const nextLabel = isLast ? '결과 보기 →' : '다음 문제 →';
+
+  const ab = document.getElementById('answer-banner');
+  const abText = document.getElementById('ab-text');
+  ab.classList.remove('ok', 'bad');
+  if (isCorrect) {
+    ab.classList.add('show', 'ok');
+    abText.innerHTML = `✓ 정답입니다! <span class="ab-sub">정답: ${correctCircle}</span>`;
+  } else {
+    ab.classList.add('show', 'bad');
+    abText.innerHTML = `✗ 오답입니다 <span class="ab-sub">정답: ${correctCircle}</span>`;
+  }
+  document.getElementById('btn-next-top').textContent = nextLabel;
+
   // 해설 표시
   const fm = S.fm;
   const note = card.note;
@@ -733,12 +802,14 @@ function selectOption(answerNum, displayPos, clickedBtn, order) {
   if (fm.exp >= 0 && note.fields[fm.exp]) {
     document.getElementById('explain-text').innerHTML = cleanHtml(note.fields[fm.exp]);
     expBox.classList.add('show');
+    typesetQ(expBox); // ★ 해설 수식 렌더링 (이 호출이 없어 해설 MathJax가 안 나왔음)
+  } else {
+    expBox.classList.remove('show');
   }
 
-  // 네비 업데이트
-  const isLast = cur >= S.session.cards.length - 1;
+  // 하단 네비 버튼 (해설 박스 바로 아래 — 해설이 끝난 후의 다음 버튼)
   const btnNext = document.getElementById('btn-next');
-  btnNext.textContent = isLast ? '결과 보기 →' : '다음 문제 →';
+  btnNext.textContent = nextLabel;
   btnNext.classList.add('show');
   const navL = document.getElementById('quiz-nav-l');
   navL.textContent = isCorrect ? '✅ 정답!' : `❌ 오답 (오답 ${S.session.wrongs.length}개 저장)`;
@@ -926,9 +997,14 @@ function cleanHtml(html) {
 }
 function typesetQ(el) {
   const target = el || document.getElementById('q-text-box') || document.body;
-  if (window.MathJax && MathJax.typesetPromise) {
-    MathJax.typesetPromise([target]).catch(e => console.warn('MathJax:', e));
+  if (!target) return;
+  // MathJax가 async 로드라 아직 준비 전이면 준비될 때까지 재시도
+  if (!(window.MathJax && MathJax.typesetPromise)) {
+    setTimeout(() => typesetQ(el), 200);
+    return;
   }
+  try { if (MathJax.typesetClear) MathJax.typesetClear([target]); } catch(e) {}
+  MathJax.typesetPromise([target]).catch(e => console.warn('MathJax:', e));
 }
 function cleanText(html) {
   if (!html) return '';

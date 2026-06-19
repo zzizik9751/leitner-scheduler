@@ -123,6 +123,9 @@ body {
 .block-label { font-size: 10px; font-weight: 700; color: #bbb; letter-spacing: 0.1em; text-transform: uppercase; }
 .block-body { font-size: 15px; color: #1a1a1a; line-height: 1.75; }
 .block-body img { max-width: 100%; border-radius: 8px; margin-top: 8px; }
+/* 전역 reset(padding:0)으로 사라진 리스트 들여쓰기 복원 — 불릿이 박스 밖으로 나가는 문제 방지 */
+.block-body ul, .block-body ol { padding-left: 1.5em; margin: 6px 0; list-style-position: outside; }
+.block-body li { margin: 3px 0; }
 .c-divider { height: 1px; background: #f0f0ee; flex-shrink: 0; }
 .card-footer {
   padding: 10px 1.5rem; display: flex; justify-content: space-between; align-items: center;
@@ -1043,6 +1046,16 @@ function hide(id){const el=document.getElementById(id);el.classList.add('hidden'
 function countStars(v){return v?(v.match(/★/g)||[]).length:0;}
 function isHeart(v){return v&&v.includes('♡')&&countStars(v)===0;}
 function shuffle(arr){for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}return arr;}
+// ── MathJax 수식 렌더링 (동적 삽입 콘텐츠용) ──
+// MathJax v3는 초기 로드 시점의 DOM만 자동 변환하므로, innerHTML로 넣은 문제/힌트/정답은
+// 수동으로 typeset 해야 한다. async 로드 중이면 준비될 때까지 재시도한다.
+function typesetMath(el){
+  const target = el || document.getElementById('card-scroll') || document.body;
+  if (!target) return;
+  if (!(window.MathJax && MathJax.typesetPromise)) { setTimeout(()=>typesetMath(el), 200); return; }
+  try { if (MathJax.typesetClear) MathJax.typesetClear([target]); } catch(e) {}
+  MathJax.typesetPromise([target]).catch(e=>console.warn('MathJax:', e));
+}
 
 // 카드 로드 후 실제 신규/복습 최대치 추적
 let _maxNew=0, _maxReview=0;
@@ -1585,6 +1598,7 @@ async function loadCard(){
   document.getElementById('content-hint').innerHTML=await resolveMedia(c.hint);
   document.getElementById('content-hint2').innerHTML=await resolveMedia(c.hint); // backhint 모드용
   document.getElementById('content-back').innerHTML=await resolveMedia(c.back);
+  typesetMath(); // 문제·힌트·정답 수식 렌더링
   ['block-hint','div-hint','block-hint2','div-hint2','block-back','div-back','block-year'].forEach(hide);
   document.getElementById('action-row').classList.add('hidden');
   document.getElementById('shortcut-guide').style.display='none';

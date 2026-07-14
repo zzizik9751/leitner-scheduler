@@ -364,13 +364,29 @@ body {
   font-size:11px; font-weight:700; color:#aaa;
   text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px;
 }
-/* 렌더 콘텐츠(문제·보기·해설) 내 리스트 정렬 — 불릿이 박스 밖으로 나가거나 과도 들여쓰기 방지 */
+/* 힌트 영역 — 해설 바로 앞에 표시, 구분되도록 다른 색 */
+.hint-block {
+  margin-top:8px; padding:12px 14px; border-radius:10px;
+  background:#fffbe6; border:1px solid #ffe58f;
+  font-size:13px; color:#555; line-height:1.7;
+  display:none;
+}
+.hint-block .expl-label {
+  font-size:11px; font-weight:700; color:#b58900;
+  text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px;
+}
+/* 렌더 콘텐츠(문제·보기·해설·힌트) 내 리스트 정렬 — 불릿이 박스 밖으로 나가거나 과도 들여쓰기 방지 */
 #explanation-text ul, #explanation-text ol,
+#hint-text ul, #hint-text ol,
 .block-body ul, .block-body ol,
 .choice-text ul, .choice-text ol {
   padding-left: 1.5em; margin: 6px 0; list-style-position: outside; text-align: left;
 }
-#explanation-text li, .block-body li, .choice-text li { margin: 3px 0; }
+#explanation-text li, #hint-text li, .block-body li, .choice-text li {
+  margin: 3px 0; font-size: inherit; line-height: inherit;
+}
+#hint-text ul, #hint-text ol { list-style-type: disc; }
+#hint-text ul ul, #hint-text ol ol, #hint-text ul ol, #hint-text ol ul { list-style-type: circle; }
 /* 보기 영역의 리스트는 블록으로 — 인라인 span 안에서 깨지지 않도록 */
 .choice-text ul, .choice-text ol { display: block; }
 
@@ -624,6 +640,11 @@ window.MathJax = {
             </div>
             <!-- 결과 배너 -->
             <div class="result-banner" id="result-banner"></div>
+            <!-- 힌트 (힌트 필드) — 해설 바로 앞에 표시 -->
+            <div class="hint-block" id="hint-block" style="display:none;">
+              <div class="expl-label">힌트</div>
+              <div id="hint-text"></div>
+            </div>
             <!-- 해설 (C 필드) -->
             <div class="explanation-block" id="explanation-block">
               <div class="expl-label">해설</div>
@@ -1133,25 +1154,73 @@ let timerInterval=null,timerSec=0,timerPaused=false,TIMER_SEC=20;
 let cardPhase='question',starFilter=0;
 let studyOrder='hint'; // 객관식에선 미사용, 하위호환 보존
 
+// ── 필드명 → 인덱스 매핑 ──
+// Anki 노트타입(col.models)의 실제 필드 "명칭"으로 위치를 찾고, 이름이 없거나 못 찾으면
+// 기존 고정 순서(fallback)로 동작한다. 즉 필드 순서가 바뀐 apkg를 넣어도 이름으로 찾는다.
+const FIELD_ALIASES = {
+  front: ['문제','Front','앞면'],
+  s1:    ['보기①','보기1','S1'],
+  s2:    ['보기②','보기2','S2'],
+  s3:    ['보기③','보기3','S3'],
+  s4:    ['보기④','보기4','S4'],
+  정답:  ['정답','Answer'],
+  해설:  ['해설','Explanation','Back Extra'],
+  과목:  ['과목','Subject'],
+  회차:  ['회차','Round','Year'],
+  분류:  ['분류','Category'],
+  빈도:  ['빈도','Frequency','Star','별점'],
+  힌트:  ['힌트','Hint','HINT'],
+};
+// modelsJson(col.models 파싱 결과) → {mid: {필드명: 인덱스}} 맵 생성
+function buildFieldMaps(modelsJson){
+  const maps={};
+  if(!modelsJson) return maps;
+  Object.keys(modelsJson).forEach(mid=>{
+    const model=modelsJson[mid];
+    const flds=(model&&model.flds)||[];
+    const idx={};
+    flds.forEach((f,i)=>{ if(f&&f.name) idx[f.name]=i; });
+    maps[mid]=idx; maps[String(mid)]=idx;
+  });
+  return maps;
+}
+// fmap(해당 노트의 필드명→인덱스) + 별칭 목록에서 인덱스 탐색, 없으면 fallback(고정 위치) 사용
+function fidx(fmap, aliasKey, fallback){
+  if(fmap){
+    const aliases=FIELD_ALIASES[aliasKey]||[];
+    for(const name of aliases){
+      if(Object.prototype.hasOwnProperty.call(fmap,name)) return fmap[name];
+    }
+  }
+  return fallback;
+}
+
 // ── 필드 파서 (객관식 모델: Front/S1/S2/S3/S4/정답/해설/과목/회차/힌트/기타/분류/빈도)
-function parseCard(id, p, tags){
+function parseCard(id, p, tags, fmap){
   // 필드 수에 따라 구조 판별
   if(p.length >= 13){
-    // 객관식 모델 (13필드)
+    // 객관식 모델 (13필드) — fmap이 있으면 필드 "명칭"으로, 없으면 고정 위치로 찾는다
+    const iFront=fidx(fmap,'front',0), iS1=fidx(fmap,'s1',1), iS2=fidx(fmap,'s2',2),
+          iS3=fidx(fmap,'s3',3), iS4=fidx(fmap,'s4',4), iAns=fidx(fmap,'정답',5),
+          iExp=fidx(fmap,'해설',6), iSubj=fidx(fmap,'과목',7), iRound=fidx(fmap,'회차',8),
+          iHint=fidx(fmap,'힌트',9), iCat=fidx(fmap,'분류',11), iFreq=fidx(fmap,'빈도',12);
     return {
       id:    String(id),
-      front: p[0]||'',
-      hint:  (p[1]||'').trim(),   // S1 = 보기①
-      back:  p[2]||'',             // S2 = 보기②
-      star:  (p[3]||'').trim(),    // S3 = 보기③
-      year:  (p[4]||'').trim(),    // S4 = 보기④
-      정답:  stripHtml(p[5]||'').trim(),  // 정답 번호
-      C:     stripHtml(p[6]||'').trim(),  // 해설(텍스트) — TTS·AI프롬프트·유형감지용
-      Chtml: p[6]||'',                    // 해설(원본 HTML) — 화면 표시용
-      과목:  (p[7]||'').trim(),
-      회차:  (p[8]||'').trim(),
-      분류:  stripHtml(p[11]||'').trim(),
-      빈도:  stripHtml(p[12]||'').trim(),
+      front: p[iFront]||'',
+      hint:  (p[iS1]||'').trim(),   // S1 = 보기①
+      back:  p[iS2]||'',             // S2 = 보기②
+      star:  (p[iS3]||'').trim(),    // S3 = 보기③
+      year:  (p[iS4]||'').trim(),    // S4 = 보기④
+      정답:  stripHtml(p[iAns]||'').trim(),  // 정답 번호
+      C:     stripHtml(p[iExp]||'').trim(),  // 해설(텍스트) — TTS·AI프롬프트·유형감지용
+      Chtml: p[iExp]||'',                    // 해설(원본 HTML) — 화면 표시용
+      과목:  (p[iSubj]||'').trim(),
+      회차:  (p[iRound]||'').trim(),
+      분류:  stripHtml(p[iCat]||'').trim(),
+      // 빈도: 필드 안의 "★" 문자만 세고, 뒤에 붙은 다른 글자(메모 등)는 무시한다
+      빈도:  countStars(stripHtml(p[iFreq]||'')),
+      힌트:  stripHtml(p[iHint]||'').trim(),  // 힌트(텍스트) — 존재 여부 판단용
+      힌트Html: p[iHint]||'',                 // 힌트(원본 HTML) — 화면 표시용
       tags:  (tags||'').trim(),
     };
   } else {
@@ -1160,7 +1229,7 @@ function parseCard(id, p, tags){
       id: String(id), front:p[0]||'', hint:(p[1]||'').trim(), back:p[2]||'',
       star:(p[3]||'').trim(), year:(p[4]||'').trim(),
       정답:stripHtml(p[5]||'').trim(), C:stripHtml(p[6]||'').trim(), Chtml:p[6]||'',
-      과목:'', 회차:'', 분류:'', 빈도:'', tags:(tags||'').trim(),
+      과목:'', 회차:'', 분류:'', 빈도:0, 힌트:'', 힌트Html:'', tags:(tags||'').trim(),
     };
   }
 }
@@ -1287,7 +1356,7 @@ function applyFilter(){
   const {subject:subf, star:sf, category:cf}=listDropFilters;
   let base=allCards.slice();
   if(subf) base=base.filter(c=>(c.과목||'')=== subf);
-  if(sf)   base=base.filter(c=>(c.빈도||'')=== sf);
+  if(sf)   base=base.filter(c=>String(c.빈도||0)===sf);
   if(cf)   base=base.filter(c=>(c.분류||'')=== cf);
   buildTodayDeck(base);filteredCards=todayDeck;
   if(document.getElementById('screen-study').classList.contains('active')){cur=0;passCount=0;failCount=0;loadCard();}
@@ -1317,11 +1386,17 @@ async function handleApkg(file, hasProgress=false){
     setStatus('카드 불러오는 중...','loading');
     const buf=await dbFile.async('arraybuffer');
     const db=new SQL.Database(new Uint8Array(buf));
-    const res=db.exec("SELECT id, flds, tags FROM notes");
+    let modelsJson=null;
+    try{
+      const colRes=db.exec("SELECT models FROM col");
+      if(colRes.length && colRes[0].values.length) modelsJson=JSON.parse(colRes[0].values[0][0]);
+    }catch(e){}
+    const fieldMaps=buildFieldMaps(modelsJson);
+    const res=db.exec("SELECT id, mid, flds, tags FROM notes");
     if(!res.length){setStatus('카드가 없습니다.','error');return;}
-    allCards=res[0].values.map(([id,flds,tags])=>{
+    allCards=res[0].values.map(([id,mid,flds,tags])=>{
       const p=flds.split('\x1f');
-      return parseCard(id, p, tags);
+      return parseCard(id, p, tags, fieldMaps[mid]||fieldMaps[String(mid)]);
     });
     db.close();setStatus('','');
     document.getElementById('deck-name').textContent=deckFileName;
@@ -1412,7 +1487,7 @@ function renderList(){
   let source=allCards.slice();
   const {subject:subf, star:sf, category:cf}=listDropFilters;
   if(subf) source=source.filter(c=>(c.과목||'')=== subf);
-  if(sf)   source=source.filter(c=>(c.빈도||'')=== sf);
+  if(sf)   source=source.filter(c=>String(c.빈도||0)===sf);
   if(cf)   source=source.filter(c=>(c.분류||'')=== cf);
 
   // 검색
@@ -1428,12 +1503,12 @@ function renderList(){
     matched.sort((a,b)=>{
       const sa=(a.과목||''), sb=(b.과목||'');
       if(sa!==sb) return sa.localeCompare(sb,'ko');
-      const fa=Number(a.빈도)||0, fb=Number(b.빈도)||0;
+      const fa=a.빈도||0, fb=b.빈도||0;
       if(fb!==fa) return fb-fa; // 빈도 높은 것 먼저
       return (a.분류||'').localeCompare(b.분류||'','ko');
     });
   } else if(listSort==='star'){
-    matched.sort((a,b)=>(Number(b.빈도)||0)-(Number(a.빈도)||0));
+    matched.sort((a,b)=>(b.빈도||0)-(a.빈도||0));
   } else if(listSort==='alpha'){
     matched.sort((a,b)=>stripHtml(a.front).localeCompare(stripHtml(b.front),'ko'));
   } else if(listSort==='cat'){
@@ -1463,7 +1538,7 @@ function renderList(){
     // 배지들
     const levelBadge=`<span class="list-badge ${isNew?'list-badge-new':'list-badge-level'}">${isNew?'신규':(prog?prog.level+'단계':'1단계')}</span>`;
     const subjBadge=c.과목?`<span class="list-badge" style="background:#e8f0fe;color:#1a5276;">${c.과목}</span>`:'';
-    const freqBadge=c.빈도?`<span class="list-badge" style="background:#fef9e7;color:#9a7d0a;">빈도${c.빈도}</span>`:'';
+    const freqBadge=c.빈도?`<span class="list-badge" style="background:#fef9e7;color:#9a7d0a;">${'★'.repeat(c.빈도)}</span>`:'';
     const catBadge=c.분류?`<span class="list-badge list-badge-분류">${c.분류}</span>`:'';
     const yearBadge=c.회차?`<span class="list-year">${c.회차}</span>`:'';
 
@@ -1548,14 +1623,14 @@ function openListScreen(){
     subjects.map(s=>`<option value="${s}">${s} (${subjCount[s]||0}장)</option>`).join('');
   subjSel.value='';
 
-  // 출제빈도(빈도 필드) 셀렉트 동적 생성
+  // 출제빈도(빈도 필드: ★ 개수) 셀렉트 동적 생성
   const starSel=document.getElementById('lf-star');
-  const freqVals=[...new Set(allCards.map(c=>c.빈도||'').filter(Boolean))].sort((a,b)=>Number(b)-Number(a));
+  const freqVals=[...new Set(allCards.map(c=>c.빈도||0).filter(v=>v>0))].sort((a,b)=>b-a);
   if(freqVals.length){
     const freqCount={};
     allCards.forEach(c=>{if(c.빈도)freqCount[c.빈도]=(freqCount[c.빈도]||0)+1;});
     starSel.innerHTML='<option value="">빈도 전체</option>'+
-      freqVals.map(v=>`<option value="${v}">${v} (${freqCount[v]||0}장)</option>`).join('');
+      freqVals.map(v=>`<option value="${v}">${'★'.repeat(v)} (${freqCount[v]||0}장)</option>`).join('');
   } else {
     starSel.innerHTML='<option value="">빈도 (미입력)</option>';
   }
@@ -1643,7 +1718,7 @@ function startAllCards(){
   let source=allCards.slice();
   const {subject:subf, star:sf, category:cf}=listDropFilters;
   if(subf) source=source.filter(c=>(c.과목||'')===subf);
-  if(sf)   source=source.filter(c=>(c.빈도||'')===sf);
+  if(sf)   source=source.filter(c=>String(c.빈도||0)===sf);
   if(cf)   source=source.filter(c=>(c.분류||'')===cf);
   if(kw)   source=source.filter(c=>{
     const f=stripHtml(c.front).toLowerCase(),h=stripHtml(c.hint).toLowerCase(),b=stripHtml(c.back).toLowerCase();
@@ -1653,12 +1728,12 @@ function startAllCards(){
     source.sort((a,b)=>{
       const sa=(a.과목||''),sb=(b.과목||'');
       if(sa!==sb) return sa.localeCompare(sb,'ko');
-      const fa=Number(a.빈도)||0,fb=Number(b.빈도)||0;
+      const fa=a.빈도||0,fb=b.빈도||0;
       if(fb!==fa) return fb-fa;
       return (a.분류||'').localeCompare(b.분류||'','ko');
     });
   } else if(listSort==='star'){
-    source.sort((a,b)=>(Number(b.빈도)||0)-(Number(a.빈도)||0));
+    source.sort((a,b)=>(b.빈도||0)-(a.빈도||0));
   } else if(listSort==='alpha'){
     source.sort((a,b)=>stripHtml(a.front).localeCompare(stripHtml(b.front),'ko'));
   } else if(listSort==='cat'){
@@ -1700,11 +1775,14 @@ async function loadCard(){
 
   // 해설(원본 HTML) 미리 렌더 — 숨김 상태에선 typeset하지 않음(구분자 보존)
   document.getElementById('explanation-text').innerHTML = await resolveMedia(c.Chtml||'');
+  // 힌트(원본 HTML) 미리 렌더 — 정답 확인 시 해설 바로 앞에 표시
+  document.getElementById('hint-text').innerHTML = await resolveMedia(c.힌트Html||'');
 
   // UI 초기화
   document.getElementById('choices-area').style.display='flex'; // 처음부터 표시
   document.getElementById('result-banner').style.display='none';
   document.getElementById('explanation-block').style.display='none';
+  document.getElementById('hint-block').style.display='none';
   document.getElementById('result-banner').className='result-banner';
   [1,2,3,4].forEach(i=>{
     const btn=document.getElementById('choice-'+i);
@@ -1774,6 +1852,11 @@ function revealAnswerNoSelection(){
   banner.textContent=`⏰ 시간 초과 — 정답은 ${correctNum}번`;
   banner.style.display='block';
 
+  // 힌트 표시 — 해설 바로 앞에 노출
+  if(c.힌트){
+    document.getElementById('hint-block').style.display='block';
+    typesetMath(document.getElementById('hint-block'));
+  }
   // 해설 표시 (HTML은 loadCard에서 미리 렌더됨 → 보일 때 수식 typeset)
   if(c.Chtml){
     document.getElementById('explanation-block').style.display='block';
@@ -1828,6 +1911,11 @@ function selectChoice(num){
     :`✗ 오답 — 정답은 ${correctNum}번입니다`;
   banner.style.display='block';
 
+  // 힌트 표시 — 해설 바로 앞에 노출
+  if(c.힌트){
+    document.getElementById('hint-block').style.display='block';
+    typesetMath(document.getElementById('hint-block'));
+  }
   // 해설 표시 (HTML은 loadCard에서 미리 렌더됨 → 보일 때 수식 typeset)
   if(c.Chtml){
     document.getElementById('explanation-block').style.display='block';
@@ -2266,9 +2354,47 @@ function toggleTtsRulesPanel(){
 
 
 
+// [단위] 대괄호 안에 "/"가 들어간 복합단위(예: [m/s], [V/m], [kg/m³])를 한 번에 처리하기 위한 사전.
+// "/"가 없는 단순 [V] [kV] 같은 괄호는 ttsClean 안의 기존 개별 규칙이 그대로 처리한다.
+const UNIT_TOKEN_MAP = {
+  m:'미터', cm:'센티미터', mm:'밀리미터', km:'킬로미터',
+  kg:'킬로그램', g:'그램', s:'세크', min:'분', h:'아워', // h: 기존 km/h 표기(킬로미터퍼아워)와 통일
+  V:'볼트', A:'암페어', W:'와트', F:'패럿', C:'쿨롱', H:'헨리', T:'테슬라', Wb:'웨버',
+  'Ω':'옴', Hz:'헤르츠', N:'뉴턴', Pa:'파스칼', J:'줄', rad:'라디안',
+  kV:'킬로볼트', kA:'킬로암페어', kW:'킬로와트', MW:'메가와트',
+  mA:'밀리암페어', mV:'밀리볼트',
+  'kΩ':'킬로옴', 'MΩ':'메가옴', mH:'밀리헨리', 'μH':'마이크로헨리',
+  pF:'피코패럿', nF:'나노패럿', 'μF':'마이크로패럿', mF:'밀리패럿',
+  'μC':'마이크로쿨롱', 'μA':'마이크로암페어', 'μV':'마이크로볼트',
+};
+// 조각 하나(예: "m", "s²", "mm2")를 한국어로. 사전에 없으면 null(모르는 토큰 — 잘못 추측하지 않음).
+function parseUnitToken(part){
+  const p0 = part.trim();
+  let p = p0, exp = 0;
+  if(/[²2]$/.test(p) && p.length>1 && UNIT_TOKEN_MAP[p.slice(0,-1)]){ exp=2; p=p.slice(0,-1); }
+  else if(/[³3]$/.test(p) && p.length>1 && UNIT_TOKEN_MAP[p.slice(0,-1)]){ exp=3; p=p.slice(0,-1); }
+  const kor = UNIT_TOKEN_MAP[p];
+  if(!kor) return null;
+  if(exp===0) return kor;
+  // 세크(초)는 "세크제곱"처럼 뒤에 붙이고, 나머지 길이/부피 단위는 "제곱미터"처럼 앞에 붙인다(기존 표기 관행 유지)
+  const expWord = exp===2 ? '제곱' : '세제곱';
+  return p==='s' ? (kor+expWord) : (expWord+kor);
+}
+// 대괄호 [ ... ] 하나를 통째로 처리. "/"로 나눈 조각이 전부 사전에 있을 때만 변환하고,
+// 하나라도 모르면 원문 그대로 둔다 — [ ](빈칸 표시), [정답] 같은 단위 아닌 대괄호를 건드리지 않기 위함.
+function readBracketUnit(whole, inner){
+  const reads = inner.split('/').map(parseUnitToken);
+  if(reads.some(r => r===null)) return whole;
+  return reads.join('퍼');
+}
 function ttsClean(text){
-  // 1) HTML 태그 제거
-  let s = text.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ');
+  // 0) 유니코드 정규화(NFKC) — ㎜㎝㎞㎏㎸㎃㎄㎾㎐ 같은 "사각 호환 문자"를 mm/cm/km/kg/kV/mA/kA/kW/Hz 등
+  //    보통 문자로 풀어주고, Ω(옴 기호, U+2126)를 그리스 문자 Ω(U+03A9)로 통일해 아래 규칙이 반드시 잡도록 한다.
+  let s = text.normalize('NFKC').replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ');
+  // 0-1) 대괄호 [단위] 전체를 먼저 처리 — [m/s]→"미터퍼세크", [Hz]→"헤르츠", [V/m]→"볼트퍼미터" 등.
+  //     "/"를 그대로 읽거나 이상한 소리가 나던 문제, s가 "에스"로 읽히던 문제, Hz처럼 괄호가 안 벗겨지던 문제를 함께 해결.
+  //     단위로 인식 안 되는 대괄호([ ] 빈칸 표시, [정답] 등)는 절대 건드리지 않는다.
+  s = s.replace(/\[([^\]]+)\]/g, readBracketUnit);
   // 2) 단위 기호 → 읽을 수 있는 한국어
   //    ※ 복합단위를 단순단위보다 반드시 먼저 처리
   s = s
@@ -2308,9 +2434,22 @@ function ttsClean(text){
     .replace(/\bm\/s²/g,'미터퍼세크제곱').replace(/\bm\/s/g,'미터퍼세크')
     .replace(/(\d)\s*km\/h/g,'$1킬로미터퍼아워').replace(/\bkm\/h/g,'킬로미터퍼아워')
     .replace(/(\d)\s*m²/g,'$1제곱미터').replace(/(\d)\s*m³/g,'$1세제곱미터')
+    // 넓이·부피 단위 — NFKC로 풀린 ㎟㎠㎡㎢㎣㎤㎥ (mm2/cm2/km2/m2/mm3/cm3/m3 형태)
+    // ※ mm2/cm2/km2를 bare m2보다 먼저 처리해야 "cm2"가 "센티미터2"로 잘못 쪼개지지 않는다
+    .replace(/(\d)\s*mm2\b/g,'$1제곱밀리미터').replace(/\bmm2\b/g,'제곱밀리미터')
+    .replace(/(\d)\s*cm2\b/g,'$1제곱센티미터').replace(/\bcm2\b/g,'제곱센티미터')
+    .replace(/(\d)\s*km2\b/g,'$1제곱킬로미터').replace(/\bkm2\b/g,'제곱킬로미터')
+    .replace(/(\d)\s*m2\b/g,'$1제곱미터').replace(/\bm2\b/g,'제곱미터')
+    .replace(/(\d)\s*mm3\b/g,'$1세제곱밀리미터').replace(/\bmm3\b/g,'세제곱밀리미터')
+    .replace(/(\d)\s*cm3\b/g,'$1세제곱센티미터').replace(/\bcm3\b/g,'세제곱센티미터')
+    .replace(/(\d)\s*m3\b/g,'$1세제곱미터').replace(/\bm3\b/g,'세제곱미터')
+    // 대괄호 표기 [단위] — 시험 문제에서 "m=질량" 같은 변수와 실제 단위(m=미터)를 구분하려고
+    // 단위는 대괄호로 표기하는 관행을 활용. [m]처럼 괄호로 감싼 경우만 확실히 단위로 읽는다.
+    .replace(/\[m\]/g,'미터').replace(/\[cm\]/g,'센티미터').replace(/\[mm\]/g,'밀리미터')
+    .replace(/\[km\]/g,'킬로미터').replace(/\[kg\]/g,'킬로그램').replace(/\[g\]/g,'그램')
     .replace(/(\d)\s*cm/g,'$1센티미터').replace(/(\d)\s*mm/g,'$1밀리미터')
     .replace(/(\d)\s*km/g,'$1킬로미터')
-    .replace(/(\d)\s*kg/g,'$1킬로그램').replace(/(\d)\s*g\b/g,'$1그램')
+    .replace(/(\d)\s*kg/g,'$1킬로그램').replace(/\bkg\b/g,'킬로그램').replace(/(\d)\s*g\b/g,'$1그램')
     // 사칙연산 기호
     .replace(/×/g,'곱하기').replace(/÷/g,'나누기')
     .replace(/\+/g,'더하기').replace(/−/g,'빼기')
@@ -2407,11 +2546,17 @@ async function handleZip(file){
     if(!dbFile){setStatus('ZIP 안에 ANKI 데이터 없음. APKG를 포함한 ZIP이어야 합니다.','error');return;}
     const buf=await dbFile.async('arraybuffer');
     const db=new SQL.Database(new Uint8Array(buf));
-    const res=db.exec('SELECT id, flds, tags FROM notes');
+    let modelsJson=null;
+    try{
+      const colRes=db.exec('SELECT models FROM col');
+      if(colRes.length && colRes[0].values.length) modelsJson=JSON.parse(colRes[0].values[0][0]);
+    }catch(e){}
+    const fieldMaps=buildFieldMaps(modelsJson);
+    const res=db.exec('SELECT id, mid, flds, tags FROM notes');
     if(!res.length){setStatus('카드가 없습니다.','error');return;}
-    allCards=res[0].values.map(([id,flds,tags])=>{
+    allCards=res[0].values.map(([id,mid,flds,tags])=>{
       const p=flds.split('\x1f');
-      const base=parseCard(id, p, tags);
+      const base=parseCard(id, p, tags, fieldMaps[mid]||fieldMaps[String(mid)]);
       return editedMap[base.id]?Object.assign(base,editedMap[base.id]):base;
     });
     db.close();setStatus('','');

@@ -18,6 +18,7 @@ window.MathJax = {
 };
 </script>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'맑은 고딕','Apple SD Gothic Neo','Malgun Gothic',Dotum,sans-serif;font-size:14px;background:#e4e8f0;color:#222;min-height:100vh}
@@ -511,6 +512,20 @@ body{font-family:'맑은 고딕','Apple SD Gothic Neo','Malgun Gothic',Dotum,san
         </div>
         <div id="rv-items"></div>
       </div>
+      <!-- PDF 내보내기 섹션 -->
+      <div style="background:#fff3cd;border:1.5px solid #ffc107;border-radius:8px;padding:20px;margin-bottom:20px">
+        <div style="font-weight:bold;color:#856404;margin-bottom:15px">📄 답안지 PDF 다운로드</div>
+        <div style="display:flex;gap:15px;margin-bottom:15px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input type="checkbox" id="pdf-exp" checked> 해설 포함
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input type="checkbox" id="pdf-hint"> 힌트 포함
+          </label>
+        </div>
+        <button class="btn-primary" onclick="exportToPdf()" style="width:100%">📥 PDF 다운로드</button>
+      </div>
+
       <div class="result-actions">
         <button class="btn-secondary" onclick="goSetup()">↩ 같은 설정 재시험</button>
         <button class="btn-primary" onclick="showScreen('load')">📂 새 파일 불러오기</button>
@@ -1317,6 +1332,118 @@ function cleanText(html) {
 function shuffle(arr) {
   for (let i=arr.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; }
   return arr;
+}
+
+/* ---------- PDF EXPORT ---------- */
+function exportToPdf() {
+  const { qs, answers } = S.exam;
+  const fm = S.fm;
+  const includeExp = document.getElementById('pdf-exp')?.checked || false;
+  const includeHint = document.getElementById('pdf-hint')?.checked || false;
+
+  // 오답만 필터링
+  const wrongProblems = [];
+  qs.forEach((q,i)=>{
+    const correct=parseAns(q.note.fields[fm.ans]);
+    const user=answers[i];
+    const isOk=user&&user===correct;
+    if(!isOk) { // 오답 또는 미응시만 포함
+      wrongProblems.push({q,i,correct,user});
+    }
+  });
+
+  let html = `
+    <div style="font-family:Arial,sans-serif;padding:20px;max-width:800px;margin:0 auto">
+      <div style="text-align:center;margin-bottom:30px;border-bottom:3px solid #333;padding-bottom:20px">
+        <h1 style="margin:0;color:#333;font-size:24px">전기철도기사 필기 시험 - 오답지</h1>
+        <p style="margin:5px 0;color:#666;font-size:14px">수험자: ${S.cfg.name} | 오답 ${wrongProblems.length}/${qs.length}</p>
+      </div>`;
+
+  const OPT_KEYS=['o1','o2','o3','o4'];
+  const CIRCLES=['①','②','③','④'];
+
+  wrongProblems.forEach(({q,i,correct,user})=>{
+    const isOk=user&&user===correct;
+    const status=!user?'미응시':'오답';
+    const statusColor=!user?'#ff9800':'#cc2233';
+
+    html += `
+      <div style="page-break-after:always;margin-bottom:20px;padding:15px;border-left:4px solid ${statusColor};background:#fafafa">
+        <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+          <div style="font-weight:bold;color:#333">Q${i+1}. ${q.subject}</div>
+          <div style="background:${statusColor};color:white;padding:3px 10px;border-radius:3px;font-size:12px;font-weight:bold">${status}</div>
+        </div>
+
+        <div style="margin:12px 0;font-size:14px;line-height:1.6;color:#222">
+          ${cleanText(q.note.fields[fm.q]||'')}
+        </div>
+
+        <div style="margin:10px 0">`;
+
+    // 보기 1~4
+    OPT_KEYS.forEach((k,j)=>{
+      const num=j+1;
+      const txt=q.note.fields[fm[k]]||'';
+      const sel=user===num;
+      const ok=num===correct;
+      const mark=sel?(isOk?'✓':'✕'):'';
+      const col=sel?(isOk?'#22aa44':'#cc2233'):ok?'#22aa44':'#333';
+      html += `
+        <div style="margin:6px 0;padding:8px;background:white;border:1px solid #ddd;border-radius:3px">
+          <span style="color:${col};font-weight:bold;margin-right:8px">${CIRCLES[j]}${mark}</span>
+          <span style="color:${col}">${cleanText(txt)}</span>
+        </div>`;
+    });
+
+    html += `</div>`;
+
+    // 내 답 vs 정답
+    const userAns=user?cleanText(q.note.fields[fm[OPT_KEYS[user-1]]]):'(미응시)';
+    const correctAns=correct?cleanText(q.note.fields[fm[OPT_KEYS[correct-1]]]):'?';
+    html += `
+      <div style="margin:10px 0;padding:10px;background:#f9f9f9;border-radius:3px;font-size:13px">
+        <div>내 답: <strong style="color:${isOk?'#22aa44':'#cc2233'}">${CIRCLES[user-1]||'-'} ${userAns}</strong></div>
+        <div>정답: <strong style="color:#22aa44">${CIRCLES[correct-1]} ${correctAns}</strong></div>
+      </div>`;
+
+    // 해설 (선택)
+    if(includeExp && fm.exp>=0 && q.note.fields[fm.exp]){
+      html += `
+        <div style="margin-top:12px;padding:10px;background:#e3f2fd;border-left:3px solid #2196f3;border-radius:3px;font-size:13px">
+          <strong style="color:#1976d2">💡 해설</strong><br>
+          ${cleanText(q.note.fields[fm.exp])}
+        </div>`;
+    }
+
+    // 힌트 (선택)
+    if(includeHint && fm.hint>=0 && q.note.fields[fm.hint]){
+      html += `
+        <div style="margin-top:8px;padding:8px;background:#fff3cd;border-left:3px solid #ffc107;border-radius:3px;font-size:12px">
+          <strong style="color:#856404">🔑 힌트</strong><br>
+          ${cleanText(q.note.fields[fm.hint])}
+        </div>`;
+    }
+
+    html += `</div>`;
+  });
+
+  html += `
+    <div style="margin-top:40px;padding-top:20px;border-top:2px solid #ddd;text-align:center;font-size:12px;color:#888">
+      <p>생성일: ${new Date().toLocaleString('ko-KR')}</p>
+    </div>
+  </div>`;
+
+  // PDF 생성 옵션
+  const opt={
+    margin:10,
+    filename:`전기철도기사_답안지_${S.cfg.name}_${new Date().getTime()}.pdf`,
+    image:{type:'jpeg',quality:0.98},
+    html2canvas:{scale:2,useCORS:true},
+    jsPDF:{orientation:'portrait',unit:'mm',format:'a4'}
+  };
+
+  html2pdf().set(opt).from(html).save();
+  showModal('성공','PDF가 다운로드되었습니다.',[{label:'확인',cls:'btn-primary'}]);
 }
 
 /* ---------- INIT ---------- */

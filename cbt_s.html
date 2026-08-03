@@ -295,6 +295,11 @@ body{font-family:'맑은 고딕','Apple SD Gothic Neo','Malgun Gothic',Dotum,san
     <div class="screen-title">📋 필드 매핑 설정</div>
     <div class="screen-desc">Anki 카드의 어느 필드가 문제·보기①②③④·정답인지 지정하세요. 자동 감지 후 필요 시 수동 조정하세요.</div>
     <div class="nt-row">
+      <label>📋 시험 선택 (선택사항)</label>
+      <input type="file" id="json-file-input" accept=".json" style="padding:8px 12px;border:1.5px solid #ccc;border-radius:7px;font-size:13px;min-width:320px">
+      <div style="font-size:11px;color:#888;margin-top:6px" id="json-status"></div>
+    </div>
+    <div class="nt-row">
       <label>노트 유형 선택</label>
       <select id="nt-select" onchange="onNtChange()"></select>
     </div>
@@ -525,6 +530,7 @@ const S = {
   imgMap: {},     // { 파일명: blobURL }
   fm: { q:0, o1:1, o2:2, o3:3, o4:4, ans:5, exp:6, subj:7, src:8, hint:9 },
   deckGroups: [], // [{id,name,notes:[]}]
+  selectedProblemIds: null,  // 선택된 문제 ID 배열 (JSON 로드 시)
   exam: {
     qs: [],           // [{note, subject}]
     answers: {},      // idx -> 1-4
@@ -572,6 +578,29 @@ function initDrop() {
   dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
   dz.addEventListener('drop',e=>{ e.preventDefault(); dz.classList.remove('drag-over'); const f=e.dataTransfer.files[0]; if(f) handleFile(f); });
   fi.addEventListener('change',e=>{ if(e.target.files[0]) handleFile(e.target.files[0]); fi.value=''; });
+}
+
+/* JSON 파일 로드 */
+function initJsonLoad() {
+  const jfi=document.getElementById('json-file-input');
+  if(jfi) {
+    jfi.addEventListener('change',async e=>{
+      if(!e.target.files[0]) return;
+      try {
+        const text=await e.target.files[0].text();
+        const data=JSON.parse(text);
+        if(!data.problem_ids || !Array.isArray(data.problem_ids)) throw new Error('problem_ids 배열이 없습니다.');
+        S.selectedProblemIds=data.problem_ids.map(id=>String(id));
+        const st=document.getElementById('json-status');
+        if(st) st.textContent=`✅ 로드됨: ${data.exam}시험지 (${data.total}문제)`;
+      } catch(err) {
+        const st=document.getElementById('json-status');
+        if(st) st.textContent=`❌ 오류: ${err.message}`;
+        S.selectedProblemIds=null;
+      }
+      e.target.value='';
+    });
+  }
 }
 
 async function handleFile(file) {
@@ -682,6 +711,7 @@ function renderFieldMap() {
   autoDetect(mids[0]);
   populateSelectors(mids[0]);
   updatePreview();
+  initJsonLoad();
 }
 
 function onNtChange() {
@@ -769,10 +799,17 @@ function renderSetup() {
   const fm = S.fm;
   const groups = {};
 
+  // ★ JSON으로 선택된 문제들만 필터링
+  let filteredNotes = notes;
+  if (S.selectedProblemIds && S.selectedProblemIds.length > 0) {
+    const idSet = new Set(S.selectedProblemIds);
+    filteredNotes = notes.filter(n => idSet.has(n.id));
+  }
+
   // ★ 과목 필드가 매핑되어 있으면 과목 필드값으로 자동 분류
   const useSubjField = fm.subj >= 0;
 
-  notes.forEach(n => {
+  filteredNotes.forEach(n => {
     let key, label;
     if (useSubjField) {
       // 과목 필드값으로 그룹핑

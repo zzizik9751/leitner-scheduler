@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>스터디 타이머</title>
+<style>
+  :root{
+    --bg:#0b1020;
+    --card:#141a2e;
+    --card2:#1b2340;
+    --line:#252e4d;
+    --txt:#e6e9f2;
+    --sub:#8b93ad;
+    --accent:#7c5cff;
+    --accent2:#00d4ff;
+    --ok:#00e0a4;
+    --warn:#ffb020;
+    --danger:#ff5c7a;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    font-family:'Pretendard','Segoe UI',system-ui,sans-serif;
+    background:
+      radial-gradient(900px 500px at 15% -10%, rgba(124,92,255,.28), transparent 60%),
+      radial-gradient(800px 500px at 90% 110%, rgba(0,212,255,.18), transparent 60%),
+      var(--bg);
+    color:var(--txt);
+    min-height:100vh;
+    display:flex;justify-content:center;align-items:flex-start;
+    padding:32px 16px;
+  }
+  .wrap{width:100%;max-width:560px}
+  .card{
+    background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02)),var(--card);
+    border:1px solid var(--line);
+    border-radius:24px;
+    padding:28px;
+    box-shadow:0 30px 80px rgba(0,0,0,.55);
+    backdrop-filter:blur(10px);
+  }
+  .topbar{display:flex;justify-content:flex-end;gap:8px;margin-bottom:18px}
+  .icon{
+    width:38px;height:38px;border-radius:12px;
+    border:1px solid var(--line);background:var(--card2);color:var(--sub);
+    cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;
+    transition:.2s;
+  }
+  .icon:hover{color:var(--txt);border-color:var(--accent);background:#212a4c}
+  .icon:active{transform:scale(.94)}
+
+  .title{
+    font-size:22px;font-weight:800;letter-spacing:-.3px;text-align:center;
+    margin-bottom:6px;
+  }
+  .titleInput{
+    display:none;width:100%;text-align:center;font-size:20px;font-weight:800;
+    padding:10px 12px;border-radius:12px;border:1px solid var(--accent);
+    background:var(--card2);color:var(--txt);outline:none;margin-bottom:6px;
+  }
+  .titleInput.on{display:block}
+  .title.off{display:none}
+
+  .time{
+    text-align:center;font-size:76px;font-weight:800;letter-spacing:2px;
+    font-variant-numeric:tabular-nums;
+    background:linear-gradient(135deg,#fff 0%,var(--accent2) 55%,var(--accent) 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    margin:14px 0 6px;
+  }
+  .time.run{animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.82}}
+
+  .stats{
+    display:none;gap:10px;justify-content:center;color:var(--sub);
+    font-size:12px;margin-bottom:18px;
+  }
+  .stats.on{display:flex}
+  .stats b{color:var(--txt);font-weight:600}
+
+  .adj{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0 22px}
+  .adjg{
+    background:var(--card2);border:1px solid var(--line);border-radius:16px;
+    padding:12px 8px;text-align:center;
+  }
+  .adjg span{display:block;font-size:11px;color:var(--sub);font-weight:700;margin-bottom:8px;letter-spacing:.5px}
+  .adjb{display:flex;gap:6px;justify-content:center}
+  .adjb button{
+    width:38px;height:34px;border-radius:10px;border:1px solid var(--line);
+    background:#111730;color:var(--accent2);font-size:16px;font-weight:700;cursor:pointer;transition:.15s;
+  }
+  .adjb button:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .adjb button:active{transform:scale(.93)}
+
+  .ctrl{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .btn{
+    padding:14px 6px;border:none;border-radius:14px;font-size:14px;font-weight:700;
+    cursor:pointer;transition:.2s;color:#fff;
+  }
+  .btn:disabled{background:#20263c!important;color:#4d5675!important;cursor:not-allowed;box-shadow:none!important}
+  .b-start{background:linear-gradient(135deg,var(--accent),#5b7cff);box-shadow:0 8px 24px rgba(124,92,255,.35)}
+  .b-pause{background:linear-gradient(135deg,var(--warn),#ff8a3d);box-shadow:0 8px 24px rgba(255,176,32,.25)}
+  .b-cancel{background:var(--card2);border:1px solid var(--line);color:var(--sub)}
+  .b-done{background:linear-gradient(135deg,var(--ok),#00b4ff);box-shadow:0 8px 24px rgba(0,224,164,.3)}
+  .btn:hover:not(:disabled){transform:translateY(-2px)}
+  .btn:active:not(:disabled){transform:translateY(0)}
+
+  .rec{margin-top:26px;padding-top:20px;border-top:1px solid var(--line);display:none}
+  .rec.on{display:block}
+  .rechead{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .rechead h3{font-size:14px;font-weight:800;color:var(--txt)}
+  .rechead .cnt{font-size:11px;color:var(--sub);font-weight:500;margin-left:6px}
+  .rechead div{display:flex;gap:6px}
+  .sbtn{
+    border:1px solid var(--line);background:var(--card2);color:var(--sub);
+    padding:7px 12px;border-radius:10px;font-size:11px;font-weight:700;cursor:pointer;transition:.2s;
+  }
+  .sbtn:hover{color:var(--txt);border-color:var(--accent2)}
+  .sbtn.del:hover{color:var(--danger);border-color:var(--danger)}
+
+  .reclist{max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:6px}
+  .reclist::-webkit-scrollbar{width:6px}
+  .reclist::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+  .line{
+    background:var(--card2);border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:10px;padding:10px 12px;font-size:12.5px;color:var(--sub);
+    white-space:nowrap;overflow-x:auto;font-variant-numeric:tabular-nums;
+  }
+  .line:first-child{border-left-color:var(--ok)}
+  .line b{color:var(--txt);font-weight:700}
+  .line .dur{color:var(--accent2);font-weight:700}
+
+  /* 전체화면 */
+  .card.fs{
+    position:fixed;inset:0;max-width:100vw;border-radius:0;z-index:9999;
+    display:flex;flex-direction:column;justify-content:center;overflow-y:auto;
+  }
+  .card.fs .time{font-size:20vw}
+  .card.fs .rec{display:none}
+
+  .hint{text-align:center;font-size:11px;color:#5a6383;margin-top:14px}
+
+  @media(max-width:600px){
+    .card{padding:22px 18px}
+    .time{font-size:56px}
+    .ctrl{grid-template-columns:repeat(2,1fr)}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card" id="card">
+    <div class="topbar">
+      <button class="icon" id="editBtn" title="제목 수정">✎</button>
+      <button class="icon" id="fsBtn" title="전체화면">⛶</button>
+      <button class="icon" id="minBtn" title="최소화 (항상 위)">⊟</button>
+    </div>
+
+    <h1 class="title" id="title">공부 시간</h1>
+    <input class="titleInput" id="titleInput" value="공부 시간">
+
+    <div class="time" id="time">00:20:00</div>
+
+    <div class="stats" id="stats">
+      <span>시작 <b id="sStart">-</b></span>
+      <span>·</span>
+      <span>경과 <b id="sElapsed">00:00:00</b></span>
+    </div>
+
+    <div class="adj">
+      <div class="adjg"><span>5분</span><div class="adjb"><button data-m="-5">−</button><button data-m="5">+</button></div></div>
+      <div class="adjg"><span>10분</span><div class="adjb"><button data-m="-10">−</button><button data-m="10">+</button></div></div>
+      <div class="adjg"><span>1시간</span><div class="adjb"><button data-m="-60">−</button><button data-m="60">+</button></div></div>
+    </div>
+
+    <div class="ctrl">
+      <button class="btn b-start" id="startBtn">시작</button>
+      <button class="btn b-pause" id="pauseBtn" disabled>일시중지</button>
+      <button class="btn b-cancel" id="cancelBtn" disabled>취소</button>
+      <button class="btn b-done" id="doneBtn" disabled>완료</button>
+    </div>
+
+    <div class="rec" id="rec">
+      <div class="rechead">
+        <h3>기록 <span class="cnt" id="cnt"></span></h3>
+        <div>
+          <button class="sbtn" id="txtBtn">TXT</button>
+          <button class="sbtn" id="jsonBtn">JSON</button>
+          <button class="sbtn del" id="clearBtn">전체삭제</button>
+        </div>
+      </div>
+      <div class="reclist" id="reclist"></div>
+    </div>
+
+    <div class="hint">Space 시작/일시중지 · Esc 전체화면 해제</div>
+  </div>
+</div>
+
+<script>
+const S = {
+  running:false, paused:false,
+  left:20*60, total:20*60,
+  startAt:null, iv:null, title:'공부 시간'
+};
+const $ = id => document.getElementById(id);
+let pip = null;          // PiP window
+let pipEl = null;        // {time, pause, done}
+
+/* ---------- 유틸 ---------- */
+const fmt = s => {
+  s = Math.max(0, s);
+  const h=Math.floor(s/3600), m=Math.floor(s%3600/60), x=s%60;
+  return [h,m,x].map(v=>String(v).padStart(2,'0')).join(':');
+};
+const esc = t => { const d=document.createElement('div'); d.textContent=t; return d.innerHTML; };
+const timeStr = d => new Date(d).toLocaleTimeString('ko-KR',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+const dateStr = d => new Date(d).toLocaleDateString('ko-KR');
+// 예전 기록(오전/오후 표기)도 ISO가 있으면 24시로 다시 표기
+const t24 = (iso, fallback) => iso ? timeStr(iso) : fallback;
+
+/* ---------- 표시 ---------- */
+function render(){
+  const t = fmt(S.left);
+  $('time').textContent = t;
+  $('time').classList.toggle('run', S.running);
+  if(pipEl) {
+    pipEl.time.textContent = t;
+    pipEl.time.style.color = S.running ? '#00e0a4' : '#ffb020';
+  }
+  if(S.startAt){
+    $('sStart').textContent = timeStr(S.startAt);
+    $('sElapsed').textContent = fmt(S.total - S.left);
+  }
+  const label = S.paused ? '다시' : '시작';
+  $('startBtn').textContent = label;
+  if(pipEl) pipEl.pause.textContent = S.running ? '일시중지' : label;
+}
+function setBtns(){
+  $('startBtn').disabled  = S.running;
+  $('pauseBtn').disabled  = !S.running;
+  $('cancelBtn').disabled = !(S.running || S.paused);
+  $('doneBtn').disabled   = !(S.running || S.paused);
+  $('editBtn').disabled   = S.running;
+  $('stats').classList.toggle('on', S.running || S.paused);
+  render();
+}
+
+/* ---------- 타이머 ---------- */
+function tick(){
+  S.left--;
+  render();
+  if(S.left <= 0){ done(); }
+}
+function start(){
+  if(S.running) return;
+  if(!S.paused) S.startAt = new Date();
+  S.running = true; S.paused = false;
+  clearInterval(S.iv);
+  S.iv = setInterval(tick, 1000);
+  setBtns();
+}
+function pause(){
+  if(!S.running) return;
+  clearInterval(S.iv);
+  S.running = false; S.paused = true;
+  setBtns();
+}
+function reset(){
+  clearInterval(S.iv);
+  S.running = false; S.paused = false;
+  S.left = S.total; S.startAt = null;
+  setBtns();
+}
+function cancel(){
+  if(!(S.running || S.paused)) return;
+  reset();
+}
+function done(){
+  if(!(S.running || S.paused)) return;
+  clearInterval(S.iv);
+  const end = new Date();
+  const used = S.total - S.left;
+  save({
+    title:S.title,
+    date:dateStr(end),
+    start:S.startAt ? timeStr(S.startAt) : '-',
+    end:timeStr(end),
+    dur:fmt(used),
+    sec:used,
+    startISO:S.startAt ? S.startAt.toISOString() : null,
+    endISO:end.toISOString()
+  });
+  reset();
+  list();
+  toast('기록 저장 완료 ✓');
+}
+
+/* ---------- 기록 ---------- */
+const KEY='timerRecords';
+const load = () => { try{ return JSON.parse(localStorage.getItem(KEY)||'[]'); }catch(e){ return []; } };
+function save(r){ const a=load(); a.push(r); localStorage.setItem(KEY, JSON.stringify(a)); }
+
+function list(){
+  const a = load();
+  const box = $('reclist');
+  box.innerHTML='';
+  $('rec').classList.toggle('on', a.length>0);
+  $('cnt').textContent = a.length ? `${a.length}건` : '';
+  // 최신이 위로
+  a.slice().reverse().forEach(r=>{
+    const d = document.createElement('div');
+    d.className='line';
+    d.innerHTML = `<b>${esc(r.title)}</b> / ${r.date} / ${t24(r.startISO,r.start)} / ${t24(r.endISO,r.end)} / <span class="dur">${r.dur}</span>`;
+    box.appendChild(d);
+  });
+}
+function lineText(r){
+  return `${r.title} / ${r.date} / ${t24(r.startISO,r.start)} / ${t24(r.endISO,r.end)} / ${r.dur}`;
+}
+function dl(name, text, type){
+  const b = new Blob(['﻿'+text], {type});
+  const u = URL.createObjectURL(b);
+  const a = document.createElement('a');
+  a.href=u; a.download=name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(u), 1000);
+}
+function today(){ return new Date().toISOString().slice(0,10); }
+
+/* ---------- PiP 최소화 (항상 위) ---------- */
+async function minimize(){
+  if(pip){ pip.close(); return; }
+  if(!('documentPictureInPicture' in window)){
+    alert('이 브라우저는 "항상 위" 창을 지원하지 않습니다.\nChrome 또는 Edge(최신)에서 실행해 주세요.');
+    return;
+  }
+  pip = await documentPictureInPicture.requestWindow({width:230, height:118});
+  const d = pip.document;
+  d.body.innerHTML = `
+    <style>
+      *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,sans-serif}
+      body{background:#0b1020;color:#e6e9f2;display:flex;flex-direction:column;
+           align-items:center;justify-content:center;gap:8px;height:100vh;padding:8px;
+           -webkit-user-select:none;user-select:none}
+      #ttl{font-size:10px;color:#8b93ad;max-width:100%;overflow:hidden;
+           text-overflow:ellipsis;white-space:nowrap}
+      #t{font-size:30px;font-weight:800;letter-spacing:1px;color:#00e0a4;
+         font-variant-numeric:tabular-nums;line-height:1}
+      .row{display:flex;gap:6px;width:100%}
+      button{flex:1;padding:7px 4px;border:none;border-radius:8px;font-size:11px;
+             font-weight:700;color:#fff;cursor:pointer}
+      #p{background:#ffb020;color:#231a05}
+      #k{background:#00e0a4;color:#04241b}
+      #r{flex:0 0 30px;background:#252e4d;color:#8b93ad}
+      button:active{transform:scale(.95)}
+    </style>
+    <div id="ttl"></div>
+    <div id="t">00:00:00</div>
+    <div class="row">
+      <button id="p">일시중지</button>
+      <button id="k">완료</button>
+      <button id="r" title="원래 크기로">⤢</button>
+    </div>`;
+  d.getElementById('ttl').textContent = S.title;
+  pipEl = { time:d.getElementById('t'), pause:d.getElementById('p'), done:d.getElementById('k') };
+  d.getElementById('p').onclick = () => S.running ? pause() : start();
+  d.getElementById('k').onclick = () => { done(); pip.close(); };
+  d.getElementById('r').onclick = () => pip.close();
+  pip.addEventListener('pagehide', ()=>{ pip=null; pipEl=null; });
+  render();
+}
+
+/* ---------- 토스트 ---------- */
+function toast(msg){
+  const n=document.createElement('div');
+  n.style.cssText=`position:fixed;top:22px;left:50%;transform:translateX(-50%);
+    background:linear-gradient(135deg,#00e0a4,#00b4ff);color:#04241b;padding:12px 22px;
+    border-radius:12px;font-weight:800;font-size:13px;z-index:99999;
+    box-shadow:0 12px 30px rgba(0,224,164,.35)`;
+  n.textContent=msg;
+  document.body.appendChild(n);
+  setTimeout(()=>n.remove(), 2200);
+}
+
+/* ---------- 이벤트 ---------- */
+$('startBtn').onclick = start;
+$('pauseBtn').onclick = pause;
+$('cancelBtn').onclick = cancel;
+$('doneBtn').onclick = done;
+$('minBtn').onclick = minimize;
+$('fsBtn').onclick = () => $('card').classList.toggle('fs');
+
+document.querySelectorAll('.adjb button').forEach(b=>{
+  b.onclick = () => {
+    if(S.running || S.paused) return;
+    const n = S.left + Number(b.dataset.m)*60;
+    if(n > 0){ S.left = n; S.total = n; render(); }
+  };
+});
+
+$('editBtn').onclick = () => {
+  if(S.running) return;
+  $('title').classList.add('off');
+  $('titleInput').classList.add('on');
+  $('titleInput').focus(); $('titleInput').select();
+};
+function endEdit(ok){
+  $('titleInput').classList.remove('on');
+  $('title').classList.remove('off');
+  if(ok){ S.title = $('titleInput').value.trim() || '공부 시간'; }
+  $('title').textContent = S.title;
+  $('titleInput').value = S.title;
+  if(pip) pip.document.getElementById('ttl').textContent = S.title;
+}
+$('titleInput').onblur = () => endEdit(true);
+$('titleInput').onkeydown = e => {
+  if(e.key==='Enter') endEdit(true);
+  if(e.key==='Escape') endEdit(false);
+};
+
+$('txtBtn').onclick = () => {
+  const a=load(); if(!a.length) return alert('기록이 없습니다.');
+  dl(`타이머기록_${today()}.txt`, a.slice().reverse().map(lineText).join('\n'), 'text/plain;charset=utf-8');
+};
+$('jsonBtn').onclick = () => {
+  const a=load(); if(!a.length) return alert('기록이 없습니다.');
+  dl(`타이머기록_${today()}.json`, JSON.stringify(a.slice().reverse(),null,2), 'application/json');
+};
+$('clearBtn').onclick = () => {
+  if(confirm('모든 기록을 삭제할까요?')){ localStorage.removeItem(KEY); list(); }
+};
+
+document.addEventListener('keydown', e=>{
+  if(e.target.tagName==='INPUT') return;
+  if(e.code==='Space'){ e.preventDefault(); S.running ? pause() : start(); }
+  if(e.code==='Escape') $('card').classList.remove('fs');
+});
+
+/* ---------- 초기화 ---------- */
+list(); setBtns();
+</script>
+</body>
+</html>

@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>인쇄용 문제집 생성기 - 전기철도기사</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(','\\)'], ['$','$']],
+    displayMath: [['\\[','\\]'], ['$$','$$']],
+    processEscapes: true
+  },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&family=Noto+Sans+KR:wght@400;700&family=Noto+Sans+Mono+KR:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'맑은 고딕','Apple SD Gothic Neo','Malgun Gothic',Dotum,sans-serif;font-size:14px;background:#e4e8f0;color:#222;min-height:100vh}
+
+/* SCREENS */
+.screen{display:none;min-height:100vh}
+.screen.active{display:block}
+#screen-load.active{display:flex;align-items:center;justify-content:center;flex-direction:column;background:linear-gradient(150deg,#1a3263 0%,#2a5298 60%,#1a4a8a 100%)}
+
+/* LOAD */
+.load-card{background:white;border-radius:14px;padding:40px 44px;width:500px;box-shadow:0 12px 48px rgba(0,0,0,.35)}
+.load-logo{text-align:center;margin-bottom:6px;font-size:28px;font-weight:900;color:#1a3263;letter-spacing:-1px}
+.load-logo span{color:#4a90d9}
+.load-sub{text-align:center;color:#888;font-size:12px;margin-bottom:28px}
+.drop-zone{border:2.5px dashed #4a90d9;border-radius:10px;padding:36px 20px;text-align:center;cursor:pointer;background:#f7f9ff;transition:.2s}
+.drop-zone:hover,.drop-zone.drag-over{background:#eef2ff;border-color:#1a3263}
+.dz-icon{font-size:44px;margin-bottom:10px}
+.dz-text{color:#444;font-size:15px;font-weight:bold;margin-bottom:6px}
+.dz-sub{color:#aaa;font-size:12px}
+#file-input{display:none}
+.load-note{text-align:center;margin-top:18px;color:#aaa;font-size:11px;line-height:1.8}
+
+/* BUTTONS */
+.btn-primary{background:#1a3263;color:#fff;border:none;border-radius:7px;padding:10px 26px;font-size:14px;cursor:pointer;font-family:inherit;font-weight:bold;transition:.2s}
+.btn-primary:hover{background:#2a5298}
+.btn-secondary{background:#e8eaf0;color:#333;border:1.5px solid #ccc;border-radius:7px;padding:10px 26px;font-size:14px;cursor:pointer;font-family:inherit;transition:.2s}
+.btn-secondary:hover{background:#d5d8e0}
+
+/* LOADING OVERLAY */
+.loading-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:9999;flex-direction:column;color:#fff}
+.loading-overlay.active{display:flex}
+.spinner{width:50px;height:50px;border:4px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;margin-bottom:14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loading-msg{font-size:15px}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:1000}
+.modal-overlay.active{display:flex}
+.modal-box{background:#fff;border-radius:14px;padding:36px;width:420px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.35)}
+.modal-title{font-size:18px;font-weight:bold;color:#1a3263;margin-bottom:12px}
+.modal-text{color:#555;margin-bottom:26px;line-height:1.7;font-size:14px;white-space:pre-line}
+.modal-actions{display:flex;gap:12px;justify-content:center}
+
+/* FIELD MAP SCREEN */
+#screen-fieldmap{background:#e4e8f0;padding:28px}
+.fm-container{max-width:820px;margin:0 auto;background:#fff;border-radius:12px;padding:36px;box-shadow:0 2px 16px rgba(0,0,0,.1)}
+.screen-title{font-size:20px;font-weight:900;color:#1a3263;margin-bottom:8px}
+.screen-desc{color:#777;font-size:13px;margin-bottom:24px}
+.nt-row{margin-bottom:20px}
+.nt-row label{display:block;font-weight:bold;color:#444;font-size:13px;margin-bottom:6px}
+.nt-row select,.nt-row input[type=file]{padding:8px 12px;border:1.5px solid #ccc;border-radius:7px;font-size:13px;min-width:320px}
+.fm-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:22px}
+.fm-row label{display:block;font-weight:bold;font-size:12px;color:#555;margin-bottom:5px}
+.fm-row select{width:100%;padding:7px 10px;border:1.5px solid #ccc;border-radius:6px;font-size:13px}
+.fm-preview{background:#f7f9ff;border:1.5px solid #dee3f0;border-radius:10px;padding:18px;margin-bottom:22px}
+.fm-preview-title{font-weight:bold;color:#333;margin-bottom:12px;font-size:13px}
+.preview-q{font-size:14px;line-height:1.8;margin-bottom:14px;color:#222}
+.preview-opts{display:flex;flex-direction:column;gap:7px}
+.preview-opt{display:flex;align-items:center;gap:10px;padding:7px 12px;background:#fff;border-radius:6px;border:1.5px solid #ddd;font-size:13px}
+.opt-circle{width:26px;height:26px;border-radius:50%;background:#1a3263;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;flex-shrink:0}
+.fm-actions{display:flex;gap:12px;justify-content:flex-end}
+
+/* PRINT-SETUP SCREEN */
+#screen-setup{background:#e4e8f0;padding:28px}
+.setup-container{max-width:820px;margin:0 auto;background:#fff;border-radius:12px;padding:36px;box-shadow:0 2px 16px rgba(0,0,0,.1)}
+.setup-section{margin-bottom:30px}
+.section-title{font-size:15px;font-weight:bold;color:#333;margin-bottom:14px;padding-bottom:8px;border-bottom:2.5px solid #e4e8f0}
+.deck-table{width:100%;border-collapse:collapse;font-size:13px}
+.deck-table th{background:#1a3263;color:#fff;padding:10px 12px;text-align:left;font-weight:normal}
+.deck-table th:not(:first-child){text-align:center}
+.deck-table td{padding:10px 12px;border-bottom:1px solid #eee;vertical-align:middle}
+.deck-table tr:hover td{background:#f7f9ff}
+.deck-table td:not(:first-child):not(:nth-child(2)){text-align:center}
+.deck-table input[type="checkbox"]{width:17px;height:17px;cursor:pointer}
+.deck-table input[type="number"]{width:72px;padding:5px 8px;border:1.5px solid #ccc;border-radius:5px;text-align:center;font-size:13px}
+.deck-table input[type="text"]{width:150px;padding:5px 8px;border:1.5px solid #ccc;border-radius:5px;font-size:13px}
+.total-count{font-weight:bold;color:#1a3263;margin-top:10px;font-size:13px}
+.setup-actions{display:flex;gap:12px;justify-content:flex-end;margin-top:28px}
+
+.doctype-grid{display:flex;flex-direction:column;gap:10px}
+.doctype-opt{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border:1.5px solid #ddd;border-radius:8px;cursor:pointer;transition:.15s}
+.doctype-opt:hover{border-color:#4a90d9;background:#f7f9ff}
+.doctype-opt.sel{border-color:#1a3263;background:#eef2ff}
+.doctype-opt input{margin-top:3px;width:16px;height:16px;flex-shrink:0}
+.doctype-label{font-weight:bold;font-size:13.5px;color:#222}
+.doctype-desc{font-size:11.5px;color:#888;margin-top:2px}
+
+/* PREVIEW / PRINT SCREEN */
+#screen-preview{background:#9199a8}
+.preview-toolbar{position:sticky;top:0;z-index:20;background:#1a3263;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;gap:14px;box-shadow:0 2px 10px rgba(0,0,0,.2);flex-wrap:wrap}
+.preview-toolbar .tb-title{font-weight:bold;font-size:14px;flex-shrink:0}
+.preview-toolbar .tb-hint{font-size:11px;color:#cfe0ff;flex:1;min-width:220px}
+.preview-toolbar .tb-actions{display:flex;gap:10px;flex-shrink:0}
+.tb-btn{padding:8px 18px;border:none;border-radius:6px;font-size:13px;font-weight:bold;cursor:pointer;font-family:inherit}
+.tb-btn.print{background:#3a8a8a;color:#fff}
+.tb-btn.print:hover{background:#2a7070}
+.tb-btn.back{background:#e8eaf0;color:#333}
+.tb-btn.back:hover{background:#d5d8e0}
+
+#pages-container{padding:22px 0 40px}
+
+/* A4 페이지(화면에서도 실제 인쇄될 페이지 단위로 분리해서 보여줌) */
+.a4-page{width:210mm;min-height:297mm;margin:0 auto 22px;background:#fff;box-shadow:0 4px 18px rgba(0,0,0,.3);padding:14mm 12mm;box-sizing:border-box}
+.page-header{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #111;padding-bottom:6px;margin-bottom:12px}
+.page-header .ph-title{font-size:12px;font-weight:900;color:#111}
+.page-header .ph-meta{font-size:12px;color:#777}
+
+.subj-header{font-size:12px;font-weight:900;background:#1a3263;color:#fff;padding:7px 12px;border-radius:4px;margin:0 0 10px;break-after:avoid;break-inside:avoid}
+
+.a4-cols{display:flex;gap:9mm;align-items:flex-start}
+.a4-col{flex:1;min-width:0}
+
+.q-block{break-inside:avoid;margin-bottom:20px;padding-bottom:11px;border-bottom:1px dashed #ddd;font-size:12px;line-height:1.6}
+.q-block:last-child{border-bottom:none;margin-bottom:0}
+.q-headline{display:flex;align-items:baseline;gap:5px;margin-bottom:3px}
+.q-num{font-weight:900;font-size:12px;color:#111}
+.q-freq{font-size:12px;color:#888;font-family:monospace}
+.q-front{margin:2px 0 6px;color:#111;word-break:keep-all;font-size:12px}
+.q-opts{display:flex;flex-direction:column;gap:2px;padding-left:2px;margin-bottom:8px}
+.q-opt{display:flex;gap:5px;color:#222;font-size:12px}
+.q-opt .qc{flex-shrink:0;width:1.3em}
+.q-opt.correct{color:#c0392b;font-weight:bold}
+.ans-line{margin-top:2px;font-size:12px;color:#c0392b;font-weight:bold}
+.hint-box,.exp-box{margin-top:6px;padding:6px 9px;border-radius:5px;font-size:12px;line-height:1.55}
+.hint-box{border:1.3px solid #e6b800;background:#fff9e0;color:#6b5600}
+.exp-box{border:1.3px solid #7fb3f0;background:#eef5ff;color:#1a3a63}
+.q-block img{max-width:70%;height:auto}
+
+/* ── 폰트 선택 클래스 ── */
+.font-noto-serif{font-family:'Noto Serif KR',serif !important}
+.font-noto-sans{font-family:'Noto Sans KR','Apple SD Gothic Neo',sans-serif !important}
+.font-malgun{font-family:'맑은 고딕','Malgun Gothic',sans-serif !important}
+.font-noto-mono{font-family:'Noto Sans Mono KR',monospace !important}
+
+@page{size:A4;margin:0}
+@media print{
+  .no-print{display:none !important}
+  body{background:#fff}
+  #pages-container{padding:0}
+  .a4-page{box-shadow:none;margin:0 auto;break-after:page;width:auto;min-height:auto}
+  .a4-page:last-child{break-after:auto}
+}
+</style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loading-overlay">
+  <div class="spinner"></div>
+  <div id="loading-msg">파일을 불러오는 중...</div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-box">
+    <div class="modal-title" id="modal-title">확인</div>
+    <div class="modal-text" id="modal-text"></div>
+    <div class="modal-actions" id="modal-actions"></div>
+  </div>
+</div>
+
+<!-- ===== SCREEN 1: LOAD ===== -->
+<div class="screen active" id="screen-load">
+  <div class="load-card">
+    <div class="load-logo">🖨️ 인쇄용 <span>문제집 생성기</span></div>
+    <div class="load-sub">전기철도기사 · Anki 덱 기반 2단 시험지/해설지 PDF</div>
+    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+      <div class="dz-icon">📂</div>
+      <div class="dz-text">Anki 덱 파일 불러오기</div>
+      <div class="dz-sub">드래그 &amp; 드롭하거나 클릭하세요 · .apkg 파일만 지원</div>
+    </div>
+    <input type="file" id="file-input" accept=".apkg">
+    <div class="load-note">
+      ⚠️ 인터넷 연결 필요 (sql.js 라이브러리 CDN 로드)<br>
+      🔒 파일은 브라우저 내에서만 처리되며 외부 전송 없음
+    </div>
+  </div>
+</div>
+
+<!-- ===== SCREEN 2: FIELD MAP ===== -->
+<div class="screen" id="screen-fieldmap">
+  <div class="fm-container">
+    <div class="screen-title">📋 필드 매핑 설정</div>
+    <div class="screen-desc">Anki 카드의 어느 필드가 문제·보기①②③④·정답·해설·힌트·빈도인지 지정하세요. 자동 감지 후 필요 시 수동 조정하세요.</div>
+    <div class="nt-row">
+      <label>📋 문제 세트 JSON 불러오기 (선택사항 — exam_A.json, ○○_100.json 등)</label>
+      <input type="file" id="json-file-input" accept=".json">
+      <div style="font-size:11px;color:#888;margin-top:6px" id="json-status"></div>
+    </div>
+    <div class="nt-row">
+      <label>노트 유형 선택</label>
+      <select id="nt-select" onchange="onNtChange()"></select>
+    </div>
+    <div class="fm-grid">
+      <div class="fm-row"><label>📝 문제 필드</label><select id="fm-q"></select></div>
+      <div class="fm-row"><label>① 보기 1</label><select id="fm-o1"></select></div>
+      <div class="fm-row"><label>② 보기 2</label><select id="fm-o2"></select></div>
+      <div class="fm-row"><label>③ 보기 3</label><select id="fm-o3"></select></div>
+      <div class="fm-row"><label>④ 보기 4</label><select id="fm-o4"></select></div>
+      <div class="fm-row"><label>✅ 정답 필드 <span style="font-weight:normal;color:#aaa">(1~4 숫자)</span></label><select id="fm-ans"></select></div>
+      <div class="fm-row"><label>💡 해설 필드 <span style="font-weight:normal;color:#aaa">(선택)</span></label><select id="fm-exp"></select></div>
+      <div class="fm-row"><label>🔑 힌트 필드 <span style="font-weight:normal;color:#aaa">(선택)</span></label><select id="fm-hint"></select></div>
+      <div class="fm-row"><label>📚 과목 필드 <span style="font-weight:normal;color:#e05">(★ 자동분류 핵심)</span></label><select id="fm-subj"></select></div>
+      <div class="fm-row"><label>📅 출처/회차 필드 <span style="font-weight:normal;color:#aaa">(선택)</span></label><select id="fm-src"></select></div>
+      <div class="fm-row"><label>⭐ 빈도 필드 <span style="font-weight:normal;color:#aaa">([빈도] 표기용, 선택)</span></label><select id="fm-freq"></select></div>
+    </div>
+    <div class="fm-preview">
+      <div class="fm-preview-title">미리보기 (첫 번째 문제)</div>
+      <div class="preview-q" id="preview-q">—</div>
+      <div class="preview-opts" id="preview-opts"></div>
+    </div>
+    <div class="fm-actions">
+      <button class="btn-secondary" onclick="showScreen('load')">← 이전</button>
+      <button class="btn-secondary" onclick="updatePreview()">🔄 미리보기 갱신</button>
+      <button class="btn-primary" onclick="goSetup()">다음 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SCREEN 3: PRINT SETUP ===== -->
+<div class="screen" id="screen-setup">
+  <div class="setup-container">
+    <div class="screen-title">🖨️ 인쇄 설정</div>
+
+    <div class="setup-section">
+      <div class="section-title">시험지 유형 선택</div>
+      <div class="doctype-grid" id="doctype-grid">
+        <label class="doctype-opt sel">
+          <input type="radio" name="doctype" value="exam" checked>
+          <div>
+            <div class="doctype-label">시험용</div>
+            <div class="doctype-desc">문제 · 보기만 표시, 정답 표시 없음 (실전 연습용)</div>
+          </div>
+        </label>
+        <label class="doctype-opt">
+          <input type="radio" name="doctype" value="hint">
+          <div>
+            <div class="doctype-label">해설용 — 힌트만</div>
+            <div class="doctype-desc">정답 강조 표시 + 힌트만 함께 표시</div>
+          </div>
+        </label>
+        <label class="doctype-opt">
+          <input type="radio" name="doctype" value="exp">
+          <div>
+            <div class="doctype-label">해설용 — 해설만</div>
+            <div class="doctype-desc">정답 강조 표시 + 해설만 함께 표시</div>
+          </div>
+        </label>
+        <label class="doctype-opt">
+          <input type="radio" name="doctype" value="hintexp">
+          <div>
+            <div class="doctype-label">해설용 — 힌트 + 해설</div>
+            <div class="doctype-desc">정답 강조 표시 + 힌트와 해설 모두 표시</div>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <div class="setup-section">
+      <div class="section-title">📝 폰트 선택</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <label style="display:flex;align-items:center;gap:8px;padding:12px;border:1.5px solid #ddd;border-radius:7px;cursor:pointer;transition:.15s;" onchange="updateFontPreview()">
+          <input type="radio" name="font-select" value="noto-serif" id="font-serif">
+          <div>
+            <div style="font-weight:600;font-size:13px;">Noto Serif KR</div>
+            <div style="font-size:11px;color:#888;">serif (명조체)</div>
+          </div>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;padding:12px;border:1.5px solid #ddd;border-radius:7px;cursor:pointer;transition:.15s;" onchange="updateFontPreview()">
+          <input type="radio" name="font-select" value="noto-sans" id="font-sans" checked>
+          <div>
+            <div style="font-weight:600;font-size:13px;">Noto Sans KR</div>
+            <div style="font-size:11px;color:#888;">sans-serif (고딕체)</div>
+          </div>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;padding:12px;border:1.5px solid #ddd;border-radius:7px;cursor:pointer;transition:.15s;" onchange="updateFontPreview()">
+          <input type="radio" name="font-select" value="malgun" id="font-malgun">
+          <div>
+            <div style="font-weight:600;font-size:13px;">맑은 고딕</div>
+            <div style="font-size:11px;color:#888;">system font</div>
+          </div>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;padding:12px;border:1.5px solid #ddd;border-radius:7px;cursor:pointer;transition:.15s;" onchange="updateFontPreview()">
+          <input type="radio" name="font-select" value="noto-sans-mono" id="font-mono">
+          <div>
+            <div style="font-weight:600;font-size:13px;">Noto Sans Mono KR</div>
+            <div style="font-size:11px;color:#888;">monospace</div>
+          </div>
+        </label>
+      </div>
+      <div style="margin-top:12px;padding:12px;background:#f9f9f9;border-radius:7px;border:1px solid #eee;font-size:12px;">
+        <span style="font-weight:600;">미리보기:</span> <span id="font-preview" style="font-size:14px;margin-left:6px;">문제 : ① 보기 ② 보기 ③ 보기 ④ 보기</span>
+      </div>
+    </div>
+
+    <div class="setup-section">
+      <div class="section-title">과목별 문제 수 설정</div>
+      <p id="setup-group-mode" style="font-size:12px;margin-bottom:10px;font-weight:bold"></p>
+      <table class="deck-table" id="deck-table">
+        <thead>
+          <tr>
+            <th style="width:46px">선택</th>
+            <th>덱 이름</th>
+            <th style="width:72px">총 문제</th>
+            <th style="width:86px">출제 수</th>
+            <th style="width:150px">과목명(표시용)</th>
+          </tr>
+        </thead>
+        <tbody id="deck-tbody"></tbody>
+      </table>
+      <div class="total-count" id="total-count">총 출제 예정: 0문제</div>
+    </div>
+
+    <div class="setup-actions">
+      <button class="btn-secondary" onclick="showScreen('fieldmap')">← 이전</button>
+      <button class="btn-primary" onclick="generateDocument()">📄 문서 생성 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SCREEN 4: PREVIEW / PRINT ===== -->
+<div class="screen" id="screen-preview">
+  <div class="preview-toolbar no-print">
+    <div class="tb-title" id="pv-title">미리보기</div>
+    <div class="tb-hint">🖨️ 인쇄 대화상자의 "대상"에서 <b>Microsoft Print to PDF</b>를 선택하세요 (웹페이지에서 자동 지정은 불가능합니다)</div>
+    <div class="tb-actions">
+      <button class="tb-btn back" onclick="showScreen('setup')">← 설정으로</button>
+      <button class="tb-btn print" onclick="window.print()">🖨️ 인쇄 / PDF로 저장</button>
+    </div>
+  </div>
+  <div id="pages-container"></div>
+  <div id="measure-box" style="position:absolute;left:-9999px;top:0;visibility:hidden"></div>
+</div>
+
+<script>
+/* ================================================================
+   인쇄용 문제집 생성기 (Anki .apkg → 2단 시험지/해설지 PDF)
+================================================================ */
+
+const S = {
+  dbData: null,
+  imgMap: {},
+  fm: { q:0, o1:1, o2:2, o3:3, o4:4, ans:5, exp:6, hint:7, subj:8, src:9, freq:12 },
+  deckGroups: [],
+  selectedProblemIds: null,
+  docSet: [],      // [{label, name, notes:[...]}]
+  docType: 'exam'
+};
+
+let selectedFont = localStorage.getItem('examPrintFont') || 'noto-sans';
+
+/* ---------- 폰트 함수 ---------- */
+function updateFontPreview() {
+  const selected = document.querySelector('input[name="font-select"]:checked').value;
+  selectedFont = selected;
+  localStorage.setItem('examPrintFont', selectedFont);
+
+  const preview = document.getElementById('font-preview');
+  const fontFamilies = {
+    'noto-serif': "'Noto Serif KR', serif",
+    'noto-sans': "'Noto Sans KR', sans-serif",
+    'malgun': "'맑은 고딕', sans-serif",
+    'noto-sans-mono': "'Noto Sans Mono KR', monospace"
+  };
+  preview.style.fontFamily = fontFamilies[selected];
+}
+
+function applyFontToPages() {
+  const fontClasses = {
+    'noto-serif': 'font-noto-serif',
+    'noto-sans': 'font-noto-sans',
+    'malgun': 'font-malgun',
+    'noto-sans-mono': 'font-noto-mono'
+  };
+
+  document.querySelectorAll('.a4-page').forEach(page => {
+    page.classList.remove('font-noto-serif', 'font-noto-sans', 'font-malgun', 'font-noto-mono');
+    page.classList.add(fontClasses[selectedFont]);
+  });
+}
+
+/* ---------- UI HELPERS ---------- */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+}
+function showLoading(msg='처리 중...') {
+  document.getElementById('loading-msg').textContent=msg;
+  document.getElementById('loading-overlay').classList.add('active');
+}
+function hideLoading() { document.getElementById('loading-overlay').classList.remove('active'); }
+function showModal(title,text,btns) {
+  document.getElementById('modal-title').textContent=title;
+  document.getElementById('modal-text').textContent=text;
+  const ac=document.getElementById('modal-actions');
+  ac.innerHTML='';
+  btns.forEach(b=>{
+    const el=document.createElement('button');
+    el.className=b.cls||'btn-secondary';
+    el.textContent=b.label;
+    el.onclick=()=>{ hideModal(); b.fn&&b.fn(); };
+    ac.appendChild(el);
+  });
+  document.getElementById('modal').classList.add('active');
+}
+function hideModal() { document.getElementById('modal').classList.remove('active'); }
+
+/* ---------- FILE LOAD ---------- */
+function initDrop() {
+  const dz=document.getElementById('drop-zone');
+  const fi=document.getElementById('file-input');
+  dz.addEventListener('dragover',e=>{ e.preventDefault(); dz.classList.add('drag-over'); });
+  dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
+  dz.addEventListener('drop',e=>{ e.preventDefault(); dz.classList.remove('drag-over'); const f=e.dataTransfer.files[0]; if(f) handleFile(f); });
+  fi.addEventListener('change',e=>{ if(e.target.files[0]) handleFile(e.target.files[0]); fi.value=''; });
+}
+
+async function handleFile(file) {
+  if (!file.name.endsWith('.apkg')) {
+    showModal('파일 오류','.apkg 파일만 지원됩니다.',[{label:'확인',cls:'btn-primary'}]);
+    return;
+  }
+  showLoading('Anki 덱 파일 압축 해제 중...');
+  try {
+    const zip = await JSZip.loadAsync(file);
+
+    showLoading('이미지 파일 추출 중...');
+    S.imgMap = {};
+    const mediaManifest = {};
+    const mediaFile = zip.file('media');
+    if (mediaFile) {
+      try {
+        const mediaJson = JSON.parse(await mediaFile.async('string'));
+        Object.assign(mediaManifest, mediaJson);
+      } catch(e) { console.warn('media manifest:', e); }
+    }
+    const imgExts = /\.(png|jpg|jpeg|gif|svg|webp|bmp)$/i;
+    const mimeMap = { png:'image/png', jpg:'image/jpeg', jpeg:'image/jpeg',
+                      gif:'image/gif', svg:'image/svg+xml', webp:'image/webp', bmp:'image/bmp' };
+    for (const zipName of Object.keys(zip.files)) {
+      const zipEntry = zip.files[zipName];
+      if (zipEntry.dir) continue;
+      const realName = mediaManifest[zipName] || zipName;
+      if (!imgExts.test(realName)) continue;
+      try {
+        const blob = await zipEntry.async('blob');
+        const ext = realName.split('.').pop().toLowerCase();
+        const typedBlob = new Blob([blob], { type: mimeMap[ext] || 'image/png' });
+        const url = URL.createObjectURL(typedBlob);
+        S.imgMap[realName] = url;
+        if (zipName !== realName) S.imgMap[zipName] = url;
+      } catch(e) { console.warn('img extract fail:', zipName, e); }
+    }
+
+    const names = ['collection.anki21','collection.anki2'];
+    let buf=null;
+    for (const n of names) { const f=zip.file(n); if(f){ buf=await f.async('arraybuffer'); break; } }
+    if (!buf) throw new Error('.apkg 내에서 collection DB를 찾을 수 없습니다.\n(지원 형식: collection.anki21 / collection.anki2)');
+
+    showLoading('데이터베이스 파싱 중...');
+    const SQL = await initSqlJs({ locateFile: f=>`https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/${f}` });
+    const db = new SQL.Database(new Uint8Array(buf));
+
+    S.dbData = parseDB(db);
+    hideLoading();
+    if (S.dbData.notes.length===0) throw new Error('문제(노트)가 없는 덱입니다.');
+    renderFieldMap();
+    showScreen('fieldmap');
+  } catch(e) {
+    hideLoading();
+    showModal('오류',e.message,[{label:'확인',cls:'btn-primary'}]);
+    console.error(e);
+  }
+}
+
+function parseDB(db) {
+  let decksJson={}, modelsJson={};
+  try {
+    const r=db.exec("SELECT decks,models FROM col LIMIT 1");
+    if (r.length) { decksJson=JSON.parse(r[0].values[0][0]||'{}'); modelsJson=JSON.parse(r[0].values[0][1]||'{}'); }
+  } catch(e) { console.warn('col parse:',e); }
+
+  const deckMap={};
+  for (const [id,d] of Object.entries(decksJson)) deckMap[id]=d.name||'Unknown';
+
+  const modelMap={};
+  for (const [id,m] of Object.entries(modelsJson)) {
+    if (!m.flds) continue;
+    modelMap[id]={ name:m.name||'Unknown', fields:m.flds.slice().sort((a,b)=>(a.ord||0)-(b.ord||0)).map(f=>f.name||`Field${f.ord}`) };
+  }
+
+  let notes=[];
+  try {
+    const r=db.exec(`SELECT n.id,n.mid,n.flds,n.tags,MIN(c.did) as did FROM notes n JOIN cards c ON c.nid=n.id GROUP BY n.id`);
+    if (r.length) {
+      notes=r[0].values.map(([id,mid,flds,tags,did])=>({
+        id:String(id), mid:String(mid),
+        fields:(flds||'').split('\x1f'),
+        tags:(tags||'').trim().split(/\s+/).filter(Boolean),
+        deckId:String(did),
+        deckName:deckMap[String(did)]||'기본'
+      }));
+    }
+  } catch(e) { console.error('notes parse:',e); }
+
+  return { notes, deckMap, modelMap };
+}
+
+/* ---------- JSON 문제세트 로드 ---------- */
+function initJsonLoad() {
+  const jfi=document.getElementById('json-file-input');
+  if(jfi) {
+    jfi.addEventListener('change',async e=>{
+      if(!e.target.files[0]) return;
+      try {
+        const text=await e.target.files[0].text();
+        const data=JSON.parse(text);
+        if(!data.problem_ids || !Array.isArray(data.problem_ids)) throw new Error('problem_ids 배열이 없습니다.');
+        S.selectedProblemIds=data.problem_ids.map(id=>String(id));
+        const st=document.getElementById('json-status');
+        const label = data.exam || data.subject || '문제세트';
+        if(st) st.textContent=`✅ 로드됨: ${label} (${data.total||S.selectedProblemIds.length}문제)`;
+      } catch(err) {
+        const st=document.getElementById('json-status');
+        if(st) st.textContent=`❌ 오류: ${err.message}`;
+        S.selectedProblemIds=null;
+      }
+      e.target.value='';
+    });
+  }
+}
+
+/* ---------- FIELD MAPPING ---------- */
+function renderFieldMap() {
+  const { notes, modelMap } = S.dbData;
+  const mids=[...new Set(notes.map(n=>n.mid))];
+  const ntSel=document.getElementById('nt-select');
+  ntSel.innerHTML='';
+  mids.forEach(mid=>{
+    const opt=document.createElement('option');
+    opt.value=mid;
+    const m=modelMap[mid];
+    opt.textContent=m?`${m.name}  (${notes.filter(n=>n.mid===mid).length}개)`:`노트유형 ${mid}`;
+    ntSel.appendChild(opt);
+  });
+  autoDetect(mids[0]);
+  populateSelectors(mids[0]);
+  updatePreview();
+  initJsonLoad();
+}
+
+function onNtChange() {
+  const mid=document.getElementById('nt-select').value;
+  autoDetect(mid);
+  populateSelectors(mid);
+  updatePreview();
+}
+
+function autoDetect(mid) {
+  const { modelMap } = S.dbData;
+  const m=modelMap[mid];
+  if (!m) return;
+  const L=m.fields.map(f=>f.toLowerCase());
+  const fm=S.fm;
+  fm.q=Math.max(0, L.findIndex(f=>/문제|question|front/.test(f)));
+  const tryOpts=(pats)=>{
+    const idxs=pats.map(p=>L.findIndex(f=>p.test(f)));
+    if (idxs.every(i=>i>=0)) { [fm.o1,fm.o2,fm.o3,fm.o4]=idxs; return true; }
+    return false;
+  };
+  if (!tryOpts([/보기.?1|선택.?1|choice.?1|opt.?1/i,/보기.?2|선택.?2|choice.?2|opt.?2/i,/보기.?3|선택.?3|choice.?3|opt.?3/i,/보기.?4|선택.?4|choice.?4|opt.?4/i])) {
+    const q=fm.q;
+    fm.o1=(q+1)%m.fields.length; fm.o2=(q+2)%m.fields.length;
+    fm.o3=(q+3)%m.fields.length; fm.o4=(q+4)%m.fields.length;
+  }
+  const ai=L.findIndex(f=>/정답|answer|correct/.test(f));
+  fm.ans=ai>=0?ai:Math.min(5,m.fields.length-1);
+  const ei=L.findIndex(f=>/해설|explain/.test(f));
+  fm.exp=ei>=0?ei:-1;
+  const hi=L.findIndex(f=>/힌트|hint|keyword/.test(f));
+  fm.hint=hi>=0?hi:-1;
+  const si=L.findIndex(f=>/과목|subject|category|과\/목/.test(f));
+  fm.subj=si>=0?si:-1;
+  const ri=L.findIndex(f=>/출처|회차|year|source|연도/.test(f));
+  fm.src=ri>=0?ri:-1;
+  const fi=L.findIndex(f=>/빈도|freq/.test(f));
+  fm.freq=fi>=0?fi:-1;
+}
+
+function populateSelectors(mid) {
+  const { modelMap } = S.dbData;
+  const m=modelMap[mid];
+  const fields=m?m.fields:[];
+  const IDS=['fm-q','fm-o1','fm-o2','fm-o3','fm-o4','fm-ans','fm-exp','fm-hint','fm-subj','fm-src','fm-freq'];
+  const KEYS=['q','o1','o2','o3','o4','ans','exp','hint','subj','src','freq'];
+  const OPTIONAL_IDX=[6,7,8,9,10]; // exp, hint, subj, src, freq 는 (없음) 옵션 포함
+  IDS.forEach((sid,i)=>{
+    const sel=document.getElementById(sid);
+    sel.innerHTML='';
+    if (OPTIONAL_IDX.includes(i)) { const op=document.createElement('option'); op.value='-1'; op.textContent='(없음)'; sel.appendChild(op); }
+    fields.forEach((fname,idx)=>{ const op=document.createElement('option'); op.value=idx; op.textContent=`[${idx}] ${fname}`; sel.appendChild(op); });
+    sel.value=String(S.fm[KEYS[i]]);
+  });
+}
+
+function readFm() {
+  const KEYS=['q','o1','o2','o3','o4','ans','exp','hint','subj','src','freq'];
+  const IDS=['fm-q','fm-o1','fm-o2','fm-o3','fm-o4','fm-ans','fm-exp','fm-hint','fm-subj','fm-src','fm-freq'];
+  KEYS.forEach((k,i)=>{ S.fm[k]=parseInt(document.getElementById(IDS[i]).value); });
+}
+
+function updatePreview() {
+  readFm();
+  const mid=document.getElementById('nt-select').value;
+  const note=S.dbData.notes.find(n=>n.mid===mid);
+  if (!note) return;
+  document.getElementById('preview-q').innerHTML=cleanHtml(note.fields[S.fm.q]||'(비어있음)');
+  const OPT_KEYS=['o1','o2','o3','o4'];
+  const CIRCLES=['①','②','③','④'];
+  document.getElementById('preview-opts').innerHTML=OPT_KEYS.map((k,i)=>`
+    <div class="preview-opt">
+      <div class="opt-circle">${CIRCLES[i]}</div>
+      <span>${cleanHtml(note.fields[S.fm[k]]||'(없음)')}</span>
+    </div>`).join('');
+}
+
+function goSetup() {
+  readFm();
+  renderSetup();
+  showScreen('setup');
+  document.querySelectorAll('.doctype-opt').forEach(el=>{
+    el.addEventListener('click',()=>{
+      document.querySelectorAll('.doctype-opt').forEach(x=>x.classList.remove('sel'));
+      el.classList.add('sel');
+    });
+  });
+}
+
+/* ---------- SETUP ---------- */
+function renderSetup() {
+  const { notes } = S.dbData;
+  const fm = S.fm;
+  const groups = {};
+
+  let filteredNotes = notes;
+  if (S.selectedProblemIds && S.selectedProblemIds.length > 0) {
+    const idSet = new Set(S.selectedProblemIds);
+    filteredNotes = notes.filter(n => idSet.has(n.id));
+  }
+
+  const useSubjField = fm.subj >= 0;
+
+  filteredNotes.forEach(n => {
+    let key, label;
+    if (useSubjField) {
+      label = (n.fields[fm.subj] || '').trim() || '미분류';
+      key = label;
+    } else {
+      key = n.deckId;
+      const parts = (n.deckName || '').split('::');
+      label = parts[parts.length - 1] || n.deckName;
+    }
+    if (!groups[key]) groups[key] = { name: label, notes: [] };
+    groups[key].notes.push(n);
+  });
+
+  S.deckGroups = Object.values(groups).filter(g => g.notes.length > 0);
+  S.deckGroups.sort((a, b) => subjectOrder(a.name) - subjectOrder(b.name));
+
+  const modeEl = document.getElementById('setup-group-mode');
+  if (modeEl) {
+    modeEl.textContent = useSubjField
+      ? `✅ 과목 필드(Field[${fm.subj}]) 기준으로 ${S.deckGroups.length}개 과목 자동 분류됨` + (S.selectedProblemIds?` · JSON 필터 적용됨(${filteredNotes.length}문제)`:'')
+      : `⚠️ 과목 필드 미설정 — 덱 이름 기준으로 분류됨`;
+    modeEl.style.color = useSubjField ? '#145a14' : '#884400';
+  }
+
+  const tbody = document.getElementById('deck-tbody');
+  tbody.innerHTML = '';
+  S.deckGroups.forEach((g, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="text-align:center"><input type="checkbox" id="dk-cb-${i}" onchange="updateTotal()" checked></td>
+      <td style="font-weight:bold">${g.name}</td>
+      <td>${g.notes.length}</td>
+      <td><input type="number" id="dk-cnt-${i}" value="${Math.min(20, g.notes.length)}" min="1" max="${g.notes.length}" onchange="updateTotal()"></td>
+      <td><input type="text" id="dk-lbl-${i}" value="${g.name}"></td>`;
+    tbody.appendChild(tr);
+  });
+  updateTotal();
+}
+
+function updateTotal() {
+  let t=0;
+  S.deckGroups.forEach((_,i)=>{
+    const cb=document.getElementById(`dk-cb-${i}`);
+    const c=parseInt(document.getElementById(`dk-cnt-${i}`)?.value||0);
+    if(cb?.checked && c>0){ t+=c; }
+  });
+  document.getElementById('total-count').textContent=`총 출제 예정: ${t}문제`;
+}
+
+/* ---------- 교시(과목) 순서 정의 ---------- */
+const SUBJECT_ORDER = ['전기철도', '구조', '전기자기', '전력'];
+function subjectOrder(name) {
+  const s = (name || '').replace(/\s/g, '');
+  for (let i = 0; i < SUBJECT_ORDER.length; i++) {
+    if (s.indexOf(SUBJECT_ORDER[i]) !== -1) return i;
+  }
+  return SUBJECT_ORDER.length;
+}
+
+/* ---------- 문서 생성 ---------- */
+function generateDocument() {
+  const docTypeEl = document.querySelector('input[name="doctype"]:checked');
+  S.docType = docTypeEl ? docTypeEl.value : 'exam';
+
+  const subs=[];
+  S.deckGroups.forEach((g,i)=>{
+    const cb=document.getElementById(`dk-cb-${i}`);
+    if (!cb?.checked) return;
+    const cnt=parseInt(document.getElementById(`dk-cnt-${i}`).value)||0;
+    const lbl=document.getElementById(`dk-lbl-${i}`).value.trim()||g.name;
+    if (cnt<=0||g.notes.length===0) return;
+    const sel=[...g.notes].slice(0,Math.min(cnt,g.notes.length));
+    subs.push({ label:lbl, name:g.name, notes:sel });
+  });
+  if (!subs.length) { showModal('알림','최소 하나의 과목을 선택하세요.',[{label:'확인',cls:'btn-primary'}]); return; }
+
+  subs.sort((a,b)=>subjectOrder(a.name)-subjectOrder(b.name));
+  S.docSet = subs;
+
+  showScreen('preview');
+  showLoading('페이지 나누는 중...');
+  // 화면이 실제로 그려진 뒤 측정해야 정확하므로 다음 프레임에 실행
+  requestAnimationFrame(()=>{
+    setTimeout(()=>{
+      renderDocument().finally(()=>{
+        applyFontToPages();
+        hideLoading();
+      });
+    }, 30);
+  });
+}
+
+/* ---------- 실측 기반 A4 페이지 나누기 ----------
+   전략: 문제 하나하나를 실제 DOM 요소로 만들어 숨김 측정용 컨테이너에 넣고
+   MathJax 렌더링까지 끝낸 뒤 실제 높이를 측정 → 2단 컬럼에 순서대로 채워 넣다가
+   컬럼이 다 차면 다음 컬럼/다음 페이지로 넘기는 방식으로 "진짜 페이지" 를 만든다.
+   이렇게 만든 .a4-page 는 화면에서도 종이 낱장처럼 분리되어 보이고,
+   인쇄 시에도 그 경계 그대로 페이지가 넘어간다(브라우저의 자동 컬럼-페이지 분할에 의존하지 않음). */
+async function renderDocument() {
+  const fm=S.fm;
+  const CIRCLES=['①','②','③','④'];
+  const FILLED=['❶','❷','❸','❹'];
+  const showAnswer = S.docType !== 'exam';
+  const showHint = S.docType==='hint' || S.docType==='hintexp';
+  const showExp = S.docType==='exp' || S.docType==='hintexp';
+
+  const typeLabelMap = {exam:'시험용', hint:'해설용(힌트)', exp:'해설용(해설)', hintexp:'해설용(힌트+해설)'};
+  const docLabel = `전기철도기사 필기 문제집 — ${typeLabelMap[S.docType]}`;
+  document.getElementById('pv-title').textContent = `미리보기 — ${typeLabelMap[S.docType]}`;
+
+  /* 1) 각 문제/과목헤더를 실제 DOM 요소로 생성 */
+  function buildQNode(n, qNum) {
+    const correct = parseAns(n.fields[fm.ans]);
+    const freqTxt = fm.freq>=0 ? cleanText(n.fields[fm.freq]) : '';
+
+    const optsHtml = ['o1','o2','o3','o4'].map((k,i)=>{
+      const num=i+1;
+      const txt=n.fields[fm[k]]||'';
+      const isCorrect = showAnswer && num===correct;
+      const circ = isCorrect ? FILLED[i] : CIRCLES[i];
+      return `<div class="q-opt${isCorrect?' correct':''}"><span class="qc">${circ}</span><span>${cleanHtml(txt)}</span></div>`;
+    }).join('');
+
+    let ansLine = '';
+    if (showAnswer) {
+      const correctTxt = (correct>=1&&correct<=4) ? cleanText(n.fields[fm[['o1','o2','o3','o4'][correct-1]]]) : '';
+      ansLine = `<div class="ans-line">정답: ${correct>=1&&correct<=4?FILLED[correct-1]:'?'} ${correctTxt}</div>`;
+    }
+    let hintHtml = '';
+    if (showHint && fm.hint>=0 && n.fields[fm.hint]) {
+      hintHtml = `<div class="hint-box">힌트: ${cleanHtml(n.fields[fm.hint])}</div>`;
+    }
+    let expHtml = '';
+    if (showExp && fm.exp>=0 && n.fields[fm.exp]) {
+      expHtml = `<div class="exp-box">💡 해설: ${cleanHtml(n.fields[fm.exp])}</div>`;
+    }
+
+    const div = document.createElement('div');
+    div.className = 'q-block';
+    div.innerHTML = `
+      <div class="q-headline"><span class="q-num">${qNum}.</span>${freqTxt?`<span class="q-freq">[${freqTxt}]</span>`:''}</div>
+      <div class="q-front">${cleanHtml(n.fields[fm.q]||'(문제 없음)')}</div>
+      <div class="q-opts">${optsHtml}</div>
+      ${ansLine}${hintHtml}${expHtml}`;
+    return div;
+  }
+  function buildHeaderNode(text) {
+    const div = document.createElement('div');
+    div.className = 'subj-header';
+    div.textContent = text;
+    return div;
+  }
+
+  /* 2) 숨김 측정 컨테이너에 실제 컬럼 폭(88.5mm)으로 전부 렌더 */
+  const measureBox = document.getElementById('measure-box');
+  measureBox.innerHTML = '';
+  const colWrap = document.createElement('div');
+  colWrap.style.width = '88.5mm';
+  colWrap.className = 'a4-col';
+  measureBox.appendChild(colWrap);
+
+  const items = []; // {node, type:'header'|'q'}
+  let qNum = 0;
+  S.docSet.forEach(sub=>{
+    const startNum = qNum+1;
+    items.push({ type:'header', node: buildHeaderNode(`${sub.label} (${sub.notes.length}문제, ${startNum}~${startNum+sub.notes.length-1}번)`) });
+    sub.notes.forEach(n=>{
+      qNum++;
+      items.push({ type:'q', node: buildQNode(n, qNum) });
+    });
+  });
+  items.forEach(it=>colWrap.appendChild(it.node));
+
+  // MathJax 렌더링이 끝나야 실제 높이가 정확함
+  await new Promise(res=>{
+    if (window.MathJax && MathJax.typesetPromise) {
+      MathJax.typesetPromise([colWrap]).then(res).catch(res);
+    } else { setTimeout(res, 300); }
+  });
+  await new Promise(res=>setTimeout(res, 50)); // 레이아웃 반영 대기
+
+  const heights = items.map(it=>it.node.getBoundingClientRect().height + 20); // margin-bottom 포함 여유
+
+  /* 3) 페이지 높이 계산: A4(297mm) - 상하패딩(14mm*2) - 헤더높이(~11mm) 를 px로 환산 */
+  const mmToPx = 96/25.4;
+  const pageContentHeightPx = (297 - 14*2 - 12) * mmToPx;
+
+  /* 4) 그리디 페이지네이션: 헤더 다음엔 문제가 최소 1개는 같은 컬럼에 붙게(고아 방지) */
+  const pages = []; // [[colA_items[]], [colB_items[]]]
+  let curPage = null, curCol = 0, curColHeight = 0;
+  function newPage(){ curPage=[[],[]]; pages.push(curPage); curCol=0; curColHeight=0; }
+  newPage();
+  for (let i=0;i<items.length;i++){
+    const h = heights[i];
+    const isHeaderOrphan = items[i].type==='header' && (i+1>=items.length || heights[i]+heights[i+1] > pageContentHeightPx - curColHeight);
+    let need = h;
+    if (curColHeight + need > pageContentHeightPx) {
+      curCol++;
+      curColHeight = 0;
+      if (curCol > 1) { newPage(); }
+    }
+    curPage[curCol].push(items[i].node);
+    curColHeight += need;
+  }
+
+  /* 5) 실제 화면(및 인쇄)에 a4-page 로 렌더 */
+  const container = document.getElementById('pages-container');
+  container.innerHTML = '';
+  const totalQ = qNum;
+  pages.forEach((cols, pIdx)=>{
+    const page = document.createElement('div');
+    page.className = 'a4-page';
+    page.innerHTML = `<div class="page-header">
+        <span class="ph-title">${docLabel}</span>
+        <span class="ph-meta">총 ${totalQ}문제 · ${pIdx+1} / ${pages.length} 페이지 · ${new Date().toLocaleDateString('ko-KR')}</span>
+      </div>
+      <div class="a4-cols"></div>`;
+    const colsWrap = page.querySelector('.a4-cols');
+    cols.forEach(colNodes=>{
+      const colEl = document.createElement('div');
+      colEl.className = 'a4-col';
+      colNodes.forEach(n=>colEl.appendChild(n));
+      colsWrap.appendChild(colEl);
+    });
+    container.appendChild(page);
+  });
+
+  measureBox.innerHTML = '';
+}
+
+/* ---------- UTILS ---------- */
+function parseAns(val) {
+  if (!val) return 0;
+  const t=cleanText(val).trim();
+  if (/^[1-4]$/.test(t)) return parseInt(t);
+  const cm={'①':1,'②':2,'③':3,'④':4};
+  if (cm[t[0]]) return cm[t[0]];
+  const m=t.match(/([1-4])/);
+  return m?parseInt(m[1]):0;
+}
+
+function preprocessLatex(html) {
+  if (!html) return html;
+  html = html.replace(/\[latex\]([\s\S]*?)\[\/latex\]/gi, '\\($1\\)');
+  html = html.replace(/\[\$\]([\s\S]*?)\[\/\$\]/gi, '\\[$1\\]');
+  return html;
+}
+
+function cleanHtml(html) {
+  if (!html) return '';
+  html = preprocessLatex(html);
+  let sanitized;
+  if (typeof DOMPurify!=='undefined') {
+    sanitized = DOMPurify.sanitize(html,{USE_PROFILES:{html:true}});
+  } else {
+    sanitized = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi,'').replace(/on\w+="[^"]*"/gi,'');
+  }
+  if (Object.keys(S.imgMap).length > 0) {
+    sanitized = sanitized.replace(/<img([^>]*?)src="([^"]*)"([^>]*?)>/gi, (match, pre, src, post) => {
+      const fname = src.replace(/^.*[\\/]/, '');
+      const blobUrl = S.imgMap[src] || S.imgMap[fname];
+      if (blobUrl) return `<img${pre}src="${blobUrl}"${post} style="max-width:70%;height:auto;display:block;margin:4px 0;">`;
+      return match;
+    });
+  }
+  return sanitized;
+}
+
+function typesetQ(el) {
+  const target = el || document.body;
+  if (!target) return;
+  if (!(window.MathJax && MathJax.typesetPromise)) {
+    setTimeout(() => typesetQ(el), 200);
+    return;
+  }
+  try { if (MathJax.typesetClear) MathJax.typesetClear([target]); } catch(e) {}
+  MathJax.typesetPromise([target]).catch(e=>console.warn('MathJax:', e));
+}
+
+function cleanText(html) {
+  if (!html) return '';
+  const d=document.createElement('div'); d.innerHTML=html;
+  return (d.textContent||d.innerText||'').trim();
+}
+
+/* ---------- INIT ---------- */
+initDrop();
+
+// 폰트 초기화
+(function(){
+  const radio = document.getElementById(`font-${selectedFont.replace('noto-', '').replace('-', '-')}`);
+  if(selectedFont === 'noto-serif') document.getElementById('font-serif').checked = true;
+  else if(selectedFont === 'noto-sans') document.getElementById('font-sans').checked = true;
+  else if(selectedFont === 'malgun') document.getElementById('font-malgun').checked = true;
+  else if(selectedFont === 'noto-sans-mono') document.getElementById('font-mono').checked = true;
+  updateFontPreview();
+})();
+</script>
+</body>
+</html>

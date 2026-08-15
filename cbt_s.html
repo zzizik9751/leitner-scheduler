@@ -527,6 +527,7 @@ body{font-family:'맑은 고딕','Apple SD Gothic Neo','Malgun Gothic',Dotum,san
       </div>
 
       <div class="result-actions">
+        <button class="btn-secondary" onclick="exportWrongIds()" id="btn-export-wrong">📤 오답 노트ID 내보내기</button>
         <button class="btn-secondary" onclick="goSetup()">↩ 같은 설정 재시험</button>
         <button class="btn-primary" onclick="showScreen('load')">📂 새 파일 불러오기</button>
       </div>
@@ -1163,6 +1164,8 @@ function renderResult() {
     tr.innerHTML=`<td>${sub}${isGwa?' <span style="background:#c0392b;color:#fff;font-size:10px;padding:1px 6px;border-radius:3px;margin-left:4px;font-weight:bold">과락</span>':''}</td><td>${st.total}</td><td style="color:#145a14;font-weight:bold">${st.correct}</td><td style="color:#7a1414;font-weight:bold">${st.total-st.correct}</td><td style="${isGwa?'color:#c0392b;font-weight:900':''}"><b>${p}%</b>${isGwa?' ⚠️':p>=60?' ✅':''}</td>`;
     tbody.appendChild(tr);
   }
+  const btnExport=document.getElementById('btn-export-wrong');
+  if(btnExport) btnExport.style.display=(total-correct)>0?'':'none';
   buildReviewItems();
 }
 
@@ -1444,6 +1447,37 @@ function exportToPdf() {
 
   html2pdf().set(opt).from(html).save();
   showModal('성공','PDF가 다운로드되었습니다.',[{label:'확인',cls:'btn-primary'}]);
+}
+
+/* ---------- 오답 노트 ID 내보내기 ---------- */
+function exportWrongIds() {
+  const { qs, answers } = S.exam;
+  const fm = S.fm;
+  const ids = [];
+  qs.forEach((q,i) => {
+    const correct = parseAns(q.note.fields[fm.ans]);
+    const user = answers[i];
+    if (!(user && user === correct)) { // 오답 또는 미응시
+      if (q.note && q.note.id) ids.push(q.note.id);
+    }
+  });
+  if (!ids.length) {
+    showModal('알림','내보낼 오답이 없습니다.',[{label:'확인',cls:'btn-primary'}]);
+    return;
+  }
+  const content = 'nid:' + ids.join(',') + ',';
+  const now = new Date();
+  const p2 = n => String(n).padStart(2,'0');
+  const fname = `${now.getFullYear()}${p2(now.getMonth()+1)}${p2(now.getDate())}${p2(now.getHours())}${p2(now.getMinutes())}.json`;
+  const blob = new Blob([content], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fname;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 /* ---------- INIT ---------- */

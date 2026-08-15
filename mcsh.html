@@ -477,6 +477,7 @@ body{font-family:'맑은 고딕','Apple SD Gothic Neo',Malgun Gothic,Dotum,sans-
 
       <div class="result-actions">
         <button class="btn-secondary" onclick="retryWrongs()" id="btn-retry-wrongs">🔄 오답 재시험</button>
+        <button class="btn-secondary" onclick="exportWrongIds()" id="btn-export-wrong">📤 오답 노트ID 내보내기</button>
         <button class="btn-secondary" onclick="showScreen('setup')">↩ 같은 설정 재시험</button>
         <button class="btn-primary" onclick="showScreen('load')">📂 새 파일</button>
       </div>
@@ -1058,12 +1059,15 @@ function showResult() {
   // 오답 목록
   const wlWrap = document.getElementById('wrong-list-wrap');
   const btnRetry = document.getElementById('btn-retry-wrongs');
+  const btnExport = document.getElementById('btn-export-wrong');
   if (wrongCnt === 0) {
     wlWrap.style.display = 'none';
     btnRetry.style.display = 'none';
+    if (btnExport) btnExport.style.display = 'none';
   } else {
     wlWrap.style.display = '';
     btnRetry.style.display = '';
+    if (btnExport) btnExport.style.display = '';
     buildWrongList();
   }
 
@@ -1114,6 +1118,39 @@ function retryWrongs() {
   const wrongs = S.session.wrongs;
   if (!wrongs.length) return;
   startQuiz(true, wrongs);
+}
+
+/* ─ 오답 노트 ID 내보내기 ─ */
+function exportWrongIds() {
+  const wrongs = S.session.wrongs;
+  if (!wrongs || !wrongs.length) {
+    showModal('알림', '내보낼 오답이 없습니다.', [{ label: '확인', cls: 'btn-primary' }]);
+    return;
+  }
+  // 중복 제거(무한 모드에서 같은 노트가 여러 번 오답 처리될 수 있음), 최초 등장 순서 유지
+  const seen = new Set();
+  const ids = [];
+  wrongs.forEach(w => {
+    const id = w.card && w.card.note && w.card.note.id;
+    if (id && !seen.has(id)) { seen.add(id); ids.push(id); }
+  });
+  if (!ids.length) {
+    showModal('알림', '내보낼 오답이 없습니다.', [{ label: '확인', cls: 'btn-primary' }]);
+    return;
+  }
+  const content = 'nid:' + ids.join(',') + ',';
+  const now = new Date();
+  const p2 = n => String(n).padStart(2, '0');
+  const fname = `${now.getFullYear()}${p2(now.getMonth() + 1)}${p2(now.getDate())}${p2(now.getHours())}${p2(now.getMinutes())}.json`;
+  const blob = new Blob([content], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fname;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 /* ─ 유틸 ─ */

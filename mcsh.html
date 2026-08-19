@@ -18,9 +18,19 @@ window.MathJax = {
 };
 </script>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'맑은 고딕','Apple SD Gothic Neo',Malgun Gothic,Dotum,sans-serif;font-size:14px;background:#f0f2f5;color:#222;min-height:100vh}
+/* 위 전체 리셋(margin/padding:0)이 <ul>/<ol>의 기본 padding-left(들여쓰기)까지 0으로 지워버려서,
+   Anki 노트 해설 안에 <ul><li> 목록이 있으면 글머리점(•)이 박스 왼쪽 끝에 바짝 붙어버리는 문제가 있었음.
+   앱 자체 마크업에는 ul/li가 없고 노트 해설 내용(cleanHtml)에만 등장하므로 여기서 들여쓰기를 다시 살려줌. */
+ul,ol{padding-left:22px;margin:6px 0}
+li{margin-bottom:4px;line-height:1.7}
+li:last-child{margin-bottom:0}
+/* 큐넷(Q-net) 실제 사이트 소스에서 확인된 폰트 스택 기준 (나눔고딕 우선) */
+body{font-family:'Nanum Gothic','NanumGothic','나눔고딕','맑은 고딕','Apple SD Gothic Neo',Dotum,'돋움',Gulim,'굴림',AppleGothic,sans-serif;font-size:14px;background:#f0f2f5;color:#222;min-height:100vh}
 .screen{display:none;min-height:100vh}
 .screen.active{display:block}
 #screen-load.active{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(150deg,#1a3263 0%,#2a5298 60%,#1a4a8a 100%)}
@@ -130,9 +140,13 @@ body{font-family:'맑은 고딕','Apple SD Gothic Neo',Malgun Gothic,Dotum,sans-
 .opt-text{flex:1}
 .opt-icon{margin-left:auto;font-size:18px;flex-shrink:0;align-self:center}
 
-.explain-box{background:#fffce8;border-left:4px solid #f0c000;border-radius:0 8px 8px 0;padding:14px 16px;margin-bottom:14px;font-size:13px;line-height:1.8;display:none}
+.explain-box{background:#fff;border:1px solid #eee;border-radius:8px;padding:14px 16px;margin-bottom:14px;font-size:13px;line-height:1.8;display:none;box-shadow:0 1px 4px rgba(0,0,0,.08)}
 .explain-box.show{display:block}
-.explain-box b{color:#886600;display:block;margin-bottom:4px}
+/* 해설 박스 제목(💡 해설)에만 적용되는 클래스. 예전에는 ".explain-box b"로 걸어놔서
+   문제/해설 본문 안의 <b>굵게</b> 표시가 전부 강제 줄바꿈(block)되고 금색으로 물들었음.
+   (예: "•<b>최고전압: 27,500[V]</b>" → "•" 다음이 강제 줄바꿈되어 마치 <br>가 낀 것처럼 보이던 원인) */
+.explain-title{color:#555;display:block;margin-bottom:4px;font-weight:bold}
+.explain-box b{color:inherit}
 
 .quiz-nav{display:flex;align-items:center;justify-content:space-between;padding:4px 0}
 .quiz-nav-l{font-size:12px;color:#999}
@@ -180,7 +194,7 @@ body{font-family:'맑은 고딕','Apple SD Gothic Neo',Malgun Gothic,Dotum,sans-
 .wrong-ans-row{font-size:12px;color:#555;line-height:1.9}
 .wrong-ans-row .my{color:#c62828;font-weight:bold}
 .wrong-ans-row .cor{color:#1a8a3a;font-weight:bold}
-.wrong-explain{margin-top:8px;padding:8px 12px;background:#fffce8;border-radius:6px;font-size:12px;color:#666;border-left:3px solid #f0c000;line-height:1.8}
+.wrong-explain{margin-top:8px;padding:8px 12px;background:#fff;border:1px solid #eee;border-radius:6px;font-size:12px;color:#666;line-height:1.8}
 
 .result-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:24px}
 
@@ -254,20 +268,24 @@ body{font-family:'맑은 고딕','Apple SD Gothic Neo',Malgun Gothic,Dotum,sans-
           <button class="quiz-btn" data-mode="repeat" onclick="selectQuizMode('repeat', this);">[무한]</button>
         </div>
       </div>
-      <div class="info-box">💡 [1번]: 문제를 1회만 풀고 다음 문제 진행 | [무한]: 틀린 문제가 정답일 때까지 계속 반복</div>
+      <div class="quiz-setting-row">
+        <div class="quiz-setting-label">보기 섞기</div>
+        <div class="quiz-setting-options">
+          <button class="quiz-btn active" data-shuffle="off" onclick="selectShuffleOpt(false, this);">끄기</button>
+          <button class="quiz-btn" data-shuffle="on" onclick="selectShuffleOpt(true, this);">켜기</button>
+        </div>
+      </div>
+      <div class="info-box">💡 [1번]: 문제를 1회만 풀고 다음 문제 진행 | [무한]: 틀린 문제가 정답일 때까지 계속 반복<br>💡 보기 섞기 [켜기]: ①②③④ 보기의 순서를 문제마다 무작위로 섞어서 출제 (같은 문제를 다시 볼 때도 섞인 순서 유지)</div>
     </div>
 
-    <!-- ② 난이도 태그 필터 -->
-    <div class="section-label">② 난이도 태그 필터</div>
+    <!-- ② 태그 필터 -->
+    <div class="section-label">② 태그 필터</div>
     <div class="tag-filter">
-      <div class="tag-label">풀이할 문제 수준 선택</div>
-      <div class="tag-options">
-        <button class="tag-btn" data-tag="100" onclick="selectTag('100', this);">100선</button>
-        <button class="tag-btn" data-tag="150" onclick="selectTag('150', this);">150선</button>
-        <button class="tag-btn" data-tag="200" onclick="selectTag('200', this);">200선</button>
-        <button class="tag-btn" data-tag="250" onclick="selectTag('250', this);">250선</button>
-        <button class="tag-btn active" data-tag="ALL" onclick="selectTag('ALL', this);">ALL</button>
-      </div>
+      <div class="tag-label">1단계. 덱에 포함된 태그 불러오기</div>
+      <button class="btn-secondary" id="btn-load-tags" onclick="loadAvailableTags()" style="margin-bottom:14px">🔄 태그 불러오기</button>
+      <div id="tag-empty-msg" style="font-size:12px;color:#aaa;margin-bottom:6px"></div>
+      <div class="tag-label" id="tag-select-label" style="display:none">2단계. 필터링할 태그 선택 (복수 선택 가능 · 아무것도 선택 안 하면 전체 출제)</div>
+      <div class="tag-options" id="tag-options-dynamic"></div>
     </div>
 
     <!-- ③ 필드 설정 -->
@@ -374,20 +392,14 @@ body{font-family:'맑은 고딕','Apple SD Gothic Neo',Malgun Gothic,Dotum,sans-
           </select>
         </div>
         <div class="field-row">
-          <label class="field-label">과목</label>
-          <select class="field-select" id="field-subj">
-            <option value="q">문제</option>
-            <option value="o1">보기1</option>
-            <option value="o2">보기2</option>
-            <option value="o3">보기3</option>
-            <option value="o4">보기4</option>
-            <option value="ans">정답</option>
-            <option value="exp">해설</option>
-            <option value="subj" selected>과목</option>
-            <option value="src">회차</option>
-          </select>
+          <label class="field-label">회차/빈도 표시</label>
+          <div style="display:flex;gap:8px">
+            <button type="button" class="quiz-btn active" data-metamode="src" onclick="selectMetaMode('src', this);" style="flex:1;padding:8px 6px;font-size:12px">회차</button>
+            <button type="button" class="quiz-btn" data-metamode="freq" onclick="selectMetaMode('freq', this);" style="flex:1;padding:8px 6px;font-size:12px">빈도</button>
+          </div>
         </div>
       </div>
+      <div class="info-box" style="margin-top:12px">💡 과목은 항상 자동으로 표시됩니다. 여기서는 문제 화면 상단에 과목과 함께 "회차"(예: 19-08-04)를 보여줄지, "빈도"(예: ★ 19-08-04, 별표는 출제빈도)를 보여줄지 선택합니다.</div>
     </div>
 
     <div class="setup-actions">
@@ -418,7 +430,7 @@ body{font-family:'맑은 고딕','Apple SD Gothic Neo',Malgun Gothic,Dotum,sans-
       <div class="q-text-box" id="q-text-box"></div>
       <div class="opts-grid" id="opts-grid"></div>
       <div class="explain-box" id="explain-box">
-        <b>💡 해설</b>
+        <b class="explain-title">💡 해설</b>
         <div id="explain-text"></div>
       </div>
       <div class="quiz-nav">
@@ -493,12 +505,14 @@ body{font-family:'맑은 고딕','Apple SD Gothic Neo',Malgun Gothic,Dotum,sans-
 /* ─ 상태 ─ */
 const S = {
   dbData: null,
-  fm: { q:0, o1:1, o2:2, o3:3, o4:4, ans:5, exp:6, subj:7, src:8, hint:9 },
+  fm: { q:0, o1:1, o2:2, o3:3, o4:4, ans:5, exp:6, subj:7, src:8, hint:9, freq:-1 },
   groups: [],
   imgMap: {},   // { 파일명: blobURL }
   quizConfig: {
     mode: 'once',  // 'once' | 'repeat'
-    tagFilter: 'ALL',  // '100' | '150' | '200' | '250' | 'ALL'
+    selectedTags: [],  // 덱에서 불러온 태그 중 선택된 것들 (빈 배열 = 전체 출제)
+    shuffleOptions: false,  // 보기 순서 무작위 섞기 여부
+    metaMode: 'src',  // 문제 화면 상단 메타 표시: 'src'(회차) | 'freq'(빈도, ★ 표시)
     fieldMap: {}  // 사용자 정의 필드 매핑
   },
   session: {
@@ -675,6 +689,8 @@ function autoDetect() {
   fm.src = ri >= 0 ? ri : -1;
   const hi = L.findIndex(f => /힌트|hint/.test(f));
   fm.hint = hi >= 0 ? hi : -1;
+  const fi = L.findIndex(f => /빈도|frequency|^freq$/.test(f));
+  fm.freq = fi >= 0 ? fi : -1;
 }
 
 /* ─ 설정 화면 ─ */
@@ -737,10 +753,99 @@ function selectQuizMode(mode, el) {
   el.classList.add('active');
 }
 
-function selectTag(tag, el) {
-  S.quizConfig.tagFilter = tag;
-  document.querySelectorAll('[data-tag]').forEach(b => b.classList.remove('active'));
+// 1단계: 현재 불러온 덱에서 실제 사용된 태그를 모두 스캔해 목록으로 표시
+function loadAvailableTags() {
+  const notes = S.dbData && S.dbData.notes;
+  const label = document.getElementById('tag-select-label');
+  const wrap = document.getElementById('tag-options-dynamic');
+  const emptyMsg = document.getElementById('tag-empty-msg');
+  wrap.innerHTML = '';
+  S.quizConfig.selectedTags = []; // 다시 불러오면 선택 초기화
+
+  if (!notes || !notes.length) {
+    label.style.display = 'none';
+    emptyMsg.textContent = '⚠️ 먼저 Anki 덱 파일을 불러오세요.';
+    return;
+  }
+
+  const counts = {};
+  notes.forEach(n => {
+    (n.tags || []).forEach(t => {
+      if (!t) return;
+      counts[t] = (counts[t] || 0) + 1;
+    });
+  });
+  const tagList = Object.keys(counts).sort((a, b) => counts[b] - counts[a] || a.localeCompare(b, 'ko'));
+
+  if (!tagList.length) {
+    label.style.display = 'none';
+    emptyMsg.textContent = '⚠️ 이 덱에는 태그가 없습니다. 태그 필터 없이 전체 문제가 출제됩니다.';
+    return;
+  }
+
+  emptyMsg.textContent = `✅ 태그 ${tagList.length}개를 불러왔습니다. 아래에서 선택하세요.`;
+  label.style.display = '';
+  tagList.forEach(tag => {
+    const btn = document.createElement('button');
+    btn.className = 'tag-btn';
+    btn.type = 'button';
+    btn.dataset.tagValue = tag;
+    btn.textContent = `${tag} (${counts[tag]})`;
+    btn.onclick = () => toggleTagSelect(tag, btn);
+    wrap.appendChild(btn);
+  });
+}
+
+// 2단계: 태그 버튼 클릭 시 다중 선택 토글 (선택 없음 = 전체 출제)
+function toggleTagSelect(tag, btn) {
+  const sel = S.quizConfig.selectedTags;
+  const idx = sel.indexOf(tag);
+  if (idx >= 0) {
+    sel.splice(idx, 1);
+    btn.classList.remove('active');
+  } else {
+    sel.push(tag);
+    btn.classList.add('active');
+  }
+}
+
+function selectShuffleOpt(on, el) {
+  S.quizConfig.shuffleOptions = on;
+  document.querySelectorAll('[data-shuffle]').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
+}
+
+function selectMetaMode(mode, el) {
+  S.quizConfig.metaMode = mode;
+  document.querySelectorAll('[data-metamode]').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// 문제 화면 상단 "과목 · 회차" 또는 "과목 · ★ 회차" 텍스트 생성
+// '빈도' 모드에서는 빈도 필드 맨 앞의 별표(★)만 뽑아 회차 앞에 붙인다.
+// (빈도 필드 예: "★★ 15-03-11, 19-08-04" → 별표만 추출해 "★★ 19-08-04"처럼 표시)
+function buildMetaText(note, subject) {
+  const fm = S.fm;
+  const srcVal = fm.src >= 0 ? (note.fields[fm.src] || '').trim() : '';
+  let rightPart = srcVal;
+
+  if (S.quizConfig.metaMode === 'freq' && fm.freq >= 0) {
+    const freqRaw = cleanText(note.fields[fm.freq] || '');
+    const starMatch = freqRaw.match(/^★+/);
+    if (starMatch) {
+      rightPart = srcVal ? `${starMatch[0]} ${srcVal}` : starMatch[0];
+    } else if (freqRaw && !srcVal) {
+      rightPart = freqRaw; // 별표가 없으면 빈도 필드 원문이라도 표시
+    }
+  }
+
+  return rightPart ? `${subject}  ·  ${rightPart}` : subject;
+}
+
+// 보기 표시 순서 배열 생성: 섞기 옵션이 켜져 있으면 무작위, 아니면 원래 순서([0,1,2,3] = 보기1~4)
+function makeOptOrder() {
+  const base = [0, 1, 2, 3];
+  return S.quizConfig.shuffleOptions ? shuffle([...base]) : base;
 }
 
 function getFieldConfig() {
@@ -762,6 +867,7 @@ function startQuiz(isRetry, retryCards) {
     // 오답 재시험
     cards = retryCards.map(w => ({ ...w.card }));
     cards.forEach(c => {
+      c.optOrder = makeOptOrder(); // 재시험 시에도 현재 섞기 설정 반영해 새로 생성
       const sub = c.subject;
       if (!subStats[sub]) subStats[sub] = { total: 0, correct: 0 };
       subStats[sub].total++;
@@ -769,7 +875,7 @@ function startQuiz(isRetry, retryCards) {
   } else {
     // 일반 시작
     const fm = S.fm;
-    const tagFilter = S.quizConfig.tagFilter;
+    const selectedTags = S.quizConfig.selectedTags || [];
 
     S.groups.forEach((g, i) => {
       const cb = document.getElementById(`g-cb-${i}`);
@@ -779,18 +885,18 @@ function startQuiz(isRetry, retryCards) {
 
       let pool = [...g.notes];
 
-      // 태그 필터 적용
-      if (tagFilter !== 'ALL') {
+      // 태그 필터 적용 (선택된 태그 중 하나라도 일치하면 포함, 선택 없으면 전체)
+      if (selectedTags.length) {
         pool = pool.filter(n => {
           const tags = n.tags || [];
-          return tags.includes(tagFilter);
+          return tags.some(t => selectedTags.includes(t));
         });
         if (!pool.length) pool = [...g.notes]; // 태그 매칭 없으면 전체 사용
       }
 
       const selected = shuffle(pool).slice(0, Math.min(cnt, pool.length));
       selected.forEach(note => {
-        const optOrder = [0, 1, 2, 3]; // 기본값 (원래는 shuffle할 수 있음)
+        const optOrder = makeOptOrder();
         cards.push({ note, subject: g.name, optOrder });
         if (!subStats[g.name]) subStats[g.name] = { total: 0, correct: 0 };
         subStats[g.name].total++;
@@ -837,9 +943,8 @@ function renderQuizCard() {
   else wChip.style.display = 'none';
   document.getElementById('prog-fill').style.width = `${cur / cards.length * 100}%`;
 
-  // 과목/출처 메타
-  const srcVal = fm.src >= 0 ? (note.fields[fm.src] || '').trim() : '';
-  document.getElementById('q-meta').textContent = srcVal ? `${subject}  ·  ${srcVal}` : subject;
+  // 과목/회차/빈도 메타
+  document.getElementById('q-meta').textContent = buildMetaText(note, subject);
 
   // 문제 텍스트
   document.getElementById('q-text-box').innerHTML =

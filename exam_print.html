@@ -106,6 +106,18 @@ body{font-family:'맑은 고딕','Apple SD Gothic Neo','Malgun Gothic',Dotum,san
 .doctype-label{font-weight:bold;font-size:13.5px;color:#222}
 .doctype-desc{font-size:11.5px;color:#888;margin-top:2px}
 
+/* 시험지 유형 상위 탭(객관식 / 주관식·요약형) */
+.dockind-tabs{display:flex;gap:10px;margin-bottom:14px}
+.dockind-tab{flex:1;padding:12px;border:1.5px solid #ddd;border-radius:8px;background:#f7f9ff;cursor:pointer;font-size:13.5px;font-weight:bold;color:#555;font-family:inherit;transition:.15s}
+.dockind-tab:hover{border-color:#4a90d9}
+.dockind-tab.sel{border-color:#1a3263;background:#1a3263;color:#fff}
+
+/* 과목별 문제 수 설정 섹션 타이틀 + 전체 최대 버튼 */
+.section-title-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:8px;border-bottom:2.5px solid #e4e8f0}
+.section-title-row .section-title{margin:0;border:none;padding:0}
+.btn-mini{background:#eef2ff;color:#1a3263;border:1.3px solid #b8c6e8;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:bold;cursor:pointer;font-family:inherit;transition:.15s}
+.btn-mini:hover{background:#dde5f8}
+
 /* PREVIEW / PRINT SCREEN */
 #screen-preview{background:#9199a8}
 .preview-toolbar{position:sticky;top:0;z-index:20;background:#1a3263;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;gap:14px;box-shadow:0 2px 10px rgba(0,0,0,.2);flex-wrap:wrap}
@@ -142,10 +154,13 @@ body{font-family:'맑은 고딕','Apple SD Gothic Neo','Malgun Gothic',Dotum,san
 .q-opt .qc{flex-shrink:0;width:1.3em}
 .q-opt.correct{color:#c0392b;font-weight:bold}
 .ans-line{margin-top:2px;font-size:12px;color:#c0392b;font-weight:bold}
-.hint-box,.exp-box{margin-top:6px;padding:6px 9px;border-radius:5px;font-size:12px;line-height:1.55}
-.hint-box{border:1.3px solid #e6b800;background:#fff9e0;color:#6b5600}
-.exp-box{border:1.3px solid #7fb3f0;background:#eef5ff;color:#1a3a63}
+.hint-box,.exp-box{margin-top:6px;padding:6px 9px;border-radius:5px;font-size:12px;line-height:1.55;overflow:hidden}
+.hint-box{border:1.3px solid #e6b800;background:#fff;color:#6b5600}
+.exp-box{border:1.3px solid #7fb3f0;background:#fff;color:#1a3a63}
 .q-block img{max-width:70%;height:auto}
+/* 힌트/해설 박스·문제 본문 안의 목록(<ul><li>)이 박스 밖으로 튀어나오지 않도록 마커를 박스 안쪽으로 정렬 */
+.hint-box ul,.hint-box ol,.exp-box ul,.exp-box ol,.q-front ul,.q-front ol{padding-left:1.3em;margin:4px 0}
+.hint-box li,.exp-box li,.q-front li{margin-bottom:2px}
 
 /* ── 폰트 선택 클래스 ── */
 .font-noto-serif{font-family:'Noto Serif KR',serif !important}
@@ -245,33 +260,70 @@ body{font-family:'맑은 고딕','Apple SD Gothic Neo','Malgun Gothic',Dotum,san
 
     <div class="setup-section">
       <div class="section-title">시험지 유형 선택</div>
-      <div class="doctype-grid" id="doctype-grid">
+
+      <div class="dockind-tabs" id="dockind-tabs">
+        <button type="button" class="dockind-tab sel" data-kind="mc" onclick="switchDocKind('mc')">📝 객관식 시험지</button>
+        <button type="button" class="dockind-tab" data-kind="sa" onclick="switchDocKind('sa')">📖 주관식 · 요약형</button>
+      </div>
+
+      <div class="doctype-grid" id="doctype-grid-mc">
         <label class="doctype-opt sel">
-          <input type="radio" name="doctype" value="exam" checked>
+          <input type="radio" name="doctype-mc" value="exam" checked>
           <div>
             <div class="doctype-label">시험용</div>
             <div class="doctype-desc">문제 · 보기만 표시, 정답 표시 없음 (실전 연습용)</div>
           </div>
         </label>
         <label class="doctype-opt">
-          <input type="radio" name="doctype" value="hint">
+          <input type="radio" name="doctype-mc" value="hint">
           <div>
             <div class="doctype-label">해설용 — 힌트만</div>
             <div class="doctype-desc">정답 강조 표시 + 힌트만 함께 표시</div>
           </div>
         </label>
         <label class="doctype-opt">
-          <input type="radio" name="doctype" value="exp">
+          <input type="radio" name="doctype-mc" value="exp">
           <div>
             <div class="doctype-label">해설용 — 해설만</div>
             <div class="doctype-desc">정답 강조 표시 + 해설만 함께 표시</div>
           </div>
         </label>
         <label class="doctype-opt">
-          <input type="radio" name="doctype" value="hintexp">
+          <input type="radio" name="doctype-mc" value="hintexp">
           <div>
             <div class="doctype-label">해설용 — 힌트 + 해설</div>
             <div class="doctype-desc">정답 강조 표시 + 힌트와 해설 모두 표시</div>
+          </div>
+        </label>
+      </div>
+
+      <div class="doctype-grid" id="doctype-grid-sa" style="display:none">
+        <label class="doctype-opt sel">
+          <input type="radio" name="doctype-sa" value="sa-qah" checked>
+          <div>
+            <div class="doctype-label">문제 + 정답 + 힌트</div>
+            <div class="doctype-desc">보기(①②③④) 없이 문제·정답·힌트만 표시 (요약집용)</div>
+          </div>
+        </label>
+        <label class="doctype-opt">
+          <input type="radio" name="doctype-sa" value="sa-qahe">
+          <div>
+            <div class="doctype-label">문제 + 정답 + 힌트 + 해설</div>
+            <div class="doctype-desc">보기 없이 문제·정답·힌트·해설을 모두 표시</div>
+          </div>
+        </label>
+        <label class="doctype-opt">
+          <input type="radio" name="doctype-sa" value="sa-qa">
+          <div>
+            <div class="doctype-label">문제 + 정답</div>
+            <div class="doctype-desc">보기 없이 문제와 정답만 간단히 표시 (빠른 요약집용)</div>
+          </div>
+        </label>
+        <label class="doctype-opt">
+          <input type="radio" name="doctype-sa" value="sa-exp">
+          <div>
+            <div class="doctype-label">문제 + 해설</div>
+            <div class="doctype-desc">정답 표시 없이 문제와 해설만 표시 (개념 복습용)</div>
           </div>
         </label>
       </div>
@@ -315,7 +367,10 @@ body{font-family:'맑은 고딕','Apple SD Gothic Neo','Malgun Gothic',Dotum,san
     </div>
 
     <div class="setup-section">
-      <div class="section-title">과목별 문제 수 설정</div>
+      <div class="section-title-row">
+        <div class="section-title">과목별 문제 수 설정</div>
+        <button type="button" class="btn-mini" onclick="setAllMax()">🔼 선택된 과목 전체 최대 출제수로</button>
+      </div>
       <p id="setup-group-mode" style="font-size:12px;margin-bottom:10px;font-weight:bold"></p>
       <table class="deck-table" id="deck-table">
         <thead>
@@ -645,13 +700,23 @@ function updatePreview() {
     </div>`).join('');
 }
 
+let docKind = 'mc'; // 'mc'(객관식 시험지) | 'sa'(주관식·요약형)
+
+function switchDocKind(kind) {
+  docKind = kind;
+  document.querySelectorAll('.dockind-tab').forEach(b=>b.classList.toggle('sel', b.dataset.kind===kind));
+  document.getElementById('doctype-grid-mc').style.display = kind==='mc' ? 'flex' : 'none';
+  document.getElementById('doctype-grid-sa').style.display = kind==='sa' ? 'flex' : 'none';
+}
+
 function goSetup() {
   readFm();
   renderSetup();
   showScreen('setup');
   document.querySelectorAll('.doctype-opt').forEach(el=>{
     el.addEventListener('click',()=>{
-      document.querySelectorAll('.doctype-opt').forEach(x=>x.classList.remove('sel'));
+      const grid = el.closest('.doctype-grid'); // 같은 그리드(객관식/주관식) 안에서만 선택 표시 동기화
+      grid.querySelectorAll('.doctype-opt').forEach(x=>x.classList.remove('sel'));
       el.classList.add('sel');
     });
   });
@@ -721,6 +786,16 @@ function updateTotal() {
   document.getElementById('total-count').textContent=`총 출제 예정: ${t}문제`;
 }
 
+/* 선택(체크)된 과목들의 출제 수를 모두 해당 과목의 총 문제 수(최대)로 한번에 올림 */
+function setAllMax() {
+  S.deckGroups.forEach((g,i)=>{
+    const cb=document.getElementById(`dk-cb-${i}`);
+    const cnt=document.getElementById(`dk-cnt-${i}`);
+    if (cb?.checked && cnt) cnt.value = g.notes.length;
+  });
+  updateTotal();
+}
+
 /* ---------- 교시(과목) 순서 정의 ---------- */
 const SUBJECT_ORDER = ['전기철도', '구조', '전기자기', '전력'];
 function subjectOrder(name) {
@@ -733,8 +808,9 @@ function subjectOrder(name) {
 
 /* ---------- 문서 생성 ---------- */
 function generateDocument() {
-  const docTypeEl = document.querySelector('input[name="doctype"]:checked');
-  S.docType = docTypeEl ? docTypeEl.value : 'exam';
+  const docTypeEl = document.querySelector(docKind==='sa' ? 'input[name="doctype-sa"]:checked' : 'input[name="doctype-mc"]:checked');
+  if (!docTypeEl) { showModal('알림','시험지 유형을 선택하세요.',[{label:'확인',cls:'btn-primary'}]); return; }
+  S.docType = docTypeEl.value;
 
   const subs=[];
   S.deckGroups.forEach((g,i)=>{
@@ -774,11 +850,16 @@ async function renderDocument() {
   const fm=S.fm;
   const CIRCLES=['①','②','③','④'];
   const FILLED=['❶','❷','❸','❹'];
-  const showAnswer = S.docType !== 'exam';
-  const showHint = S.docType==='hint' || S.docType==='hintexp';
-  const showExp = S.docType==='exp' || S.docType==='hintexp';
+  const isSA = S.docType.startsWith('sa-'); // 주관식·요약형: 보기(①②③④) 없이 문제+정답/힌트/해설만 표시
+  const showAnswer = isSA ? (S.docType !== 'sa-exp') : (S.docType !== 'exam');
+  const showHint = S.docType==='hint' || S.docType==='hintexp' || S.docType==='sa-qah' || S.docType==='sa-qahe';
+  const showExp = S.docType==='exp' || S.docType==='hintexp' || S.docType==='sa-qahe' || S.docType==='sa-exp';
 
-  const typeLabelMap = {exam:'시험용', hint:'해설용(힌트)', exp:'해설용(해설)', hintexp:'해설용(힌트+해설)'};
+  const typeLabelMap = {
+    exam:'시험용', hint:'해설용(힌트)', exp:'해설용(해설)', hintexp:'해설용(힌트+해설)',
+    'sa-qah':'주관식·요약형(문제+정답+힌트)', 'sa-qahe':'주관식·요약형(문제+정답+힌트+해설)',
+    'sa-qa':'주관식·요약형(문제+정답)', 'sa-exp':'주관식·요약형(문제+해설)'
+  };
   const docLabel = `전기철도기사 필기 문제집 — ${typeLabelMap[S.docType]}`;
   document.getElementById('pv-title').textContent = `미리보기 — ${typeLabelMap[S.docType]}`;
 
@@ -787,7 +868,8 @@ async function renderDocument() {
     const correct = parseAns(n.fields[fm.ans]);
     const freqTxt = fm.freq>=0 ? cleanText(n.fields[fm.freq]) : '';
 
-    const optsHtml = ['o1','o2','o3','o4'].map((k,i)=>{
+    // 주관식·요약형은 보기(①②③④) 목록을 표시하지 않음
+    const optsHtml = isSA ? '' : ['o1','o2','o3','o4'].map((k,i)=>{
       const num=i+1;
       const txt=n.fields[fm[k]]||'';
       const isCorrect = showAnswer && num===correct;
@@ -798,15 +880,17 @@ async function renderDocument() {
     let ansLine = '';
     if (showAnswer) {
       const correctTxt = (correct>=1&&correct<=4) ? cleanText(n.fields[fm[['o1','o2','o3','o4'][correct-1]]]) : '';
-      ansLine = `<div class="ans-line">정답: ${correct>=1&&correct<=4?FILLED[correct-1]:'?'} ${correctTxt}</div>`;
+      ansLine = isSA
+        ? `<div class="ans-line">정답: ${correctTxt}</div>`
+        : `<div class="ans-line">정답: ${correct>=1&&correct<=4?FILLED[correct-1]:'?'} ${correctTxt}</div>`;
     }
     let hintHtml = '';
     if (showHint && fm.hint>=0 && n.fields[fm.hint]) {
-      hintHtml = `<div class="hint-box">${cleanHtml(n.fields[fm.hint])}</div>`;
+      hintHtml = `<div class="hint-box">힌트: ${cleanHtml(n.fields[fm.hint])}</div>`;
     }
     let expHtml = '';
     if (showExp && fm.exp>=0 && n.fields[fm.exp]) {
-      expHtml = `<div class="exp-box">${cleanHtml(n.fields[fm.exp])}</div>`;
+      expHtml = `<div class="exp-box">💡 해설: ${cleanHtml(n.fields[fm.exp])}</div>`;
     }
 
     const div = document.createElement('div');
@@ -814,7 +898,7 @@ async function renderDocument() {
     div.innerHTML = `
       <div class="q-headline"><span class="q-num">${qNum}.</span>${freqTxt?`<span class="q-freq">[${freqTxt}]</span>`:''}</div>
       <div class="q-front">${cleanHtml(n.fields[fm.q]||'(문제 없음)')}</div>
-      <div class="q-opts">${optsHtml}</div>
+      ${optsHtml?`<div class="q-opts">${optsHtml}</div>`:''}
       ${ansLine}${hintHtml}${expHtml}`;
     return div;
   }

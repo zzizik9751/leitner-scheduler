@@ -145,12 +145,60 @@
     .time{font-size:56px}
     .ctrl{grid-template-columns:repeat(2,1fr)}
   }
+
+  /* 계산기 */
+  .calcOverlay{
+    position:fixed;inset:0;background:rgba(5,7,15,.72);backdrop-filter:blur(4px);
+    display:none;align-items:center;justify-content:center;z-index:10000;padding:16px;
+  }
+  .calcOverlay.on{display:flex}
+  .calcBox{
+    width:100%;max-width:320px;max-height:92vh;overflow-y:auto;
+    background:var(--card);border:1px solid var(--line);
+    border-radius:20px;padding:18px;box-shadow:0 30px 80px rgba(0,0,0,.6);
+  }
+  .calcHead{
+    display:flex;justify-content:space-between;align-items:center;
+    margin-bottom:12px;font-size:12px;font-weight:700;color:var(--sub);gap:8px;
+  }
+  .calcHead .icon{width:30px;height:30px;font-size:13px;flex:none}
+  .calcDisplay{
+    text-align:right;font-size:32px;font-weight:800;font-variant-numeric:tabular-nums;
+    background:var(--card2);border:1px solid var(--line);border-radius:12px;
+    padding:14px 16px;margin-bottom:12px;color:var(--txt);overflow-x:auto;white-space:nowrap;
+  }
+  .calcGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .calcGrid button{
+    padding:14px 4px;border:none;border-radius:12px;font-size:14px;font-weight:700;
+    background:var(--card2);color:var(--txt);cursor:pointer;transition:.15s;
+  }
+  .calcGrid button:hover{background:#212a4c}
+  .calcGrid button:active{transform:scale(.93)}
+  .calcGrid button[data-op="+"],
+  .calcGrid button[data-op="-"],
+  .calcGrid button[data-op="*"],
+  .calcGrid button[data-op="/"]{background:var(--accent);color:#fff}
+  #calcEq{background:var(--ok);color:#04241b}
+  .calcGrid button[data-fn]{color:var(--accent2)}
+  #calcC,#calcBack{color:var(--danger)}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="card" id="card">
     <div class="topbar">
+      <button class="icon" id="calcBtn" title="공학용 계산기">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="4" y="2" width="16" height="20" rx="2"/>
+          <rect x="7" y="5" width="10" height="4" rx="1"/>
+          <line x1="7" y1="13" x2="7" y2="13"/>
+          <line x1="12" y1="13" x2="12" y2="13"/>
+          <line x1="17" y1="13" x2="17" y2="13"/>
+          <line x1="7" y1="17" x2="7" y2="17"/>
+          <line x1="12" y1="17" x2="12" y2="17"/>
+          <line x1="17" y1="17" x2="17" y2="17"/>
+        </svg>
+      </button>
       <button class="icon" id="editBtn" title="제목 수정">✎</button>
       <button class="icon" id="fsBtn" title="전체화면">⛶</button>
       <button class="icon" id="minBtn" title="최소화 (항상 위)">⊟</button>
@@ -196,11 +244,52 @@
   </div>
 </div>
 
+<div class="calcOverlay" id="calcOverlay">
+  <div class="calcBox">
+    <div class="calcHead">
+      <span>공학용 계산기 (삼각함수 · Degree)</span>
+      <button class="icon" id="calcClose">✕</button>
+    </div>
+    <div class="calcDisplay" id="calcDisplay">0</div>
+    <div class="calcGrid">
+      <button data-op="(">(</button>
+      <button data-op=")">)</button>
+      <button data-op="^">^</button>
+      <button id="calcAns">Ans</button>
+      <button data-fn="sin">sin</button>
+      <button data-fn="cos">cos</button>
+      <button data-fn="tan">tan</button>
+      <button data-fn="sqrt">√</button>
+      <button data-fn="sq">x²</button>
+      <button data-op="%">%</button>
+      <button id="calcC">C</button>
+      <button id="calcBack">⌫</button>
+      <button data-num="7">7</button>
+      <button data-num="8">8</button>
+      <button data-num="9">9</button>
+      <button data-op="/">÷</button>
+      <button data-num="4">4</button>
+      <button data-num="5">5</button>
+      <button data-num="6">6</button>
+      <button data-op="*">×</button>
+      <button data-num="1">1</button>
+      <button data-num="2">2</button>
+      <button data-num="3">3</button>
+      <button data-op="-">−</button>
+      <button data-fn="neg">±</button>
+      <button data-num="0">0</button>
+      <button data-num=".">.</button>
+      <button data-op="+">+</button>
+      <button id="calcEq" style="grid-column:span 4">=</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const S = {
   running:false, paused:false,
   left:20*60, total:20*60,
-  startAt:null, iv:null, title:'공부 시간'
+  startAt:null, endAt:null, iv:null, title:'공부 시간'
 };
 const $ = id => document.getElementById(id);
 let pip = null;          // PiP window
@@ -247,13 +336,18 @@ function setBtns(){
 
 /* ---------- 타이머 ---------- */
 function tick(){
-  S.left--;
+  if(S.endAt){
+    S.left = Math.max(0, Math.round((S.endAt - Date.now())/1000));
+  } else {
+    S.left--;
+  }
   render();
   if(S.left <= 0){ done(); }
 }
 function start(){
   if(S.running) return;
   if(!S.paused) S.startAt = new Date();
+  S.endAt = Date.now() + S.left*1000;
   S.running = true; S.paused = false;
   clearInterval(S.iv);
   S.iv = setInterval(tick, 1000);
@@ -261,14 +355,16 @@ function start(){
 }
 function pause(){
   if(!S.running) return;
+  if(S.endAt) S.left = Math.max(0, Math.round((S.endAt - Date.now())/1000));
   clearInterval(S.iv);
   S.running = false; S.paused = true;
+  S.endAt = null;
   setBtns();
 }
 function reset(){
   clearInterval(S.iv);
   S.running = false; S.paused = false;
-  S.left = S.total; S.startAt = null;
+  S.left = S.total; S.startAt = null; S.endAt = null;
   setBtns();
 }
 function cancel(){
@@ -369,6 +465,134 @@ async function minimize(){
   render();
 }
 
+/* ---------- 계산기 (수식 입력 + 파서, 삼각함수는 Degree 기준) ---------- */
+const CALC = { expr:'', ans:0, justEq:false };
+
+function calcUpdate(){ $('calcDisplay').textContent = CALC.expr || '0'; }
+
+function calcTokenize(str){
+  const re = /\d+\.?\d*|\.\d+|sin|cos|tan|sqrt|Ans|[()+\-*/^%]/g;
+  return str.match(re) || [];
+}
+function calcParse(tokens){
+  let pos = 0;
+  const peek = () => tokens[pos];
+  const next = () => tokens[pos++];
+  function parseExpr(){
+    let v = parseTerm();
+    while(peek()==='+'||peek()==='-'){
+      const op = next();
+      const r = parseTerm();
+      v = (op==='+') ? v+r : v-r;
+    }
+    return v;
+  }
+  function parseTerm(){
+    let v = parsePower();
+    while(peek()==='*'||peek()==='/'){
+      const op = next();
+      const r = parsePower();
+      if(op==='/'){ if(r===0) throw new Error('div0'); v = v/r; }
+      else v = v*r;
+    }
+    return v;
+  }
+  function parsePower(){
+    const v = parseUnary();
+    if(peek()==='^'){ next(); return Math.pow(v, parsePower()); } // 우결합
+    return v;
+  }
+  function parseUnary(){
+    if(peek()==='-'){ next(); return -parseUnary(); }
+    if(peek()==='+'){ next(); return parseUnary(); }
+    return parsePostfix();
+  }
+  function parsePostfix(){
+    let v = parsePrimary();
+    while(peek()==='%'){ next(); v = v/100; }
+    return v;
+  }
+  function parsePrimary(){
+    const t = next();
+    if(t===undefined) throw new Error('unexpected end');
+    if(t==='('){
+      const v = parseExpr();
+      if(next()!==')') throw new Error('paren');
+      return v;
+    }
+    if(t==='sin'||t==='cos'||t==='tan'||t==='sqrt'){
+      if(next()!=='(') throw new Error('func paren');
+      const v = parseExpr();
+      if(next()!==')') throw new Error('paren');
+      if(t==='sin') return Math.sin(v*Math.PI/180);
+      if(t==='cos') return Math.cos(v*Math.PI/180);
+      if(t==='tan') return Math.tan(v*Math.PI/180);
+      return v<0 ? NaN : Math.sqrt(v);
+    }
+    if(t==='Ans') return CALC.ans;
+    if(/^\d+\.?\d*$|^\.\d+$/.test(t)) return parseFloat(t);
+    throw new Error('unexpected token '+t);
+  }
+  const result = parseExpr();
+  if(pos !== tokens.length) throw new Error('trailing tokens');
+  return result;
+}
+
+function calcClear(){ CALC.expr=''; CALC.justEq=false; calcUpdate(); }
+function calcBack(){ CALC.expr = CALC.expr.slice(0,-1); calcUpdate(); }
+
+function calcInputNum(n){
+  if(CALC.justEq){ CALC.expr=''; CALC.justEq=false; }
+  CALC.expr += n;
+  calcUpdate();
+}
+// 이항 연산자/괄호/퍼센트: 연속 연산자는 마지막 것을 교체(단, '-'는 음수 표기를 위해 허용)
+function calcInputOp(op){
+  CALC.justEq=false;
+  if(op==='('){ CALC.expr += '('; calcUpdate(); return; }
+  if(op===')'){ CALC.expr += ')'; calcUpdate(); return; }
+  if(op==='%'){ CALC.expr += '%'; calcUpdate(); return; }
+  const last = CALC.expr.slice(-1);
+  if('+-*/^'.includes(last) && op!=='-'){
+    CALC.expr = CALC.expr.slice(0,-1) + op;
+  } else {
+    CALC.expr += op;
+  }
+  calcUpdate();
+}
+function calcFn(fn){
+  CALC.justEq=false;
+  if(fn==='sin'||fn==='cos'||fn==='tan'||fn==='sqrt'){ CALC.expr += fn+'('; calcUpdate(); return; }
+  if(fn==='sq'){ CALC.expr += '^2'; calcUpdate(); return; }
+  if(fn==='neg'){
+    const last = CALC.expr.slice(-1);
+    if(CALC.expr==='' || '(+-*/^'.includes(last)){ CALC.expr += '-'; calcUpdate(); }
+    return;
+  }
+}
+function calcAns(){ CALC.justEq=false; CALC.expr += 'Ans'; calcUpdate(); }
+
+function calcEquals(){
+  if(!CALC.expr) return;
+  // 닫히지 않은 괄호는 자동으로 채워줌
+  let open=0;
+  for(const c of CALC.expr){ if(c==='(') open++; if(c===')') open--; }
+  const fixed = CALC.expr + ')'.repeat(Math.max(0, open));
+  try{
+    const tokens = calcTokenize(fixed);
+    const r = calcParse(tokens);
+    if(!Number.isFinite(r)) throw new Error('invalid');
+    const rr = +r.toFixed(10);
+    CALC.ans = rr;
+    CALC.expr = String(rr);
+    CALC.justEq = true;
+  }catch(e){
+    CALC.expr = 'Error';
+    CALC.justEq = true;
+  }
+  calcUpdate();
+}
+
 /* ---------- 토스트 ---------- */
 function toast(msg){
   const n=document.createElement('div');
@@ -429,11 +653,35 @@ $('clearBtn').onclick = () => {
   if(confirm('모든 기록을 삭제할까요?')){ localStorage.removeItem(KEY); list(); }
 };
 
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState==='visible' && S.running && S.endAt){
+    S.left = Math.max(0, Math.round((S.endAt - Date.now())/1000));
+    render();
+    if(S.left <= 0) done();
+  }
+});
+
 document.addEventListener('keydown', e=>{
   if(e.target.tagName==='INPUT') return;
+  if($('calcOverlay').classList.contains('on')){
+    if(e.code==='Escape') $('calcOverlay').classList.remove('on');
+    return;
+  }
   if(e.code==='Space'){ e.preventDefault(); S.running ? pause() : start(); }
   if(e.code==='Escape') $('card').classList.remove('fs');
 });
+
+/* ---------- 계산기 이벤트 ---------- */
+$('calcBtn').onclick = () => { calcUpdate(); $('calcOverlay').classList.add('on'); };
+$('calcClose').onclick = () => $('calcOverlay').classList.remove('on');
+$('calcOverlay').addEventListener('click', e => { if(e.target.id==='calcOverlay') $('calcOverlay').classList.remove('on'); });
+document.querySelectorAll('#calcOverlay [data-num]').forEach(b=> b.onclick = () => calcInputNum(b.dataset.num));
+document.querySelectorAll('#calcOverlay [data-op]').forEach(b=> b.onclick = () => calcInputOp(b.dataset.op));
+document.querySelectorAll('#calcOverlay [data-fn]').forEach(b=> b.onclick = () => calcFn(b.dataset.fn));
+$('calcC').onclick = calcClear;
+$('calcBack').onclick = calcBack;
+$('calcEq').onclick = calcEquals;
+$('calcAns').onclick = calcAns;
 
 /* ---------- 초기화 ---------- */
 list(); setBtns();

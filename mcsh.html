@@ -205,10 +205,10 @@ body{font-family:'Nanum Gothic','NanumGothic','나눔고딕','맑은 고딕','Ap
 .calc-btn{background:rgba(255,255,255,.15);border:none;border-radius:8px;width:32px;height:32px;
   display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;flex-shrink:0;transition:.15s}
 .calc-btn:hover{background:rgba(255,255,255,.28)}
-.calcOverlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:2000;padding:16px}
-.calcOverlay.on{display:flex}
-.calcBox{width:100%;max-width:320px;max-height:92vh;overflow-y:auto;background:#fff;border-radius:14px;
-  padding:18px;box-shadow:0 10px 40px rgba(0,0,0,.35)}
+.calcOverlay{position:fixed;right:14px;bottom:14px;left:auto;top:auto;display:none;z-index:2000}
+.calcOverlay.on{display:block}
+.calcBox{width:290px;max-width:calc(100vw - 28px);max-height:min(560px,calc(100vh - 28px));overflow-y:auto;background:#fff;border-radius:14px;
+  padding:18px;box-shadow:0 10px 36px rgba(0,0,0,.28);border:1px solid #e2e5ec}
 .calcHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;
   font-size:12px;font-weight:bold;color:#555;gap:8px}
 .calcHead .calc-close{width:28px;height:28px;border:none;border-radius:8px;background:#e8eaf0;color:#555;
@@ -218,7 +218,7 @@ body{font-family:'Nanum Gothic','NanumGothic','나눔고딕','맑은 고딕','Ap
   background:#f0f2f5;border:1px solid #ddd;border-radius:10px;padding:14px 16px;margin-bottom:12px;
   color:#222;overflow-x:auto;white-space:nowrap}
 .calcGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.calcGrid button{padding:13px 4px;border:1.5px solid #ddd;border-radius:10px;font-size:14px;font-weight:600;
+.calcGrid button{padding:9px 4px;border:1.5px solid #ddd;border-radius:10px;font-size:14px;font-weight:600;
   background:#fff;color:#333;cursor:pointer;font-family:inherit;transition:.15s}
 .calcGrid button:hover{background:#f0faf9;border-color:#3a8a8a}
 .calcGrid button:active{transform:scale(.93)}

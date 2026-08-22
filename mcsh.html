@@ -148,7 +148,7 @@ body{font-family:'Nanum Gothic','NanumGothic','나눔고딕','맑은 고딕','Ap
 .explain-title{color:#555;display:block;margin-bottom:4px;font-weight:bold}
 .explain-box b{color:inherit}
 
-.quiz-nav{display:flex;align-items:center;justify-content:space-between;padding:4px 0}
+.quiz-nav{display:flex;align-items:center;justify-content:space-between;padding:4px 0;margin-bottom:14px}
 .quiz-nav-l{font-size:12px;color:#999}
 .btn-next{background:#3a8a8a;color:#fff;border:none;border-radius:8px;padding:11px 28px;font-size:14px;font-weight:bold;cursor:pointer;font-family:inherit;transition:.15s;display:none}
 .btn-next.show{display:inline-block}
@@ -200,6 +200,36 @@ body{font-family:'Nanum Gothic','NanumGothic','나눔고딕','맑은 고딕','Ap
 
 /* ─ 키보드 힌트 ─ */
 .key-hint{text-align:center;font-size:11px;color:#bbb;margin-top:8px}
+
+/* ─ 계산기 ─ */
+.calc-btn{background:rgba(255,255,255,.15);border:none;border-radius:8px;width:32px;height:32px;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;flex-shrink:0;transition:.15s}
+.calc-btn:hover{background:rgba(255,255,255,.28)}
+.calcOverlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:2000;padding:16px}
+.calcOverlay.on{display:flex}
+.calcBox{width:100%;max-width:320px;max-height:92vh;overflow-y:auto;background:#fff;border-radius:14px;
+  padding:18px;box-shadow:0 10px 40px rgba(0,0,0,.35)}
+.calcHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;
+  font-size:12px;font-weight:bold;color:#555;gap:8px}
+.calcHead .calc-close{width:28px;height:28px;border:none;border-radius:8px;background:#e8eaf0;color:#555;
+  font-size:13px;cursor:pointer;flex:none}
+.calcHead .calc-close:hover{background:#d5d8e0}
+.calcDisplay{text-align:right;font-size:20px;font-weight:400;font-variant-numeric:tabular-nums;
+  background:#f0f2f5;border:1px solid #ddd;border-radius:10px;padding:14px 16px;margin-bottom:12px;
+  color:#222;overflow-x:auto;white-space:nowrap}
+.calcGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.calcGrid button{padding:13px 4px;border:1.5px solid #ddd;border-radius:10px;font-size:14px;font-weight:600;
+  background:#fff;color:#333;cursor:pointer;font-family:inherit;transition:.15s}
+.calcGrid button:hover{background:#f0faf9;border-color:#3a8a8a}
+.calcGrid button:active{transform:scale(.93)}
+.calcGrid button[data-op="+"],.calcGrid button[data-op="-"],
+.calcGrid button[data-op="*"],.calcGrid button[data-op="/"]{background:#3a8a8a;color:#fff;border-color:#3a8a8a}
+.calcGrid button[data-op="+"]:hover,.calcGrid button[data-op="-"]:hover,
+.calcGrid button[data-op="*"]:hover,.calcGrid button[data-op="/"]:hover{background:#2a7070}
+#calcEq{background:#22aa44;color:#fff;border-color:#22aa44}
+#calcEq:hover{background:#1c8a38}
+.calcGrid button[data-fn],.calcGrid button[data-const]{color:#2a5298}
+#calcC,#calcBack{color:#e53935}
 </style>
 </head>
 <body>
@@ -415,6 +445,18 @@ body{font-family:'Nanum Gothic','NanumGothic','나눔고딕','맑은 고딕','Ap
   <div class="quiz-top">
     <div class="quiz-top-title" id="quiz-title">전기철도기사 필기 퀴즈</div>
     <div class="quiz-top-r">
+      <button class="calc-btn" id="calcBtn" title="공학용 계산기">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="4" y="2" width="16" height="20" rx="2"/>
+          <rect x="7" y="5" width="10" height="4" rx="1"/>
+          <line x1="7" y1="13" x2="7" y2="13"/>
+          <line x1="12" y1="13" x2="12" y2="13"/>
+          <line x1="17" y1="13" x2="17" y2="13"/>
+          <line x1="7" y1="17" x2="7" y2="17"/>
+          <line x1="12" y1="17" x2="12" y2="17"/>
+          <line x1="17" y1="17" x2="17" y2="17"/>
+        </svg>
+      </button>
       <span class="quiz-progress-txt" id="quiz-prog">1 / 40</span>
       <span class="wrong-chip" id="wrong-chip" style="display:none">❌ 0</span>
     </div>
@@ -423,19 +465,64 @@ body{font-family:'Nanum Gothic','NanumGothic','나눔고딕','맑은 고딕','Ap
     <div class="progress-bar-fill" id="prog-fill" style="width:0%"></div>
   </div>
 
+  <div class="calcOverlay" id="calcOverlay">
+    <div class="calcBox">
+      <div class="calcHead">
+        <span>공학용 계산기 (삼각함수 · Degree)</span>
+        <button class="calc-close" id="calcClose">✕</button>
+      </div>
+      <div class="calcDisplay" id="calcDisplay">0</div>
+      <div class="calcGrid">
+        <button data-op="(">(</button>
+        <button data-op=")">)</button>
+        <button data-op="^">^</button>
+        <button id="calcAns">Ans</button>
+        <button data-fn="sin">sin</button>
+        <button data-fn="cos">cos</button>
+        <button data-fn="tan">tan</button>
+        <button data-fn="sqrt">√</button>
+        <button data-fn="sq">x²</button>
+        <button data-op="%">%</button>
+        <button id="calcC">C</button>
+        <button id="calcBack">⌫</button>
+        <button data-const="pi">π</button>
+        <button data-const="sqrt2">√2</button>
+        <button data-const="sqrt3">√3</button>
+        <button data-const="e">e</button>
+        <button data-num="7">7</button>
+        <button data-num="8">8</button>
+        <button data-num="9">9</button>
+        <button data-op="/">÷</button>
+        <button data-num="4">4</button>
+        <button data-num="5">5</button>
+        <button data-num="6">6</button>
+        <button data-op="*">×</button>
+        <button data-num="1">1</button>
+        <button data-num="2">2</button>
+        <button data-num="3">3</button>
+        <button data-op="-">−</button>
+        <button data-fn="neg">±</button>
+        <button data-num="0">0</button>
+        <button data-num=".">.</button>
+        <button data-op="+">+</button>
+        <button id="calcEq" style="grid-column:span 4">=</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 퀴즈 본문 -->
   <div class="quiz-body">
     <div class="quiz-card">
       <div class="q-meta" id="q-meta"></div>
       <div class="q-text-box" id="q-text-box"></div>
       <div class="opts-grid" id="opts-grid"></div>
-      <div class="explain-box" id="explain-box">
-        <b class="explain-title">💡 해설</b>
-        <div id="explain-text"></div>
-      </div>
       <div class="quiz-nav">
         <div class="quiz-nav-l" id="quiz-nav-l"></div>
         <button class="btn-next" id="btn-next" onclick="nextCard()">다음 문제 →</button>
+      </div>
+      <div class="explain-box" id="explain-box">
+        <b class="explain-title">💡 해설</b>
+        <div id="explain-text"></div>
       </div>
       <div class="key-hint" id="key-hint">키보드: 1 · 2 · 3 · 4 선택 &nbsp;|&nbsp; Space · Enter = 다음</div>
     </div>
@@ -1258,6 +1345,153 @@ function exportWrongIds() {
   URL.revokeObjectURL(url);
 }
 
+/* ─ 공학용 계산기 (수식 입력 + 파서, 삼각함수는 Degree 기준) ─ */
+const CALC = { expr:'', ans:0, justEq:false };
+
+function calcUpdate(){ document.getElementById('calcDisplay').textContent = CALC.expr || '0'; }
+
+function calcTokenize(str){
+  const re = /\d+\.?\d*|\.\d+|sin|cos|tan|sqrt|Ans|pi|e|[()+\-*/^%]/g;
+  return str.match(re) || [];
+}
+function calcParse(tokens){
+  let pos = 0;
+  const peek = () => tokens[pos];
+  const next = () => tokens[pos++];
+  function parseExpr(){
+    let v = parseTerm();
+    while(peek()==='+'||peek()==='-'){
+      const op = next();
+      const r = parseTerm();
+      v = (op==='+') ? v+r : v-r;
+    }
+    return v;
+  }
+  function parseTerm(){
+    let v = parsePower();
+    while(peek()==='*'||peek()==='/'){
+      const op = next();
+      const r = parsePower();
+      if(op==='/'){ if(r===0) throw new Error('div0'); v = v/r; }
+      else v = v*r;
+    }
+    return v;
+  }
+  function parsePower(){
+    const v = parseUnary();
+    if(peek()==='^'){ next(); return Math.pow(v, parsePower()); }
+    return v;
+  }
+  function parseUnary(){
+    if(peek()==='-'){ next(); return -parseUnary(); }
+    if(peek()==='+'){ next(); return parseUnary(); }
+    return parsePostfix();
+  }
+  function parsePostfix(){
+    let v = parsePrimary();
+    while(peek()==='%'){ next(); v = v/100; }
+    return v;
+  }
+  function parsePrimary(){
+    const t = next();
+    if(t===undefined) throw new Error('unexpected end');
+    if(t==='('){
+      const v = parseExpr();
+      if(next()!==')') throw new Error('paren');
+      return v;
+    }
+    if(t==='sin'||t==='cos'||t==='tan'||t==='sqrt'){
+      if(next()!=='(') throw new Error('func paren');
+      const v = parseExpr();
+      if(next()!==')') throw new Error('paren');
+      if(t==='sin') return Math.sin(v*Math.PI/180);
+      if(t==='cos') return Math.cos(v*Math.PI/180);
+      if(t==='tan') return Math.tan(v*Math.PI/180);
+      return v<0 ? NaN : Math.sqrt(v);
+    }
+    if(t==='Ans') return CALC.ans;
+    if(t==='pi') return Math.PI;
+    if(t==='e') return Math.E;
+    if(/^\d+\.?\d*$|^\.\d+$/.test(t)) return parseFloat(t);
+    throw new Error('unexpected token '+t);
+  }
+  const result = parseExpr();
+  if(pos !== tokens.length) throw new Error('trailing tokens');
+  return result;
+}
+
+function calcClear(){ CALC.expr=''; CALC.justEq=false; calcUpdate(); }
+function calcBack(){ CALC.expr = CALC.expr.slice(0,-1); calcUpdate(); }
+
+function calcInputNum(n){
+  if(CALC.justEq){ CALC.expr=''; CALC.justEq=false; }
+  CALC.expr += n;
+  calcUpdate();
+}
+function calcInputOp(op){
+  CALC.justEq=false;
+  if(op==='('){ CALC.expr += '('; calcUpdate(); return; }
+  if(op===')'){ CALC.expr += ')'; calcUpdate(); return; }
+  if(op==='%'){ CALC.expr += '%'; calcUpdate(); return; }
+  const last = CALC.expr.slice(-1);
+  if('+-*/^'.includes(last) && op!=='-'){
+    CALC.expr = CALC.expr.slice(0,-1) + op;
+  } else {
+    CALC.expr += op;
+  }
+  calcUpdate();
+}
+function calcFn(fn){
+  CALC.justEq=false;
+  if(fn==='sin'||fn==='cos'||fn==='tan'||fn==='sqrt'){ CALC.expr += fn+'('; calcUpdate(); return; }
+  if(fn==='sq'){ CALC.expr += '^2'; calcUpdate(); return; }
+  if(fn==='neg'){
+    const last = CALC.expr.slice(-1);
+    if(CALC.expr==='' || '(+-*/^'.includes(last)){ CALC.expr += '-'; calcUpdate(); }
+    return;
+  }
+}
+function calcAns(){ CALC.justEq=false; CALC.expr += 'Ans'; calcUpdate(); }
+function calcInsertConst(name){
+  CALC.justEq=false;
+  if(name==='sqrt2') CALC.expr += '1.4142';
+  else if(name==='sqrt3') CALC.expr += '1.732';
+  else if(name==='pi') CALC.expr += 'pi';
+  else if(name==='e') CALC.expr += 'e';
+  calcUpdate();
+}
+function calcEquals(){
+  if(!CALC.expr) return;
+  let open=0;
+  for(const c of CALC.expr){ if(c==='(') open++; if(c===')') open--; }
+  const fixed = CALC.expr + ')'.repeat(Math.max(0, open));
+  try{
+    const tokens = calcTokenize(fixed);
+    const r = calcParse(tokens);
+    if(!Number.isFinite(r)) throw new Error('invalid');
+    const rr = +r.toFixed(10);
+    CALC.ans = rr;
+    CALC.expr = String(rr);
+    CALC.justEq = true;
+  }catch(e){
+    CALC.expr = 'Error';
+    CALC.justEq = true;
+  }
+  calcUpdate();
+}
+
+document.getElementById('calcBtn').onclick = () => { calcUpdate(); document.getElementById('calcOverlay').classList.add('on'); };
+document.getElementById('calcClose').onclick = () => document.getElementById('calcOverlay').classList.remove('on');
+document.getElementById('calcOverlay').addEventListener('click', e => { if(e.target.id==='calcOverlay') document.getElementById('calcOverlay').classList.remove('on'); });
+document.querySelectorAll('#calcOverlay [data-num]').forEach(b=> b.onclick = () => calcInputNum(b.dataset.num));
+document.querySelectorAll('#calcOverlay [data-op]').forEach(b=> b.onclick = () => calcInputOp(b.dataset.op));
+document.querySelectorAll('#calcOverlay [data-fn]').forEach(b=> b.onclick = () => calcFn(b.dataset.fn));
+document.querySelectorAll('#calcOverlay [data-const]').forEach(b=> b.onclick = () => calcInsertConst(b.dataset.const));
+document.getElementById('calcC').onclick = calcClear;
+document.getElementById('calcBack').onclick = calcBack;
+document.getElementById('calcEq').onclick = calcEquals;
+document.getElementById('calcAns').onclick = calcAns;
+
 /* ─ 유틸 ─ */
 function parseAns(val) {
   if (!val) return 0;
@@ -1317,6 +1551,11 @@ function shuffle(arr) {
 document.addEventListener('keydown', e => {
   const screen = document.querySelector('.screen.active');
   if (!screen || screen.id !== 'screen-quiz') return;
+  const overlay = document.getElementById('calcOverlay');
+  if (overlay && overlay.classList.contains('on')) {
+    if (e.key === 'Escape') overlay.classList.remove('on');
+    return;
+  }
   const { answered } = S.session;
   if (!answered && ['1','2','3','4'].includes(e.key)) {
     const idx = parseInt(e.key) - 1; // 0-based display position

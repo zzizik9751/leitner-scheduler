@@ -163,7 +163,7 @@
   }
   .calcHead .icon{width:30px;height:30px;font-size:13px;flex:none}
   .calcDisplay{
-    text-align:right;font-size:32px;font-weight:800;font-variant-numeric:tabular-nums;
+    text-align:right;font-size:24px;font-weight:500;font-variant-numeric:tabular-nums;
     background:var(--card2);border:1px solid var(--line);border-radius:12px;
     padding:14px 16px;margin-bottom:12px;color:var(--txt);overflow-x:auto;white-space:nowrap;
   }
@@ -180,6 +180,7 @@
   .calcGrid button[data-op="/"]{background:var(--accent);color:#fff}
   #calcEq{background:var(--ok);color:#04241b}
   .calcGrid button[data-fn]{color:var(--accent2)}
+  .calcGrid button[data-const]{color:var(--accent2)}
   #calcC,#calcBack{color:var(--danger)}
 </style>
 </head>
@@ -264,6 +265,10 @@
       <button data-op="%">%</button>
       <button id="calcC">C</button>
       <button id="calcBack">⌫</button>
+      <button data-const="pi">π</button>
+      <button data-const="sqrt2">√2</button>
+      <button data-const="sqrt3">√3</button>
+      <button data-const="e">e</button>
       <button data-num="7">7</button>
       <button data-num="8">8</button>
       <button data-num="9">9</button>
@@ -471,7 +476,7 @@ const CALC = { expr:'', ans:0, justEq:false };
 function calcUpdate(){ $('calcDisplay').textContent = CALC.expr || '0'; }
 
 function calcTokenize(str){
-  const re = /\d+\.?\d*|\.\d+|sin|cos|tan|sqrt|Ans|[()+\-*/^%]/g;
+  const re = /\d+\.?\d*|\.\d+|sin|cos|tan|sqrt|Ans|pi|e|[()+\-*/^%]/g;
   return str.match(re) || [];
 }
 function calcParse(tokens){
@@ -530,6 +535,8 @@ function calcParse(tokens){
       return v<0 ? NaN : Math.sqrt(v);
     }
     if(t==='Ans') return CALC.ans;
+    if(t==='pi') return Math.PI;
+    if(t==='e') return Math.E;
     if(/^\d+\.?\d*$|^\.\d+$/.test(t)) return parseFloat(t);
     throw new Error('unexpected token '+t);
   }
@@ -571,6 +578,14 @@ function calcFn(fn){
   }
 }
 function calcAns(){ CALC.justEq=false; CALC.expr += 'Ans'; calcUpdate(); }
+function calcInsertConst(name){
+  CALC.justEq=false;
+  if(name==='sqrt2') CALC.expr += '1.4142';
+  else if(name==='sqrt3') CALC.expr += '1.732';
+  else if(name==='pi') CALC.expr += 'pi';
+  else if(name==='e') CALC.expr += 'e';
+  calcUpdate();
+}
 
 function calcEquals(){
   if(!CALC.expr) return;
@@ -682,6 +697,7 @@ $('calcC').onclick = calcClear;
 $('calcBack').onclick = calcBack;
 $('calcEq').onclick = calcEquals;
 $('calcAns').onclick = calcAns;
+document.querySelectorAll('#calcOverlay [data-const]').forEach(b=> b.onclick = () => calcInsertConst(b.dataset.const));
 
 /* ---------- 초기화 ---------- */
 list(); setBtns();

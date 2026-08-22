@@ -886,11 +886,11 @@ async function renderDocument() {
     }
     let hintHtml = '';
     if (showHint && fm.hint>=0 && n.fields[fm.hint]) {
-      hintHtml = `<div class="hint-box">힌트: ${cleanHtml(n.fields[fm.hint])}</div>`;
+      hintHtml = `<div class="hint-box"> ${cleanHtml(n.fields[fm.hint])}</div>`;
     }
     let expHtml = '';
     if (showExp && fm.exp>=0 && n.fields[fm.exp]) {
-      expHtml = `<div class="exp-box">💡 해설: ${cleanHtml(n.fields[fm.exp])}</div>`;
+      expHtml = `<div class="exp-box"> ${cleanHtml(n.fields[fm.exp])}</div>`;
     }
 
     const div = document.createElement('div');

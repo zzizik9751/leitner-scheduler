@@ -1296,6 +1296,7 @@ function buildWrongList() {
     </div>`;
   }).join('');
   document.getElementById('wrong-list').innerHTML = html;
+  typesetQ(document.getElementById('wrong-list'));
 }
 
 function toggleWrongList() {

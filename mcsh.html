@@ -166,8 +166,8 @@ body{font-family:'Nanum Gothic','NanumGothic','나눔고딕','맑은 고딕','Ap
 .result-header h1{font-size:22px;font-weight:900;margin-bottom:4px}
 .result-header p{font-size:12px;color:rgba(255,255,255,.7)}
 .result-body{background:#fff;padding:32px 36px;border-radius:0 0 14px 14px;box-shadow:0 4px 16px rgba(0,0,0,.1)}
-.score-row{display:flex;gap:16px;margin-bottom:26px}
-.score-card{flex:1;background:#f7f9ff;border-radius:12px;padding:20px;text-align:center}
+.score-row{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:26px}
+.score-card{flex:1 1 130px;min-width:0;background:#f7f9ff;border-radius:12px;padding:20px;text-align:center}
 .score-card .big{font-size:48px;font-weight:900;line-height:1}
 .score-card .big.green{color:#1a8a3a}
 .score-card .big.red{color:#e53935}
@@ -231,6 +231,32 @@ body{font-family:'Nanum Gothic','NanumGothic','나눔고딕','맑은 고딕','Ap
 #calcEq:hover{background:#1c8a38}
 .calcGrid button[data-fn],.calcGrid button[data-const]{color:#2a5298}
 #calcC,#calcBack{color:#e53935}
+
+/* ─ 모바일 대응 ─ */
+@media(max-width:480px){
+  #screen-result{padding:14px}
+  .result-header{padding:20px 18px}
+  .result-body{padding:18px 16px}
+  .score-row{gap:8px}
+  .score-card{flex:1 1 calc(50% - 4px);padding:14px 8px}
+  .score-card .big{font-size:32px}
+  .badge-pass{padding:4px 14px;font-size:12px}
+}
+
+/* ─ 합격/불합격 팝업 ─ */
+.rp-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:3000;padding:20px}
+.rp-overlay.on{display:flex}
+.rp-box{width:100%;max-width:340px;background:#fff;border-radius:18px;padding:34px 26px 26px;text-align:center;
+  box-shadow:0 20px 50px rgba(0,0,0,.35);animation:rpPop .28s ease}
+@keyframes rpPop{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+.rp-icon{font-size:56px;line-height:1;margin-bottom:10px}
+.rp-title{font-size:22px;font-weight:900;margin-bottom:8px}
+.rp-title.pass{color:#1a8a3a}
+.rp-title.fail{color:#2a5298}
+.rp-sub{font-size:13.5px;color:#666;line-height:1.7;margin-bottom:22px}
+.rp-btn{border:none;border-radius:10px;padding:13px 0;width:100%;font-size:15px;font-weight:bold;cursor:pointer;color:#fff}
+.rp-btn.pass{background:#27ae60}
+.rp-btn.fail{background:#2a5298}
 </style>
 </head>
 <body>
@@ -437,7 +463,7 @@ body{font-family:'Nanum Gothic','NanumGothic','나눔고딕','맑은 고딕','Ap
       <button class="btn-secondary" onclick="showScreen('load')">← 이전</button>
       <button class="btn-primary" onclick="startQuiz()">퀴즈 시작 →</button>
     </div>
-    <div class="app-version">v1.2 · 2026-08-23 수정</div>
+    <div class="app-version">v1.5 · 2026-08-23 수정</div>
   </div>
 </div>
 
@@ -532,6 +558,15 @@ body{font-family:'Nanum Gothic','NanumGothic','나눔고딕','맑은 고딕','Ap
 </div>
 
 <!-- ===== SCREEN 4: RESULT ===== -->
+<div class="rp-overlay" id="rp-overlay">
+  <div class="rp-box">
+    <div class="rp-icon" id="rp-icon">🎉</div>
+    <div class="rp-title" id="rp-title">합격입니다!</div>
+    <div class="rp-sub" id="rp-sub"></div>
+    <button class="rp-btn" id="rp-btn" onclick="document.getElementById('rp-overlay').classList.remove('on')">결과 확인하기</button>
+  </div>
+</div>
+
 <div class="screen" id="screen-result">
   <div class="result-wrap">
     <div class="result-header">
@@ -1180,6 +1215,49 @@ function nextCard() {
 }
 
 /* ─ 결과 화면 ─ */
+const RP_MSGS = {
+  pass: [
+    { icon:'🎉', title:'합격입니다!', sub:(pct)=>`정답률 ${pct}% · 모의고사 합격이에요! 이 실력이면 본 시험도 충분히 통과할 수 있어요 💪` },
+    { icon:'🥳', title:'훌륭해요!', sub:(pct)=>`정답률 ${pct}%로 합격 기준을 넘었어요. 지금처럼만 유지하면 본 시험도 걱정 없어요!` },
+    { icon:'👏', title:'합격 컨디션!', sub:(pct)=>`정답률 ${pct}% · 준비가 잘 되고 있다는 증거예요. 마무리까지 이 페이스 유지해봐요!` },
+    { icon:'✨', title:'잘하고 있어요!', sub:(pct)=>`이번 모의고사는 합격입니다. 오답만 한 번 더 확인하면 본 시험도 자신 있게 볼 수 있어요.` },
+    { icon:'🔥', title:'합격!', sub:(pct)=>`정답률 ${pct}% · 실전 감각이 잘 잡혀가고 있어요. 남은 기간도 꾸준히 이어가봐요!` }
+  ],
+  gwaRak: [
+    { icon:'💪', title:'괜찮아요, 여기까지 온 것도 대단해요', sub:(pct,gap,subs)=>`과락 과목(${subs})만 집중해서 다시 보면, 본 시험에서는 충분히 합격할 수 있어요!` },
+    { icon:'📚', title:'포인트를 찾았어요!', sub:(pct,gap,subs)=>`${subs} 과목이 발목을 잡았네요. 모의고사에서 미리 알았으니, 본 시험 전까지 집중 공부하면 승산 있어요!` },
+    { icon:'🎯', title:'약점을 발견한 거예요', sub:(pct,gap,subs)=>`${subs} 과목만 보완하면 다음엔 무난히 합격이에요. 지금 알아낸 게 오히려 다행이에요!` },
+    { icon:'🌱', title:'아직 시간 있어요', sub:(pct,gap,subs)=>`과락 과목(${subs})만 집중 공략하면 본 시험 합격, 충분히 가능해요. 포기하지 마세요!` },
+    { icon:'🔍', title:'이번 모의고사의 역할, 제대로 했어요', sub:(pct,gap,subs)=>`${subs} 과목의 구멍을 미리 찾은 거예요. 본 시험 전에 채우면 결과는 달라질 거예요!` }
+  ],
+  avgFail: [
+    { icon:'🌱', title:'조금만 더 힘내요', sub:(pct,gap)=>`평균 ${pct}점 · 합격까지 ${gap}점 남았어요. 지금처럼만 보완하면 본 시험은 문제없어요!` },
+    { icon:'📈', title:'거의 다 왔어요', sub:(pct,gap)=>`${gap}점 차이예요. 오답만 다시 훑어봐도 금방 채울 수 있는 거리예요!` },
+    { icon:'💡', title:'지금 알아서 다행이에요', sub:(pct,gap)=>`모의고사라서 다행이에요. 평균 ${pct}점, 부족한 부분만 채우면 본 시험 합격은 충분해요.` },
+    { icon:'🙂', title:'괜찮아요, 이 정도면 잘하고 있어요', sub:(pct,gap)=>`합격까지 ${gap}점! 오답 위주로 조금만 더 다지면 다음엔 합격이에요.` },
+    { icon:'🚀', title:'여기서 조금만 더!', sub:(pct,gap)=>`평균 ${pct}점 · 남은 기간 오답 정리만 잘 해도 본 시험 합격 가능해요!` }
+  ]
+};
+
+function showResultPopup(passed, pct, gwaRak, gwaRakSubs) {
+  const icon = document.getElementById('rp-icon');
+  const title = document.getElementById('rp-title');
+  const sub = document.getElementById('rp-sub');
+  const btn = document.getElementById('rp-btn');
+  const gap = 60 - pct;
+  const subs = gwaRakSubs ? gwaRakSubs.join(', ') : '';
+
+  const key = passed ? 'pass' : (gwaRak ? 'gwaRak' : 'avgFail');
+  const pick = RP_MSGS[key][Math.floor(Math.random() * RP_MSGS[key].length)];
+
+  icon.textContent = pick.icon;
+  title.textContent = pick.title;
+  title.className = passed ? 'rp-title pass' : 'rp-title fail';
+  sub.textContent = pick.sub(pct, gap, subs);
+  btn.className = passed ? 'rp-btn pass' : 'rp-btn fail';
+  document.getElementById('rp-overlay').classList.add('on');
+}
+
 function showResult() {
   const { cards, wrongs, correct, subStats } = S.session;
   const total = cards.length;
@@ -1194,6 +1272,8 @@ function showResult() {
   }
   const gwaRak = gwaRakSubs.length > 0;
   const passed = !gwaRak && pct >= 60;
+
+  showResultPopup(passed, pct, gwaRak, gwaRakSubs);
 
   document.getElementById('r-correct').textContent = correct;
   document.getElementById('r-wrong').textContent = wrongCnt;

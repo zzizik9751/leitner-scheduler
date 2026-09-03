@@ -105,16 +105,19 @@ body {
 }
 
 /* ── 헤더 ── */
+.top-row {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 6px; flex-shrink: 0; flex-wrap: wrap;
+}
 .study-header {
-  display: flex; justify-content: space-between;
-  align-items: center; margin-bottom: 8px; flex-shrink: 0;
+  display: flex; align-items: center; margin-bottom: 8px; flex-shrink: 0;
 }
 .deck-name {
   font-size: 13px; font-weight: 600; color: #555;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 55%;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 45%; flex-shrink: 1;
 }
-.header-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-.progress-text { font-size: 13px; color: #aaa; }
+.header-right { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; row-gap: 6px; width: 100%; }
+.progress-text { font-size: 13px; color: #aaa; margin-left: 2px; }
 
 .timer-ring { position: relative; width: 34px; height: 34px; flex-shrink: 0; cursor: pointer; }
 .timer-ring svg { transform: rotate(-90deg); }
@@ -314,7 +317,7 @@ body {
   .shortcut-guide { display: none !important; }
 }
 
-.quota-bar { display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-shrink:0;flex-wrap:wrap; }
+.quota-bar { display:flex;gap:6px;align-items:center;flex-shrink:0;flex-wrap:wrap; }
 .quota-chip { font-size:11px;font-weight:600;padding:3px 9px;border-radius:12px; }
 .quota-review { background:#fff3e0;color:#e65100; }
 .quota-new    { background:#e8f5e9;color:#2e7d32; }
@@ -544,20 +547,22 @@ window.MathJax = {
     <div class="study-layout">
       <div class="study-col">
 
-        <div class="quota-bar" id="quota-bar"></div>
-
-        <!-- 헤더 -->
-        <div class="study-header">
+        <div class="top-row">
           <span class="deck-name" id="deck-name"></span>
+          <div class="quota-bar" id="quota-bar"></div>
+        </div>
+
+        <!-- 헤더 (아이콘 줄) -->
+        <div class="study-header">
           <div class="header-right">
-            <button onclick="openList()" style="padding:5px 10px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="카드 목록/검색">🔍</button>
-            <button onclick="askAI()" id="btn-ask-ai" style="padding:5px 10px;border-radius:6px;border:1px solid #c8eed8;background:#f0faf6;font-size:13px;cursor:pointer;line-height:1;color:#0F6E56;font-weight:600;" title="현재 문제를 Claude.ai에 질문하기">✦ AI</button>
-            <button onclick="goToPrev()" id="btn-prev" style="padding:5px 10px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;opacity:0.35;" title="이전 카드 보기">◀</button>
-            <button onclick="openEditModal()" style="padding:5px 10px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="카드 텍스트 편집">✏️</button>
-            <button onclick="openCalc()" id="btn-calc" style="padding:5px 10px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="계산기">🧮</button>
-            <button onclick="saveProgress()" style="padding:5px 10px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="진도 저장 (ZIP)">💾</button>
-            <button id="btn-fullscreen" onclick="toggleFullscreen()" style="padding:5px 10px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="전체화면 (F11)">⛶</button>
-            <button id="btn-tts" onclick="toggleTTS()" style="padding:5px 10px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="TTS 음성 읽기 켜기/끄기">🔇</button>
+            <button onclick="openList()" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="카드 목록/검색">🔍</button>
+            <button onclick="askAI()" id="btn-ask-ai" style="padding:5px 8px;border-radius:6px;border:1px solid #c8eed8;background:#f0faf6;font-size:13px;cursor:pointer;line-height:1;color:#0F6E56;font-weight:600;" title="현재 문제를 Claude.ai에 질문하기">✦ AI</button>
+            <button onclick="goToPrev()" id="btn-prev" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;opacity:0.35;" title="이전 카드 보기">◀</button>
+            <button onclick="openEditModal()" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="카드 텍스트 편집">✏️</button>
+            <button onclick="openCalc()" id="btn-calc" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="계산기">🧮</button>
+            <button onclick="saveProgress()" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="진도 저장 (ZIP)">💾</button>
+            <button id="btn-fullscreen" onclick="toggleFullscreen()" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="전체화면 (F11)">⛶</button>
+            <button id="btn-tts" onclick="toggleTTS()" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="TTS 음성 읽기 켜기/끄기">🔇</button>
             <div class="timer-ring" id="timer-ring" onclick="togglePause()" title="클릭 = 일시정지/재개">
               <svg width="34" height="34" viewBox="0 0 34 34">
                 <circle class="timer-bg" cx="17" cy="17" r="14"/>
@@ -1609,7 +1614,7 @@ function renderList(){
   const {star:sf, type:tf, category:cf}=listDropFilters;
   if(sf&&sf.size>0) source=source.filter(c=>sf.has(starBucket(countStars(c.star))));
   if(tf)  source=source.filter(c=>detectCardType(c)===tf);
-  if(cf)  source=source.filter(c=>c.분류.split('•')[0]===cf);
+  if(cf)  source=source.filter(c=>catGroupKey(c.분류)===cf);
 
   // 검색
   const matched=source.filter(c=>{
@@ -1625,10 +1630,10 @@ function renderList(){
     matched.sort((a,b)=>stripHtml(a.front).localeCompare(stripHtml(b.front),'ko'));
   } else if(listSort==='cat'){
     matched.sort((a,b)=>{
-      const pa=a.분류.split('•'),pb=b.분류.split('•');
+      const pa=catParts(a.분류),pb=catParts(b.분류);
       const ra=(ROMAN_ORDER[pa[0]]||99),rb=(ROMAN_ORDER[pb[0]]||99);
       if(ra!==rb) return ra-rb;
-      return parseInt(pa[1]||0)-parseInt(pb[1]||0);
+      return (parseInt(pa[1])||0)-(parseInt(pb[1])||0);
     });
   }
   // 'order' = 원본 allCards 순서 유지 (기본값, 별도 정렬 불필요)
@@ -1694,7 +1699,21 @@ function starBucket(n){ n=n||0; if(n>=5) return '5+'; if(n<=1) return '1-'; retu
 let listSort='order'; // 'order'|'star'|'alpha'|'cat'
 let selectedCards=new Set();
 
-const ROMAN_ORDER={'I':1,'II':2,'III':3,'IV':4,'V':5,'VI':6,'VII':7,'VIII':8};
+// 대분류 표기가 유니코드 로마숫자(Ⅰ Ⅱ ...)든 일반 알파벳(I II ...)이든 모두 인식
+const ROMAN_ORDER={
+  'Ⅰ':1,'Ⅱ':2,'Ⅲ':3,'Ⅳ':4,'Ⅴ':5,'Ⅵ':6,'Ⅶ':7,'Ⅷ':8,'Ⅸ':9,'Ⅹ':10,
+  'I':1,'II':2,'III':3,'IV':4,'V':5,'VI':6,'VII':7,'VIII':8,'IX':9,'X':10,
+};
+// 분류 필드("대분류·중분류", 예: Ⅲ·13)를 구분자(·/•) 무관하게 분리
+function catParts(cat){ return (cat||'').split(/[·•]/).map(s=>s.trim()).filter(Boolean); }
+// 2단계(대분류+중분류)까지 크게 묶은 그룹 키 — 예: "Ⅲ·13" → "Ⅲ-1"
+function catGroupKey(cat){
+  const p=catParts(cat);
+  if(!p[0]) return '';
+  const major=p[0], num=p[1]||'';
+  const mid=num?num.charAt(0):'';
+  return mid?major+'-'+mid:major;
+}
 const CATEGORY_NAME={
   'I':'Ⅰ. 산업안전관리 계획수립',
   'II':'Ⅱ. 기계·작업장 안전관리',
@@ -1731,15 +1750,26 @@ function openListScreen(){
     if(el) el.classList.toggle('active', id==='ls-order');
   });
 
-  // 분류 셀렉트 동적 생성
+  // 분류 셀렉트 동적 생성 — 대분류로 묶고(optgroup), 그 안에 중분류(2단계)까지 옵션으로 표시
   const catSel=document.getElementById('lf-category');
-  const prefixes=[...new Set(
-    allCards.map(c=>c.분류.includes('•')?c.분류.split('•')[0]:'').filter(Boolean)
-  )].sort((a,b)=>(ROMAN_ORDER[a]||99)-(ROMAN_ORDER[b]||99));
   const catCount={};
-  allCards.forEach(c=>{const p=c.분류.includes('•')?c.분류.split('•')[0]:'';if(p)catCount[p]=(catCount[p]||0)+1;});
-  catSel.innerHTML='<option value="">분류 전체</option>'+
-    prefixes.map(p=>`<option value="${p}">${CATEGORY_NAME[p]||p} (${catCount[p]||0}장)</option>`).join('');
+  allCards.forEach(c=>{const k=catGroupKey(c.분류);if(k)catCount[k]=(catCount[k]||0)+1;});
+  const majors=[...new Set(Object.keys(catCount).map(k=>k.split('-')[0]))]
+    .sort((a,b)=>(ROMAN_ORDER[a]||99)-(ROMAN_ORDER[b]||99));
+  let catHtml='<option value="">분류 전체</option>';
+  majors.forEach(maj=>{
+    const keys=Object.keys(catCount).filter(k=>k.split('-')[0]===maj)
+      .sort((a,b)=>(parseInt(a.split('-')[1])||0)-(parseInt(b.split('-')[1])||0));
+    const majTotal=keys.reduce((s,k)=>s+catCount[k],0);
+    const majLabel=CATEGORY_NAME[maj]||maj;
+    catHtml+=`<optgroup label="${majLabel} · 총 ${majTotal}장">`;
+    keys.forEach(k=>{
+      const mid=k.split('-')[1];
+      catHtml+=`<option value="${k}">${mid} (${catCount[k]}장)</option>`;
+    });
+    catHtml+='</optgroup>';
+  });
+  catSel.innerHTML=catHtml;
   catSel.value='';
 
   // 문제유형 셀렉트 동적 생성
@@ -1846,7 +1876,7 @@ function startAllCards(){
   const {star:sf,type:tf,category:cf}=listDropFilters;
   if(sf&&sf.size>0) source=source.filter(c=>sf.has(starBucket(countStars(c.star))));
   if(tf) source=source.filter(c=>detectCardType(c)===tf);
-  if(cf) source=source.filter(c=>c.분류.split('•')[0]===cf);
+  if(cf) source=source.filter(c=>catGroupKey(c.분류)===cf);
   if(kw) source=source.filter(c=>{
     const f=stripHtml(c.front).toLowerCase(),h=stripHtml(c.hint).toLowerCase(),b=stripHtml(c.back).toLowerCase();
     return f.includes(kw)||h.includes(kw)||b.includes(kw);
@@ -1854,10 +1884,10 @@ function startAllCards(){
   if(listSort==='star') source.sort((a,b)=>countStars(b.star)-countStars(a.star));
   else if(listSort==='alpha') source.sort((a,b)=>stripHtml(a.front).localeCompare(stripHtml(b.front),'ko'));
   else if(listSort==='cat') source.sort((a,b)=>{
-    const pa=a.분류.split('•'),pb=b.분류.split('•');
+    const pa=catParts(a.분류),pb=catParts(b.분류);
     const ra=(ROMAN_ORDER[pa[0]]||99),rb=(ROMAN_ORDER[pb[0]]||99);
     if(ra!==rb) return ra-rb;
-    return parseInt(pa[1]||0)-parseInt(pb[1]||0);
+    return (parseInt(pa[1])||0)-(parseInt(pb[1])||0);
   });
   filteredCards=isRandomMode()?shuffle(source):[...source];
   cur=0;passCount=0;failCount=0;sessionLog=[];failedCards=[];studyStartTime=new Date();

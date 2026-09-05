@@ -484,6 +484,10 @@ window.MathJax = {
       <div style="margin-top:4px;">
         <span id="progress-file-name" style="font-size:12px;color:#1D9E75;font-weight:600;"></span>
       </div>
+      <div id="apkg-store-info" style="display:none;margin-top:6px;font-size:12px;color:#888;">
+        📌 최근 파일: <span id="apkg-store-name" style="color:#555;font-weight:600;"></span>
+        <span id="apkg-store-clear" style="margin-left:8px;color:#c62828;text-decoration:underline;cursor:pointer;">저장된 파일 지우기</span>
+      </div>
       <div class="status-bar" id="status-bar"></div>
       <div class="notice">
         <strong>💡 내보내기 설정</strong><br>
@@ -1092,6 +1096,67 @@ else if (typeof exports === 'object'){
 </script>
 <script>
 const LEITNER_DAYS=[0,1,2,4,9,14];
+/* ── 최근 apkg 자동 재로드 (IndexedDB 저장) ── */
+const APKG_STORE_DB='mh_apkg_store', APKG_STORE_TABLE='files', APKG_STORE_KEY='last';
+function apkgStoreOpen(){
+  return new Promise((resolve,reject)=>{
+    if(!window.indexedDB){reject(new Error('indexedDB 미지원'));return;}
+    const req=indexedDB.open(APKG_STORE_DB,1);
+    req.onupgradeneeded=()=>{req.result.createObjectStore(APKG_STORE_TABLE);};
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error);
+  });
+}
+async function apkgStoreSave(file){
+  try{
+    const buffer=await file.arrayBuffer();
+    const db=await apkgStoreOpen();
+    await new Promise((resolve,reject)=>{
+      const tx=db.transaction(APKG_STORE_TABLE,'readwrite');
+      tx.objectStore(APKG_STORE_TABLE).put({name:file.name,buffer,savedAt:Date.now()},APKG_STORE_KEY);
+      tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);
+    });
+    db.close();
+  }catch(e){ /* 저장 실패해도 앱 동작에는 영향 없음 */ }
+}
+async function apkgStoreLoad(){
+  try{
+    const db=await apkgStoreOpen();
+    const rec=await new Promise((resolve,reject)=>{
+      const tx=db.transaction(APKG_STORE_TABLE,'readonly');
+      const req=tx.objectStore(APKG_STORE_TABLE).get(APKG_STORE_KEY);
+      req.onsuccess=()=>resolve(req.result||null);
+      req.onerror=()=>reject(req.error);
+    });
+    db.close();
+    return rec;
+  }catch(e){ return null; }
+}
+async function apkgStoreClear(){
+  try{
+    const db=await apkgStoreOpen();
+    await new Promise((resolve,reject)=>{
+      const tx=db.transaction(APKG_STORE_TABLE,'readwrite');
+      tx.objectStore(APKG_STORE_TABLE).delete(APKG_STORE_KEY);
+      tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);
+    });
+    db.close();
+  }catch(e){}
+}
+async function apkgStoreRefreshUI(){
+  const box=document.getElementById('apkg-store-info');
+  const nameEl=document.getElementById('apkg-store-name');
+  if(!box||!nameEl) return;
+  const rec=await apkgStoreLoad();
+  if(rec && rec.name){ box.style.display='block'; nameEl.textContent=rec.name; }
+  else { box.style.display='none'; nameEl.textContent=''; }
+}
+async function apkgStoreClearAndRefresh(){
+  if(!confirm('저장된 최근 파일 기록을 지울까요? (다음 실행 시 자동으로 불러오지 않습니다)')) return;
+  await apkgStoreClear();
+  apkgStoreRefreshUI();
+}
+
 let SQL=null,allCards=[],filteredCards=[],mediaMap={},zipRef=null;
 let pendingImport=null; // apkg 파싱 후 필드매핑 확인을 기다리는 원자료
 let sessionLog=[], cardEdited=false, ttsRate=1.1, ttsVoiceIdx=-1;
@@ -1302,6 +1367,7 @@ async function handleApkg(file, hasProgress=false){
     if(mFile){try{const j=JSON.parse(await mFile.async('string'));Object.entries(j).forEach(([k,v])=>mediaMap[v]=k);}catch(e){}}
     const dbFile=zip.file('collection.anki21')||zip.file('collection.anki2');
     if(!dbFile){setStatus('구버전 호환 포맷 필요: "Support older Anki versions" 체크 후 저장','error');return;}
+    apkgStoreSave(file).then(apkgStoreRefreshUI); // 다음 실행 시 자동 불러오기용 (비동기, 실패해도 무시)
     setStatus('카드 불러오는 중...','loading');
     const buf=await dbFile.async('arraybuffer');
     const db=new SQL.Database(new Uint8Array(buf));
@@ -2792,6 +2858,25 @@ window.addEventListener('DOMContentLoaded',()=>{
   if(sub)sub.textContent='필드명 자동 인식(필요 시 수동 매핑) · 저장된 ZIP도 가능';
   const inp=document.querySelector('#drop-zone input[type=file]');
   if(inp)inp.accept='.apkg,.zip';
+
+  const clearBtn=document.getElementById('apkg-store-clear');
+  if(clearBtn) clearBtn.addEventListener('click', apkgStoreClearAndRefresh);
+
+  apkgStoreRefreshUI();
+
+  // 이전에 불러온 apkg가 있으면 자동으로 우선 불러오기
+  (async ()=>{
+    const rec=await apkgStoreLoad();
+    if(rec && rec.buffer && rec.buffer.byteLength>0){
+      setStatus('이전에 불러온 파일 자동 불러오는 중: '+rec.name,'loading');
+      try{
+        const restoredFile=new File([rec.buffer], rec.name, {type:'application/octet-stream'});
+        await handleFile(restoredFile);
+      }catch(e){
+        setStatus('','');
+      }
+    }
+  })();
 });
 
 </script>

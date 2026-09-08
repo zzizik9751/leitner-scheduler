@@ -1,0 +1,1931 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>암기도우미(ver 전기철도기사)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f4f6fb;
+    --card:#ffffff;
+    --text:#1e2635;
+    --muted:#68758c;
+    --line:#e3e8f0;
+    --primary:#2f6fed;
+    --primary-dark:#1f56c4;
+    --good:#17a566;
+    --good-bg:#e8f8f1;
+    --bad:#e5484d;
+    --bad-bg:#fdecec;
+    --hint:#c07a12;
+    --hint-bg:#fdf3e2;
+    --radius:16px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  /* 고딕(산세리프) 계열 폰트를 최우선으로 강제 적용.
+     - Noto Sans KR(웹폰트, 인터넷 연결 시)을 1순위로 시도.
+     - 그 다음은 OS에 내장된 고딕 계열만 나열(맑은 고딕의 한글/영문 이름을 모두 넣어
+       일부 환경에서 이름 매칭이 안 되는 문제를 방지).
+     - 마지막 generic 키워드인 sans-serif까지도, 일부 크롬 환경에서 한글 sans-serif
+       기본값이 명조(바탕체) 계열로 잘못 설정되어 있는 경우가 있어 그 앞에
+       돋움/굴림/나눔고딕 등 구체적인 고딕 폰트명을 추가로 넣어 방어함. */
+  html,body,button,input,select,textarea{
+    font-family:"Noto Sans KR","맑은 고딕","Malgun Gothic","Apple SD Gothic Neo",
+      "돋움","Dotum","굴림","Gulim","나눔고딕","NanumGothic",system-ui,sans-serif;
+  }
+  body{
+    background:var(--bg);
+    color:var(--text);
+    min-height:100vh;
+  }
+  #app{max-width:640px;margin:0 auto;min-height:100vh;padding:16px;padding-bottom:40px;}
+  .screen{display:none;}
+  .screen.active{display:block;animation:fadein .15s ease-out;}
+  @keyframes fadein{from{opacity:0}to{opacity:1}}
+
+  h1{font-size:1.5rem;margin:.2em 0 0;}
+
+  .brand{display:flex;align-items:center;gap:14px;}
+  .brand-badge{
+    flex-shrink:0;width:54px;height:54px;border-radius:16px;
+    background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+    color:#fff;display:flex;align-items:center;justify-content:center;
+    font-size:1.6rem;font-weight:900;
+    box-shadow:0 6px 16px -4px rgba(30,60,150,.45);
+    box-shadow:0 6px 16px -4px color-mix(in srgb, var(--primary) 60%, transparent);
+  }
+  .brand-text{display:flex;flex-direction:column;line-height:1.15;}
+  .brand-eyebrow{font-size:.85rem;font-weight:600;color:var(--muted);letter-spacing:.01em;}
+  .brand-version{font-size:1rem;font-weight:700;color:var(--muted);margin-left:6px;-webkit-text-fill-color:var(--muted);}
+  .brand-title{
+    margin:2px 0 0;font-size:2rem;font-weight:900;letter-spacing:-.02em;
+    background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  h2{font-size:1.15rem;margin:0 0 12px;}
+  .sub{color:var(--muted);font-size:.92rem;margin:4px 0 20px;}
+
+  .card{background:var(--card);border-radius:var(--radius);padding:20px;box-shadow:0 1px 3px rgba(20,30,60,.06);margin-bottom:14px;}
+
+  .btn{
+    display:block;width:100%;padding:16px;margin:10px 0;border:none;border-radius:14px;
+    font-size:1.05rem;font-weight:600;cursor:pointer;text-align:center;
+    background:var(--card);color:var(--text);border:1.5px solid var(--line);
+    transition:transform .05s ease;
+  }
+  .btn:active{transform:scale(.98);}
+  .btn-primary{background:var(--primary);color:#fff;border-color:var(--primary);}
+  .btn-primary:hover{background:var(--primary-dark);}
+  .btn-ghost{background:transparent;border:1.5px solid var(--line);color:var(--muted);}
+  .btn-danger{background:var(--bad-bg);color:var(--bad);border-color:var(--bad-bg);}
+  .btn-row{display:flex;gap:8px;}
+  .btn-row .btn{flex:1;}
+  .btn-sm{padding:9px 12px;font-size:.85rem;margin:0;width:auto;border-radius:10px;}
+
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .topbar .back{background:none;border:none;color:var(--muted);font-size:1rem;cursor:pointer;padding:6px 0;}
+
+  .progress-wrap{margin-bottom:16px;}
+  .progress-text{display:flex;justify-content:space-between;font-size:.85rem;color:var(--muted);margin-bottom:6px;}
+  .progress-bar{height:10px;background:var(--line);border-radius:6px;overflow:hidden;}
+  .progress-fill{height:100%;background:var(--primary);width:0%;transition:width .2s ease;}
+
+  .qbox{background:var(--card);border-radius:var(--radius);padding:28px 20px;text-align:center;box-shadow:0 1px 3px rgba(20,30,60,.06);min-height:120px;display:flex;align-items:center;justify-content:center;}
+  .qtext{font-size:1.25rem;font-weight:600;line-height:1.5;white-space:pre-wrap;}
+
+  .hintbox{margin-top:14px;background:var(--hint-bg);color:var(--hint);border-radius:14px;padding:16px;text-align:center;font-size:1.15rem;font-weight:700;letter-spacing:.03em;min-height:1.4em;}
+  .hintbox.placeholder{color:var(--muted);font-weight:500;font-size:1rem;}
+  .hintbox.answer-reveal{background:var(--good-bg);color:var(--good);}
+  .hidden{display:none;}
+  /* 초성 힌트 글자별 색상 구분: 한글 유래는 기본 힌트색, 영어 유래는 진한 파란색,
+     숫자 유래는 진한 보라색. 세 가지 모두 굵게 강조한다. */
+  .hintbox .cho{font-weight:800;}
+  .hintbox .cho-en{color:#1d4ed8;}
+  .hintbox .cho-digit{color:#7c3aed;}
+
+  .tap-hint{text-align:center;color:var(--muted);font-size:.82rem;margin-top:10px;}
+
+  .answer-input{
+    width:100%;padding:16px;font-size:1.15rem;border-radius:14px;border:1.5px solid var(--line);
+    margin-top:16px;text-align:center;
+  }
+  .answer-input:focus{outline:none;border-color:var(--primary);}
+
+  .feedback{margin-top:12px;text-align:center;font-weight:600;min-height:1.4em;font-size:.98rem;}
+  .feedback.good{color:var(--good);}
+  .feedback.bad{color:var(--bad);}
+
+  .stat-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:.92rem;color:var(--muted);}
+  .combo{font-weight:800;color:var(--primary);font-size:1rem;}
+  .score{font-weight:800;color:var(--text);}
+
+  table{width:100%;border-collapse:collapse;font-size:.85rem;}
+  th,td{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left;vertical-align:top;}
+  th{color:var(--muted);font-weight:600;}
+  td.q-cell{max-width:180px;overflow:hidden;text-overflow:ellipsis;}
+  .tag{display:inline-block;background:var(--bg);border-radius:8px;padding:2px 8px;font-size:.75rem;color:var(--muted);}
+
+  .field{margin-bottom:12px;}
+  .field label{display:block;font-size:.82rem;color:var(--muted);margin-bottom:4px;}
+  .field input[type=text], .field input[type=number], .field select, .field textarea{
+    width:100%;padding:10px;border-radius:10px;border:1.5px solid var(--line);font-size:.95rem;font-family:inherit;
+  }
+  .field textarea{resize:vertical;min-height:56px;}
+
+  .checkline{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:.95rem;}
+  .checkline input{width:18px;height:18px;}
+
+  .modal-backdrop{position:fixed;inset:0;background:rgba(20,30,50,.45);display:flex;align-items:flex-end;justify-content:center;z-index:50;}
+  .modal-backdrop.hidden{display:none;}
+  .modal{background:var(--card);border-radius:18px 18px 0 0;padding:20px;width:100%;max-width:640px;max-height:85vh;overflow-y:auto;}
+  @media (min-width:680px){
+    .modal-backdrop{align-items:center;}
+    .modal{border-radius:18px;}
+  }
+
+  .result-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0;}
+  .result-item{background:var(--bg);border-radius:12px;padding:12px;text-align:center;}
+  .result-item .num{font-size:1.3rem;font-weight:800;}
+  .result-item .label{font-size:.78rem;color:var(--muted);margin-top:2px;}
+
+  .search-row{display:flex;gap:8px;margin-bottom:12px;}
+  .search-row input, .search-row select{flex:1;padding:9px 10px;border-radius:10px;border:1.5px solid var(--line);font-size:.9rem;}
+
+  .theme-row{display:flex;gap:10px;}
+  .theme-swatch{
+    flex:1;height:58px;border-radius:14px;border:3px solid transparent;cursor:pointer;
+    color:#fff;font-size:.8rem;font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,.35);
+  }
+  .theme-swatch.selected{border-color:var(--text);box-shadow:0 0 0 2px var(--card) inset;}
+
+  .empty-note{color:var(--muted);font-size:.9rem;text-align:center;padding:20px 0;}
+  .file-btn{position:relative;overflow:hidden;}
+  .file-btn input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;}
+
+  .tts-replay-btn{background:none;border:none;font-size:1.15rem;cursor:pointer;color:var(--muted);padding:4px 6px;line-height:1;}
+  .tts-replay-btn:active{transform:scale(.9);}
+
+  /* ---- 접근 암호 게이트: 매달 자동으로 바뀌는 비밀번호(YYMM)를 입력해야 앱이 열림 ---- */
+  .gate-overlay{
+    position:fixed;inset:0;z-index:999;background:var(--bg);
+    display:flex;align-items:center;justify-content:center;padding:24px;
+  }
+  .gate-overlay.hidden{display:none;}
+  .gate-box{
+    background:var(--card);border-radius:var(--radius);padding:28px 24px;max-width:360px;width:100%;
+    box-shadow:0 10px 30px -10px rgba(20,30,60,.25);text-align:center;
+  }
+  .gate-notice{
+    background:var(--bad-bg);color:var(--bad);border-radius:12px;padding:10px 12px;
+    font-size:.85rem;font-weight:700;margin-bottom:18px;line-height:1.4;
+  }
+  .gate-title{font-size:1.15rem;font-weight:800;margin-bottom:6px;}
+  .gate-sub{color:var(--muted);font-size:.88rem;margin:0 0 16px;}
+  .gate-input{
+    width:100%;padding:14px;font-size:1.1rem;border-radius:12px;border:1.5px solid var(--line);
+    text-align:center;letter-spacing:.1em;margin-bottom:12px;
+  }
+  .gate-input:focus{outline:none;border-color:var(--primary);}
+  .gate-error{color:var(--bad);font-size:.85rem;font-weight:600;margin-top:10px;min-height:1.2em;}
+  .gate-footer{margin-top:20px;font-size:.78rem;color:var(--muted);}
+  .gate-footer a{color:var(--primary);text-decoration:none;font-weight:700;}
+  .gate-footer a:hover{text-decoration:underline;}
+
+  /* ---- 메인 화면 대시보드 ---- */
+  .dashboard-card{
+    display:flex;align-items:center;gap:18px;background:var(--card);border-radius:var(--radius);
+    padding:18px 20px;box-shadow:0 1px 3px rgba(20,30,60,.06);margin-bottom:14px;
+  }
+  .ring-wrap{position:relative;width:100px;height:100px;flex-shrink:0;}
+  .ring-svg{width:100%;height:100%;transform:rotate(-90deg);}
+  .ring-bg{fill:none;stroke:var(--line);stroke-width:10;}
+  .ring-fg{fill:none;stroke:var(--primary);stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset .5s ease;}
+  .ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .ring-num{font-size:1.45rem;font-weight:900;line-height:1;}
+  .ring-label{font-size:.7rem;color:var(--muted);margin-top:2px;}
+  .dashboard-stats{flex:1;display:flex;flex-direction:column;gap:10px;}
+  .dstat{display:flex;justify-content:space-between;align-items:baseline;}
+  .dstat-num{font-weight:800;font-size:1.05rem;}
+  .dstat-label{font-size:.78rem;color:var(--muted);}
+
+  .menu-grid{display:flex;flex-direction:column;gap:12px;margin:16px 0;}
+  .menu-card{
+    display:flex;align-items:center;gap:14px;width:100%;border:none;border-radius:18px;
+    padding:16px 18px;cursor:pointer;color:#fff;text-align:left;
+    box-shadow:0 8px 20px -10px rgba(20,30,60,.5);
+  }
+  .menu-card:active{transform:scale(.98);}
+  .menu-icon{
+    flex-shrink:0;width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.22);
+    display:flex;align-items:center;justify-content:center;font-size:1.35rem;
+  }
+  .menu-body{flex:1;display:flex;flex-direction:column;gap:5px;min-width:0;}
+  .menu-title{font-size:1.02rem;font-weight:800;}
+  .menu-pill{
+    display:inline-block;align-self:flex-start;background:rgba(255,255,255,.24);
+    border-radius:999px;padding:2px 10px;font-size:.7rem;font-weight:600;
+  }
+  .menu-arrow{font-size:1.4rem;font-weight:700;opacity:.85;flex-shrink:0;}
+  .grad-blue{background:linear-gradient(135deg,#60a5fa,#2f6fed);}
+  .grad-purple{background:linear-gradient(135deg,#c084fc,#7c3aed);}
+  .grad-green{background:linear-gradient(135deg,#4ade80,#15803d);}
+  .grad-orange{background:linear-gradient(135deg,#fbbf24,#ea580c);}
+
+  .encourage-banner{
+    margin-top:4px;background:var(--hint-bg);color:var(--hint);border-radius:14px;
+    padding:13px 14px;text-align:center;font-size:.88rem;font-weight:600;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ================= 메인 화면 ================= -->
+  <section id="screen-main" class="screen active">
+    <div class="brand">
+      <div class="brand-badge" aria-hidden="true">⚡</div>
+      <div class="brand-text">
+        <span class="brand-eyebrow">전기철도기사 · 초성을 이용한</span>
+        <h1 class="brand-title">암기도우미<span class="brand-version">(ver 전기철도기사)</span></h1>
+      </div>
+    </div>
+    <p class="sub">전기철도·구조물공학 단답형 문제를 초성 힌트로 외우고, 학습·게임 두 가지 방식으로 확인하는 학습도구</p>
+
+    <div class="dashboard-card">
+      <div class="ring-wrap">
+        <svg class="ring-svg" viewBox="0 0 120 120">
+          <circle class="ring-bg" cx="60" cy="60" r="52"></circle>
+          <circle class="ring-fg" id="main-ring-fg" cx="60" cy="60" r="52"></circle>
+        </svg>
+        <div class="ring-center">
+          <div class="ring-num" id="main-qcount-num">0</div>
+          <div class="ring-label">문제</div>
+        </div>
+      </div>
+      <div class="dashboard-stats">
+        <div class="dstat"><span class="dstat-label">과목 수</span><span class="dstat-num" id="main-cat-count">0</span></div>
+        <div class="dstat"><span class="dstat-label">평균 난이도</span><span class="dstat-num" id="main-diff-avg">-</span></div>
+      </div>
+    </div>
+
+    <div class="menu-grid">
+      <button class="menu-card grad-blue" data-open-setup="study" type="button">
+        <span class="menu-icon">📖</span>
+        <span class="menu-body"><span class="menu-title">학습모드</span><span class="menu-pill">눈으로 익히기</span></span>
+        <span class="menu-arrow">›</span>
+      </button>
+      <button class="menu-card grad-purple" data-open-setup="game" type="button">
+        <span class="menu-icon">🎮</span>
+        <span class="menu-body"><span class="menu-title">게임모드</span><span class="menu-pill">점수・콤보 쌓기</span></span>
+        <span class="menu-arrow">›</span>
+      </button>
+      <button class="menu-card grad-green" data-nav="screen-bank" type="button">
+        <span class="menu-icon">🗂</span>
+        <span class="menu-body"><span class="menu-title">문제은행 관리</span><span class="menu-pill">추가・수정・엑셀</span></span>
+        <span class="menu-arrow">›</span>
+      </button>
+      <button class="menu-card grad-orange" data-nav="screen-settings" type="button">
+        <span class="menu-icon">⚙️</span>
+        <span class="menu-body"><span class="menu-title">설정</span><span class="menu-pill">테마・음성・시간</span></span>
+        <span class="menu-arrow">›</span>
+      </button>
+    </div>
+
+    <div class="encourage-banner">🌱 오늘도 한 걸음씩, 초성 힌트로 즐겁게 외워봐요!</div>
+  </section>
+
+  <!-- ================= 출제 설정 (학습/게임 공통) ================= -->
+  <section id="screen-setup" class="screen">
+    <div class="topbar">
+      <button class="back" data-nav="screen-main">← 메인</button>
+      <h2 id="setup-title" style="margin:0;">출제 설정</h2>
+      <span style="width:40px;"></span>
+    </div>
+    <div class="card">
+      <div class="field">
+        <label>과목 선택</label>
+        <div id="setup-subjects"></div>
+      </div>
+      <div class="field">
+        <label>출제 순서</label>
+        <select id="setup-order">
+          <option value="order">등록 순서</option>
+          <option value="random">랜덤</option>
+        </select>
+      </div>
+      <div class="checkline">
+        <input type="checkbox" id="setup-wrong-only">
+        <label for="setup-wrong-only">직전 세션에서 틀린 문제만</label>
+      </div>
+    </div>
+    <div class="empty-note" id="setup-empty" style="display:none;">선택한 조건에 해당하는 문제가 없습니다.</div>
+    <button class="btn btn-primary" id="setup-start-btn">시작하기</button>
+  </section>
+
+  <!-- ================= 학습모드 ================= -->
+  <section id="screen-study" class="screen">
+    <div class="topbar">
+      <button class="back" data-nav="screen-main">← 종료</button>
+      <span class="tag" id="study-subject-tag"></span>
+      <button type="button" class="tts-replay-btn" id="study-replay-btn" title="다시 듣기">🔊</button>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-text"><span id="study-progress-text">0 / 0</span></div>
+      <div class="progress-bar"><div class="progress-fill" id="study-progress-fill"></div></div>
+    </div>
+    <div class="qbox" id="study-qbox">
+      <div class="qtext" id="study-question-text"></div>
+    </div>
+    <div class="hintbox placeholder" id="study-hint-box">생각해 보세요</div>
+    <div class="hintbox answer-reveal hidden" id="study-answer-box"></div>
+    <div class="tap-hint">화면을 탭하면 바로 다음 단계로 진행합니다</div>
+  </section>
+
+  <!-- ================= 게임모드 ================= -->
+  <section id="screen-game" class="screen">
+    <div class="topbar">
+      <button class="back" data-nav="screen-main">← 종료</button>
+      <span class="tag" id="game-subject-tag"></span>
+      <button type="button" class="tts-replay-btn" id="game-replay-btn" title="다시 듣기">🔊</button>
+    </div>
+    <div class="stat-row">
+      <span id="game-progress-text">0 / 0</span>
+      <span class="score">점수 <span id="game-score">0</span></span>
+      <span class="combo" id="game-combo">0 COMBO</span>
+    </div>
+    <div class="progress-bar" style="margin-bottom:16px;"><div class="progress-fill" id="game-progress-fill"></div></div>
+    <div class="qbox"><div class="qtext" id="game-question-text"></div></div>
+    <div class="hintbox" id="game-hint-text"></div>
+    <input type="text" class="answer-input" id="game-answer-input" placeholder="정답을 입력하세요" autocomplete="off">
+    <div class="feedback" id="game-feedback"></div>
+    <button class="btn btn-primary" id="game-submit-btn">정답 확인</button>
+  </section>
+
+  <!-- ================= 결과 화면 ================= -->
+  <section id="screen-result" class="screen">
+    <div class="topbar">
+      <span></span>
+      <h2 style="margin:0;">🏁 결과</h2>
+      <span></span>
+    </div>
+    <div class="card" id="result-card"></div>
+    <div class="btn-row">
+      <button class="btn" id="result-all-btn">전체 다시 학습</button>
+      <button class="btn" id="result-wrong-btn">틀린 문제 학습</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn" id="result-random-btn">랜덤 학습</button>
+      <button class="btn btn-ghost" data-nav="screen-main">종료</button>
+    </div>
+  </section>
+
+  <!-- ================= 문제은행 관리 ================= -->
+  <section id="screen-bank" class="screen">
+    <div class="topbar">
+      <button class="back" data-nav="screen-main">← 메인</button>
+      <h2 style="margin:0;">문제은행 관리</h2>
+      <span style="width:40px;"></span>
+    </div>
+    <div class="card">
+      <div class="stat-row" style="margin-bottom:14px;">
+        <span>총 문제</span><span class="score" id="bank-count">0</span>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-sm file-btn">📥 Excel 가져오기<input type="file" id="bank-excel-input" accept=".xlsx,.xls"></button>
+        <button class="btn btn-sm file-btn">📥 JSON 가져오기<input type="file" id="bank-json-input" accept=".json"></button>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-sm" id="bank-export-excel-btn">📤 Excel 내보내기</button>
+        <button class="btn btn-sm" id="bank-export-btn">📤 JSON 내보내기</button>
+      </div>
+    </div>
+    <div class="search-row">
+      <input type="text" id="bank-search" placeholder="문제/정답 검색">
+      <select id="bank-filter-category"><option value="">전체 과목</option></select>
+    </div>
+    <div class="card" style="overflow-x:auto;">
+      <table>
+        <thead><tr><th>과목</th><th>문제</th><th>정답</th><th>난이도</th><th></th></tr></thead>
+        <tbody id="bank-tbody"></tbody>
+      </table>
+      <div class="empty-note" id="bank-empty" style="display:none;">등록된 문제가 없습니다. Excel 또는 JSON을 가져오세요.</div>
+    </div>
+    <button class="btn btn-primary" id="bank-add-btn" style="padding:18px;font-size:1.1rem;">➕ 문제 추가</button>
+  </section>
+
+  <!-- ================= 설정 ================= -->
+  <section id="screen-settings" class="screen">
+    <div class="topbar">
+      <button class="back" data-nav="screen-main">← 메인</button>
+      <h2 style="margin:0;">설정</h2>
+      <span style="width:40px;"></span>
+    </div>
+    <div class="card">
+      <div class="field">
+        <label>테마 색상</label>
+        <div class="theme-row" id="settings-theme-row">
+          <button type="button" class="theme-swatch" data-theme="blue" style="background:#2f6fed;">기본</button>
+          <button type="button" class="theme-swatch" data-theme="green" style="background:#1f9d55;">초록</button>
+          <button type="button" class="theme-swatch" data-theme="gray" style="background:#4b5563;">그레이</button>
+          <button type="button" class="theme-swatch" data-theme="dark" style="background:#12151c;">다크</button>
+        </div>
+      </div>
+      <div class="checkline">
+        <input type="checkbox" id="settings-tts-enabled">
+        <label for="settings-tts-enabled">🔊 문제·힌트를 음성으로 읽어주기 (TTS)</label>
+      </div>
+      <div class="field">
+        <label>음성 읽기 속도 (<span id="settings-tts-rate-val">1.0</span>배)</label>
+        <input type="range" id="settings-tts-rate" min="0.5" max="2" step="0.1" value="1" style="width:100%;">
+      </div>
+      <div class="field">
+        <label>학습모드 문제 표시시간 배율 (<span id="settings-mult-val">1.0</span>배)</label>
+        <input type="range" id="settings-mult" min="0.5" max="3" step="0.1" value="1" style="width:100%;">
+      </div>
+      <div class="field">
+        <label>학습모드 초성 힌트·정답 표시시간 (<span id="settings-hint-val">5</span>초씩)</label>
+        <input type="range" id="settings-hint" min="2" max="15" step="1" value="5" style="width:100%;">
+      </div>
+    </div>
+    <button class="btn btn-primary" id="settings-save-btn">저장</button>
+    <div class="card" style="margin-top:20px;">
+      <div class="sub" style="margin:0 0 10px;">테스트 / 초기화</div>
+      <button class="btn btn-ghost btn-sm" id="settings-sample-btn" style="width:100%;margin-bottom:8px;">기본 문제(전기철도공학·구조물공학 428문제)로 초기화</button>
+      <button class="btn btn-danger btn-sm" id="settings-reset-btn" style="width:100%;">문제은행 전체 삭제</button>
+    </div>
+  </section>
+
+  <!-- ================= 문제 추가/수정 모달 ================= -->
+  <div class="modal-backdrop hidden" id="edit-modal">
+    <div class="modal">
+      <h2 id="edit-modal-title">문제 추가</h2>
+      <div class="field"><label>과목</label><input type="text" id="edit-category" placeholder="예: 전기철도공학"></div>
+      <div class="field"><label>문제</label><textarea id="edit-question"></textarea></div>
+      <div class="field"><label>정답 (한글 또는 숫자)</label><input type="text" id="edit-answer"></div>
+      <div class="field"><label>난이도</label>
+        <select id="edit-difficulty"><option value="1">1 (쉬움)</option><option value="2">2</option><option value="3">3 (어려움)</option></select>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" id="edit-cancel-btn">취소</button>
+        <button class="btn btn-primary" id="edit-save-btn">저장</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ================= 접근 암호 게이트 =================
+     본 자료의 무단 상업적 이용을 막기 위한 최소한의 접근 확인 화면.
+     비밀번호는 실행 시점의 "연도 뒤 2자리 + 월 2자리"(예: 2026년 9월 → 2609)로,
+     매달 자동으로 바뀐다(하드코딩된 값이 아니라 매번 현재 날짜로 즉석 계산됨). -->
+<div class="gate-overlay" id="gate-overlay">
+  <div class="gate-box">
+    <div class="gate-notice">본 자료는 상업적 이용을 불허합니다.</div>
+    <div class="gate-title">암기도우미(ver 전기철도기사)</div>
+    <p class="gate-sub">비밀번호를 입력해야 이용할 수 있습니다.</p>
+    <input type="password" id="gate-password" class="gate-input" placeholder="비밀번호" autocomplete="off" inputmode="numeric">
+    <button type="button" class="btn btn-primary" id="gate-submit-btn" style="margin:0;">입장하기</button>
+    <div class="gate-error" id="gate-error"></div>
+    <div class="gate-footer">Created by <a href="https://blog.naver.com/zzizik" target="_blank" rel="noopener">zz</a> with Claude AI</div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+(function(){
+"use strict";
+
+/* =========================================================
+   1. 상수 / 기본 데이터
+   ========================================================= */
+var CHO = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+
+// 정답에 영어 알파벳이 섞여 있을 때, 그 알파벳의 한글 발음(에이/비/씨...)의 초성으로 치환한다.
+// 예: A(에이)→ㅇ, B(비)→ㅂ, C(씨)→ㅆ. 모음으로 시작하는 발음(에이/이/아이/엘/엠/엔/오/에스/유/엑스/와이 등)은
+// 한글에서 초성이 없는 자리를 채우는 자음 'ㅇ'으로 표시된다.
+var ENG_CHOSUNG = {
+  A:'ㅇ', B:'ㅂ', C:'ㅆ', D:'ㄷ', E:'ㅇ', F:'ㅇ', G:'ㅈ', H:'ㅇ', I:'ㅇ', J:'ㅈ',
+  K:'ㅋ', L:'ㅇ', M:'ㅇ', N:'ㅇ', O:'ㅇ', P:'ㅍ', Q:'ㅋ', R:'ㅇ', S:'ㅇ', T:'ㅌ',
+  U:'ㅇ', V:'ㅂ', W:'ㄷ', X:'ㅇ', Y:'ㅇ', Z:'ㅈ'
+};
+// 정답에 숫자가 섞여 있을 때, 숫자의 한글 발음(일/이/삼/사/오/육/칠/팔/구/영)의 초성으로 치환한다.
+var DIGIT_CHOSUNG = {
+  '0':'ㅇ', '1':'ㅇ', '2':'ㅇ', '3':'ㅅ', '4':'ㅅ', '5':'ㅇ', '6':'ㅇ', '7':'ㅊ', '8':'ㅍ', '9':'ㄱ'
+};
+var SCORE_RULES = { CORRECT: 100, AFTER_WRONG: 30 };
+// 한국사 버전(초성암기도우미.html)과 같은 브라우저에서 동시에 써도 문제은행이
+// 서로 덮어써지지 않도록, 이 전기철도 버전은 별도의 localStorage 키를 사용한다.
+var STORAGE_KEYS = { QBANK: 'agame_rail_qbank_v1', SETTINGS: 'agame_rail_settings_v1' };
+var DEFAULT_SETTINGS = { timeMultiplier: 1, hintDelaySec: 5, theme: 'blue', ttsEnabled: true, ttsRate: 1 };
+
+// 초성 자음을 소리 내어 읽을 때 쓰는 한글 이름(한국어 TTS 엔진이 자음 낱글자를
+// 그대로는 정확히 읽어주지 않으므로, "기역/니은/디귿..." 같은 정식 명칭으로 변환한다).
+var JAMO_NAMES = {
+  'ㄱ':'기역', 'ㄲ':'쌍기역', 'ㄴ':'니은', 'ㄷ':'디귿', 'ㄸ':'쌍디귿', 'ㄹ':'리을', 'ㅁ':'미음',
+  'ㅂ':'비읍', 'ㅃ':'쌍비읍', 'ㅅ':'시옷', 'ㅆ':'쌍시옷', 'ㅇ':'이응', 'ㅈ':'지읒', 'ㅉ':'쌍지읒',
+  'ㅊ':'치읓', 'ㅋ':'키읔', 'ㅌ':'티읕', 'ㅍ':'피읖', 'ㅎ':'히읗'
+};
+
+// 테마 색상 프리셋(불규칙 동사 암기 게임과 동일하게 기본/초록/그레이/다크 4종 구성).
+// 색상 값은 CSS 변수로 주입되어 전체 화면에 즉시 반영된다.
+var THEMES = {
+  blue:  { bg:'#f4f6fb', card:'#ffffff', text:'#1e2635', muted:'#68758c', line:'#e3e8f0',
+           primary:'#2f6fed', primaryDark:'#1f56c4', good:'#17a566', goodBg:'#e8f8f1',
+           bad:'#e5484d', badBg:'#fdecec', hint:'#c07a12', hintBg:'#fdf3e2' },
+  green: { bg:'#f2faf5', card:'#ffffff', text:'#1c2b22', muted:'#5d7a68', line:'#dcece1',
+           primary:'#1f9d55', primaryDark:'#15803d', good:'#17a566', goodBg:'#e8f8f1',
+           bad:'#e5484d', badBg:'#fdecec', hint:'#b45309', hintBg:'#fdf3e2' },
+  gray:  { bg:'#f1f2f5', card:'#ffffff', text:'#22262b', muted:'#6b7280', line:'#e1e3e8',
+           primary:'#4b5563', primaryDark:'#374151', good:'#17a566', goodBg:'#e8f8f1',
+           bad:'#e5484d', badBg:'#fdecec', hint:'#b45309', hintBg:'#fdf3e2' },
+  dark:  { bg:'#12151c', card:'#1c212b', text:'#e7ebf3', muted:'#8b93a3', line:'#2b3140',
+           primary:'#5b8dff', primaryDark:'#3f6fe0', good:'#3ecf8e', goodBg:'#173229',
+           bad:'#ff6b6f', badBg:'#3a1c1e', hint:'#e3a53c', hintBg:'#3a2c12' }
+};
+function applyTheme(name) {
+  var t = THEMES[name] || THEMES.blue;
+  var root = document.documentElement.style;
+  root.setProperty('--bg', t.bg);
+  root.setProperty('--card', t.card);
+  root.setProperty('--text', t.text);
+  root.setProperty('--muted', t.muted);
+  root.setProperty('--line', t.line);
+  root.setProperty('--primary', t.primary);
+  root.setProperty('--primary-dark', t.primaryDark);
+  root.setProperty('--good', t.good);
+  root.setProperty('--good-bg', t.goodBg);
+  root.setProperty('--bad', t.bad);
+  root.setProperty('--bad-bg', t.badBg);
+  root.setProperty('--hint', t.hint);
+  root.setProperty('--hint-bg', t.hintBg);
+}
+
+// 기본 탑재 문제은행: 전기철도공학·구조물공학 단답형 428문제.
+// 사용자가 제공한 "전기철도_기본 단답형 문제.xlsx"(기존 시험/자격증 대비용으로 직접
+// 정리해 둔 자료)를 그대로 가져와 내장함. 정답 중 일부는 "값[단위]" 형식(예: 25[kV])을
+// 이미 사용 중이라 위에서 만든 대괄호 단위 표기 규칙과 그대로 맞아떨어진다.
+// 원본 445문제 중, 여러 항목을 나열한 서술형이라 게임모드(직접 입력해서 맞히기)에
+// 부적합했던 17문제는 제외하고 428문제만 담음(전기철도 카테고리는 전기철도공학으로 통합).
+var SAMPLE_QUESTIONS = [
+  { id: 1, category: '구조물공학', question: '철근 콘크리트주의 안전율은 파괴하중에 대하여 얼마 이상인가? (단, 기존지반)', answer: '2', difficulty: 1, tag: '수치', source: 'B-Ⅲ·41' },
+  { id: 2, category: '전기철도공학', question: '열차속도가 80km/h이하 일 때, 교류 강체 전차선로 두 지지점간의 최대 고저차는?', answer: '±10㎜', difficulty: 1, tag: '수치', source: 'A-Ⅴ·21' },
+  { id: 3, category: '전기철도공학', question: '교류전철변전소 주변압기(스코트결선)의 1차전류가 3상 평행 전류이면 3상 전류의 벡터 합은?', answer: '0', difficulty: 1, tag: '수치', source: 'A-Ⅱ·24' },
+  { id: 4, category: '전기철도공학', question: '고속철도에서 열차운행 속도가 250[km/h] 초과할 때 전차선의 구배(기울기)[‰]는?', answer: '0', difficulty: 1, tag: '수치', source: 'A-Ⅴ·21' },
+  { id: 5, category: '전기철도공학', question: '한 경간을 기준으로 해당 구간의 설계속도가 아래와 같을 때, 전차선의 구배(기울기)는?', answer: '0', difficulty: 1, tag: '수치', source: 'A-Ⅴ·21' },
+  { id: 6, category: '구조물공학', question: '그림과 같은 직사각형 단면의 도심을 지나는 X, Y축에 대한 단면상승 모멘트 값은?', answer: '0', difficulty: 1, tag: '수치', source: 'B-Ⅳ·12' },
+  { id: 7, category: '전기철도공학', question: 'T-bar 직류방식 강체 전차선로에서 구분장치의 중심 편위는?', answer: '0', difficulty: 1, tag: '수치', source: 'A-Ⅲ·29' },
+  { id: 8, category: '전기철도공학', question: '을종 풍압하중은 비중 ( ① )의 빙설이 전선류 주위에 ( ② )[mm]로 부착한 경우를 예상한다.( )안에 알맞은 답을 쓰시오.', answer: '0.9 , 6', difficulty: 1, tag: '수치', source: 'A-Ⅰ·22' },
+  { id: 9, category: '전기철도공학', question: '고속철도 전차선의 사전 이도량 54/2000에 대한 2번째 드로퍼의 처짐량[m]은? (단, 전차선의 사전 이도구간 길이는 45[m], 첫 번째 드로퍼 거리는 4.5[m], 두 번째 드로퍼 거리는 11.25[m] 이다.)', answer: '0.01377m', difficulty: 1, tag: '수치', source: 'A-Ⅲ·29' },
+  { id: 10, category: '전기철도공학', question: '고속철도에서 드로퍼의 최소 길이는 얼마 이하로 제한하고 있는가?', answer: '0.275[m]', difficulty: 1, tag: '수치', source: 'A-Ⅲ·29' },
+  { id: 11, category: '구조물공학', question: '어떤 재료에 있어 하중으로 인한 체적변화가 없다고 할 때, 푸아송비의 최대값은?', answer: '0.5', difficulty: 1, tag: '수치', source: 'B-Ⅲ·34' },
+  { id: 21, category: '전기철도공학', question: '빔 및 브래킷의 소재 허용응력에 대한 안전율은?', answer: '1.0 이상', difficulty: 1, tag: '수치', source: 'A-Ⅲ·27' },
+  { id: 22, category: '구조물공학', question: '전철용 전주의 건식위치: 승강장에서 ( )[m] 이상, 차막이 뒤에 부득이 설치 시 ( )[m] 이상', answer: '1.5, 10', difficulty: 1, tag: '수치', source: 'B-Ⅴ·11' },
+  { id: 23, category: '구조물공학', question: '승강장 등에 건식하는 전주는 홈의 연단에서 몇 [m] 이상 이격해야 하는가?', answer: '1.5[m]', difficulty: 1, tag: '수치', source: 'B-Ⅴ·11' },
+  { id: 24, category: '전기철도공학', question: '전차선로 지선에는 사람, 차량등에 위험이 미치지 않도록 시설하며, 특히 직 류전차선로의 지선에는 전주의 취부점에서 약 ( ) [ m ] 의 위치에 애자를 삽입한다.', answer: '1.5m', difficulty: 1, tag: '수치', source: 'A-Ⅴ·35' },
+  { id: 25, category: '구조물공학', question: '길이가 4[m]인 각중에 하중을 가해서 변형율이 0.0004가 되었다면 신장량은?', answer: '1.6[㎜]', difficulty: 1, tag: '수치', source: 'B-Ⅲ·21' },
+  { id: 26, category: '전기철도공학', question: '급전선으로 사용하는 경알루미늄연선을 경동연선과 동일한 저항치를 얻으려면 경동연선의 몇배의 굵기로 하여야 하는가?', answer: '1.6배', difficulty: 1, tag: '수치', source: 'A-Ⅲ·21' },
+  { id: 27, category: '구조물공학', question: '그림과 같이 반지름(r) 4[㎝]인 반원의 도심 위치 약 몇 [㎝]인가?', answer: '1.7cm', difficulty: 1, tag: '수치', source: 'B-Ⅳ·11' },
+  { id: 28, category: '전기철도공학', question: '강체 전차선 경간 중앙의 이도는 지지점 간격(경간)의 얼마 이하로 하는가?', answer: '1/1000', difficulty: 1, tag: '수치', source: 'A-Ⅲ·33' },
+  { id: 30, category: '전기철도공학', question: '직류 급전회로에서 급전구분소를 설치하여 상하선을 접속하면 최대 전압강하가 발생하는 지점은 변전소로부터 변전소 간격의 어느 위치가 되는가?', answer: '1/3 지점', difficulty: 1, tag: '수치', source: 'A-Ⅱ·23' },
+  { id: 31, category: '전기철도공학', question: '흡상변압기의 권수비는?', answer: '1:1', difficulty: 1, tag: '수치', source: 'A-Ⅲ·21' },
+  { id: 32, category: '전기철도공학', question: '커터너리 가선방식에서 경간이 50m이면 행거의 개수는 몇 개가 가장 적정한가?', answer: '10', difficulty: 1, tag: '수치', source: 'A-Ⅲ·29' },
+  { id: 33, category: '전기철도공학', question: '강체 가선구간에서 R-Bar 강체 전차선의 브래킷의 표준 간격 (m)은?', answer: '10', difficulty: 1, tag: '수치', source: 'A-Ⅲ·21' },
+  { id: 34, category: '구조물공학', question: '인류주 등 차막이 후방에 건식하는 전주는 몇 m 이격하여 건식하여야 하는가?', answer: '10 m 이상', difficulty: 1, tag: '수치', source: 'B-Ⅴ·12' },
+  { id: 35, category: '전기철도공학', question: '교류 강체 R-BAR 방식에서 지지점의 표준간격은?', answer: '10[m]', difficulty: 1, tag: '수치', source: 'A-Ⅲ·32' },
+  { id: 36, category: '구조물공학', question: '인류주 등 차막이 후방에 건식하는 전주는 몇 [m] 이상 이격해야 하는가?', answer: '10[m] 이상', difficulty: 1, tag: '수치', source: 'B-Ⅴ·11' },
+  { id: 37, category: '전기철도공학', question: '고속철도용 합성전차선의 최대 경사 간격 [㎜]은?', answer: '10[㎜]', difficulty: 1, tag: '수치', source: 'A-Ⅲ·22' },
+  { id: 38, category: '전기철도공학', question: '지선은 전주에 작용하는 수평하중의 몇 [%]를 부담하는가?', answer: '100[%]', difficulty: 1, tag: '수치', source: 'A-Ⅰ·33' },
+  { id: 39, category: '전기철도공학', question: '트윈 심플 커티너리 조가방식에서 전차선의 상호간격은?', answer: '100[mm]', difficulty: 1, tag: '수치', source: 'A-Ⅲ·13' },
+  { id: 40, category: '전기철도공학', question: '교류 강체 전차선로 R-Bar방식에서 전기차 운전속도가 120[km/h]보다 작거나 같을 때 브래킷의 최대 허용간격[m]은?', answer: '10m', difficulty: 1, tag: '수치', source: 'A-Ⅳ·41' },
+  { id: 41, category: '전기철도공학', question: '강체 전차선로 를 설계하려고 한다. 열차속도가 120km/h이하일 때 전차선의 지지점간 최대거리로 가장 적당한 것은?', answer: '10m', difficulty: 1, tag: '수치', source: 'A-Ⅲ·21' },
+  { id: 42, category: '전기철도공학', question: '직류전기철도의 강체 전차선 가선방식 중 건넘선 장치의 편건넘선과 Y건넘선의 분기선단에는 엔드어프로치하여 설치하되 분기선이 본선의 전차선보다 몇 [㎜] 높게 시설하여야 하는가?', answer: '10mm', difficulty: 1, tag: '수치', source: 'A-Ⅴ·21' },
+  { id: 43, category: '전기철도공학', question: '커티너리 조가방식에서 지지점에서의 조가선과 전차선을 이은 면이 궤도중심선 과 이루는 각도는 몇 도 이하로 하는 것이 적당한가?', answer: '10도', difficulty: 1, tag: '수치', source: 'A-Ⅲ·13' },
+  { id: 44, category: '구조물공학', question: '우리나라의 일반 전철구간에서 표준 경간을 선정할 때의 운전 최대 속도는 몇 km/h 인가?', answer: '120', difficulty: 1, tag: '수치', source: 'B-Ⅴ·11' },
+  { id: 45, category: '구조물공학', question: '그림과 같이 두 개의 활차를 사용하여 물체를 매달 때 3개 의 물체가 평형을 이루기 위한 θ값은? (단, 로프와 활차의 마찰은 무시한다.)', answer: '120°', difficulty: 1, tag: '수치', source: 'B-Ⅱ·31' },
+  { id: 46, category: '전기철도공학', question: '교류전기철도 전차선로에서 급전계통이 서로 다른 급전선의 가압부분 상호간 이격거리는 ( )[mm] 이상이어야 하는가?', answer: '1200', difficulty: 1, tag: '수치', source: 'A-Ⅲ·21' },
+  { id: 47, category: '전기철도공학', question: '건널선 장치에서 전차선의 접속개소는 궤도중심선과 전차선의 간격이 몇[㎜] 이내에는 설치해서는 안되는가?', answer: '1200[㎜]', difficulty: 1, tag: '수치', source: 'A-Ⅲ·21' },
+  { id: 48, category: '구조물공학', question: '교류강체방식 에서 R-bar 지지용 애자의 성능 중 상용 주파 수 유중 파괴전압 은 몇 [㎸] 인가?', answer: '140 kV', difficulty: 1, tag: '수치', source: 'B-Ⅴ·35' },
+  { id: 49, category: '전기철도공학', question: '고속철도 가동브래킷용 장간애자는 일반개소에서 누설 거리 몇 [㎜]인가? (단, 이중 절연 방식이 아니다)', answer: '1480[㎜]', difficulty: 1, tag: '수치', source: 'A-Ⅲ·27' },
+  { id: 50, category: '전기철도공학', question: '에어죠인트 평행부분에서 전차선 상호간의 표준이격거리는?', answer: '150[mm]', difficulty: 1, tag: '수치', source: 'A-Ⅲ·21' },
+  { id: 51, category: '전기철도공학', question: '일반개소의 인류장치에서 전차선과 조가선의 최대 인류구간은 얼마로 한정하여야 하는가?', answer: '1500[m]', difficulty: 1, tag: '수치', source: 'A-Ⅲ·28' },
+  { id: 52, category: '전기철도공학', question: '고속구간 일반개소의 인류장치에서 전차선과 조가선의 최대 인류구간은 얼마로 한정하여야 하는가?', answer: '1500m', difficulty: 1, tag: '수치', source: 'A-Ⅲ·28' },
+  { id: 53, category: '전기철도공학', question: '가공전차선로 건넘선장치에서 전차선 접속 개소는 궤도중심선과 전차선의 간격이 몇 ㎜ 이내에는 설치해서는 아니되는가?', answer: '1500㎜', difficulty: 1, tag: '수치', source: 'A-Ⅲ·23' },
+  { id: 54, category: '전기철도공학', question: '인류구간의 길이는 직선구간 기준으로 몇 [m] 이하를 표준으로 하는가?', answer: '1600[m]', difficulty: 1, tag: '수치', source: 'A-Ⅲ·25' },
+  { id: 55, category: '구조물공학', question: '그림과 같은 단순보의 C점에서 모멘트 [tㆍm]는?', answer: '18.75', difficulty: 1, tag: '수치', source: 'B-Ⅱ·31' },
+  { id: 56, category: '전기철도공학', question: '건넘선 장치의 교차철물 설치 시 15번 분기 이상일 때 교차 금구의 표준길이(㎜)는?', answer: '1800', difficulty: 1, tag: '수치', source: 'A-Ⅲ·23' },
+  { id: 57, category: '전기철도공학', question: '가공 급전선(케이블 제외)의 인장하중의 안전율은?', answer: '2.2', difficulty: 1, tag: '수치', source: 'A-Ⅲ·27' },
+  { id: 58, category: '전기철도공학', question: '경동연선 급전선의 안전율은?', answer: '2.2 이상', difficulty: 1, tag: '수치', source: 'A-Ⅲ·41' },
+  { id: 59, category: '전기철도공학', question: '가공전차선로에서 급전선에 사용하는 경알루미늄 연선의 안전율은 얼마 이상이어야 하는가?', answer: '2.5', difficulty: 1, tag: '수치', source: 'A-Ⅲ·27' },
+  { id: 60, category: '전기철도공학', question: '전철변전소의 순시 최대전력과 1시간 최대전력의 비를 어떤 시기(1개월 등)에 대하여 평균하면 약 얼마 정도 되는가?', answer: '2.5', difficulty: 1, tag: '수치', source: 'A-Ⅱ·24' },
+  { id: 61, category: '구조물공학', question: '가공전차선로용 지선의 안전율은 얼마 이상으로 하는가?', answer: '2.5', difficulty: 1, tag: '수치', source: 'B-Ⅲ·41' },
+  { id: 62, category: '구조물공학', question: '단면적 8[㎠], 길이 2[m]의 강선에 600[kg]의 하중을 가하였더니 0.6[㎝]가 늘어났다. 이때의 종탄성계수( E) [kgf/㎠]는? ※ 보기 오류로 10배가 차이 납니다. 지수를 잘못했거나.', answer: '2.5 × 10⁵', difficulty: 1, tag: '수치', source: 'B-Ⅲ·31' },
+  { id: 63, category: '전기철도공학', question: '전차선로의 급전선에 사용하는 경알루미늄연선의 안전율은?', answer: '2.5 이상', difficulty: 1, tag: '수치', source: 'A-Ⅲ·41' },
+  { id: 64, category: '전기철도공학', question: '가공전차선로에서 지선의 안전율은?', answer: '2.5 이상', difficulty: 1, tag: '수치', source: 'A-Ⅲ·41' },
+  { id: 66, category: '전기철도공학', question: '가공전차선의 경동선 및 동합금선을 제외한 그 밖의 전선의 안전율은 인장하 중에 대하여 얼마 이상이어야 하는가?', answer: '2.5이상', difficulty: 1, tag: '수치', source: 'A-Ⅲ·41' },
+  { id: 67, category: '구조물공학', question: '지선의 인장력에 대한 안전율은?', answer: '2.5이상', difficulty: 1, tag: '수치', source: 'B-Ⅲ·41' },
+  { id: 68, category: '구조물공학', question: '그림과 같은 보의 단부와 중앙부에서의 횡모멘트 비(단부:중앙부)는?', answer: '2:1', difficulty: 1, tag: '수치', source: 'B-Ⅱ·31' },
+  { id: 69, category: '전기철도공학', question: '차체 경사를 레일면에서 585㎜점을 중심으로 해서 좌우 610㎜의 수평점에서 상하 최대 22㎜라 할 때 차제 동요에 의한 팬터그래프의 경사각은 약 몇 [°]인가?', answer: '2°', difficulty: 1, tag: '수치', source: 'A-Ⅲ·29' },
+  { id: 70, category: '전기철도공학', question: '에어섹션개소에서 구분용 애자의 하단은 본선의 전차선 높이에서 몇 [㎜]이상으로 시설하여야 하는가?', answer: '200', difficulty: 1, tag: '수치', source: 'A-Ⅲ·24' },
+  { id: 71, category: '전기철도공학', question: '고속철도 전차선의 에어죠인트 설치의 경우 평행개소 전차선 상호간 몇 [㎜] 간격을 유지 하는가?', answer: '200', difficulty: 1, tag: '수치', source: 'A-Ⅲ·24' },
+  { id: 72, category: '전기철도공학', question: '직류 1500[V]의 강체 가선방식에서 익스팬션 죠인트의 T-bar 의 표준상호간격 [㎜]으로 맞는 것은?', answer: '200', difficulty: 1, tag: '수치', source: 'A-Ⅲ·29' },
+  { id: 73, category: '전기철도공학', question: '고속철도구간(속도등급은 250킬로급 초과) 에어조인트의 평행분에서 전차선의 상호간격(㎜)은?', answer: '200', difficulty: 1, tag: '수치', source: 'A-Ⅲ·24' },
+  { id: 74, category: '구조물공학', question: '그림과 같은 구조용 강재의 단면2차반경(회전반지름)이 5cm일 때 세장비는?', answer: '200', difficulty: 1, tag: '수치', source: 'B-Ⅳ·22' },
+  { id: 76, category: '전기철도공학', question: '고속전철이라 함은 속도가 몇 [km/h] 이상인 것을 말하는가?', answer: '200[km/h]', difficulty: 1, tag: '수치', source: 'A-Ⅰ·24' },
+  { id: 77, category: '전기철도공학', question: '직류 강체 전차선로(T-bar 방식)에서 한 섹션의 길이는?', answer: '200[m]', difficulty: 1, tag: '수치', source: 'A-Ⅲ·32' },
+  { id: 78, category: '전기철도공학', question: '직류 T-bar 방식에서 익스팬션 조인트 개소의 T-bar 상호 간격은?', answer: '200[mm]', difficulty: 1, tag: '수치', source: 'A-Ⅲ·32' },
+  { id: 79, category: '전기철도공학', question: '지상구간 커티너리 조가방식에서 직선구간의 전차선 표준편위는?', answer: '200[mm]', difficulty: 1, tag: '수치', source: 'A-Ⅲ·29' },
+  { id: 80, category: '전기철도공학', question: '가공전차선의 편위는 직선구간에서 좌우 몇[㎜]를 표준으로 하고 있는가?', answer: '200㎜', difficulty: 1, tag: '수치', source: 'A-Ⅲ·29' },
+  { id: 81, category: '구조물공학', question: '재료의 전단탄성계수(횡탄성계수) 80GPa, 푸아송비 0.3일 때. 종탄성계수 [GPa]는?', answer: '208', difficulty: 1, tag: '수치', source: 'B-Ⅲ·31' },
+  { id: 82, category: '구조물공학', question: '그림과 같은 원형단면의 X축에 대한 단면 2차모멘트[㎤] 는?', answer: '20π', difficulty: 1, tag: '수치', source: 'B-Ⅳ·21' },
+  { id: 83, category: '전기철도공학', question: '직류 1500V의 알루미늄 T-BAR의 규격은 몇 ㎟ 인가?', answer: '2100', difficulty: 1, tag: '수치', source: 'A-Ⅲ·32' },
+  { id: 84, category: '전기철도공학', question: '고정빔의 호칭이 6선용일 때 길이로 맞는 것은?', answer: '22[m] 초과 26[m] 까지', difficulty: 1, tag: '수치', source: 'A-Ⅲ·21' },
+  { id: 85, category: '구조물공학', question: '그림과 같은 힘에 대하여 0점에 대한 모멘트 M[t·cm] 는?', answer: '25', difficulty: 1, tag: '수치', source: 'B-Ⅱ·12' },
+  { id: 86, category: '구조물공학', question: '우리나라에서 전차선로를 설계할 때, 병종풍압하중은 최저 온도를 적용한다. 이 때 최저온도의 기준은 몇 ℃인가?', answer: '-25', difficulty: 1, tag: '수치', source: 'B-Ⅰ·22' },
+  { id: 87, category: '전기철도공학', question: '직류 1500[V] 방식에서 가공전차선의 가압부분과 대지와의 절연 표준 이격거리는 몇 ㎜ 인가?', answer: '250', difficulty: 1, tag: '수치', source: 'A-Ⅲ·21' },
+  { id: 89, category: '전기철도공학', question: '강체 조가방식 중 T-bar방식에 사용하는 애자의 규격으로 맞는 것은?', answer: '250[㎜]', difficulty: 1, tag: '수치', source: 'A-Ⅲ·32' },
+  { id: 90, category: '전기철도공학', question: '전차선로 가압부분과 접지물간 표준이격거리: 직류 1500V는 ( ), 교류 25kV는 ( )이다.', answer: '250[mm], 300[mm]', difficulty: 1, tag: '수치', source: 'A-Ⅵ·23' },
+  { id: 91, category: '전기철도공학', question: '교류 25[㎸] 급전방식에서 전차선로 가압부분과 대지와의 최소이격거리[㎜]로 알맞은 것은?', answer: '250[㎜]이상', difficulty: 1, tag: '수치', source: 'A-Ⅱ·21' },
+  { id: 92, category: '전기철도공학', question: '강체 가선구간에서 차고 등 상시 팬터그래프가 승강하는 장소에서는 전차선과 팬터그래프의 접은 높이와의 거리가 몇[㎜]이상이어야 하는가?', answer: '250㎜', difficulty: 1, tag: '수치', source: 'A-Ⅴ·21' },
+  { id: 93, category: '전기철도공학', question: '안정된 지반에서 전철주 콘크리트 전주기초의 안전율은?', answer: '3.0 이상', difficulty: 1, tag: '수치', source: 'A-Ⅲ·41' },
+  { id: 94, category: '전기철도공학', question: '교류전기방식 전차선로에서 애자성락사고 등 부급전선에 이상전압이 발생하면 일정값 초과시 동작하는 보안기는 지표 상 몇(m) 높이에 설치하는가?', answer: '3.5m이상', difficulty: 1, tag: '수치', source: 'A-Ⅲ·21' },
+  { id: 95, category: '전기철도공학', question: '운전최고속도가 110[㎞/h]로 운행하는 본선 전차선의 구배는 얼마 이하로 하여야 하는가?', answer: '3/1000 이하', difficulty: 1, tag: '수치', source: 'A-Ⅲ·21' },
+  { id: 96, category: '전기철도공학', question: '본선 전차선 구배: 110[km/h] 구간은 ( ) 이하, 45[km/h] 측선은 ( ) 이하', answer: '3/1000, 15/1000', difficulty: 1, tag: '수치', source: 'A-Ⅲ·21' },
+  { id: 97, category: '전기철도공학', question: '차량 동요에 의한 집전장치의 기울기에 적용하는 차량동요 최고 각도는 몇 도인가?', answer: '3°', difficulty: 1, tag: '수치', source: 'A-Ⅴ·21' },
+  { id: 98, category: '전기철도공학', question: '가공전차선로의 편위를 정할 때 전치선의 풍압편위, 지지물의 변형, 전기차 동요 등을 감안해서 최대 250[㎜]로 정하는데 이때 고려되는 운전가능한 풍속 [m/s]은?', answer: '30', difficulty: 1, tag: '수치', source: 'A-Ⅲ·29' },
+  { id: 99, category: '전기철도공학', question: '교류 강체 가선방식의 에어섹션에서 두 개의 컨덕트 레일간의 이격거리는 몇 [㎜] 인가?', answer: '300', difficulty: 1, tag: '수치', source: 'A-Ⅲ·24' },
+  { id: 100, category: '전기철도공학', question: '커티너리 가선방식이 에어섹션 팽행부분에서 전차선 상호간의 이격거리는 몇 ㎜를 표준으로 하고 있는가?', answer: '300', difficulty: 1, tag: '수치', source: 'A-Ⅲ·24' },
+  { id: 101, category: '전기철도공학', question: '에어섹션 평행부분에서 전차선 상호간의 표준이격거리는?', answer: '300[mm]', difficulty: 1, tag: '수치', source: 'A-Ⅲ·24' },
+  { id: 102, category: '구조물공학', question: '태풍이 불어 왔을 때 10분간 평균풍속이 25m/s로 관측되었 다. 순간풍속의 관측값이 없었다면 이 태풍의 5초간 순간풍 속은 약 얼마의 바람이 불었다고 추정되는가?', answer: '34m/s', difficulty: 1, tag: '수치', source: 'B-Ⅰ·22' },
+  { id: 103, category: '구조물공학', question: '빔의 길이가 몇 [m] 이상인 경우 스팬선 빔으로 시공하는 것을 원칙으로 하는가?', answer: '38[m]', difficulty: 1, tag: '수치', source: 'B-Ⅵ·43' },
+  { id: 104, category: '전기철도공학', question: '지상구간 커티너리 가선방식 전차선로에서 일반 개소(역간)의 전주 표준 건식게이지는?', answer: '3m', difficulty: 1, tag: '수치', source: 'A-Ⅲ·12' },
+  { id: 106, category: '전기철도공학', question: '가공 전차선로에서 전차선의 접속으로 더블이어를 주로 많이 사용하여 접속한다. 이것의 사용 개수와 그 간격에 대하여 설명하시오.', answer: '3개, 300[mm]', difficulty: 1, tag: '수치', source: 'A-Ⅲ·21' },
+  { id: 107, category: '전기철도공학', question: '고속철도 전차선의 지지점에서 첫 번째 드로퍼간의 간격은?', answer: '4.5[m]', difficulty: 1, tag: '수치', source: 'A-Ⅲ·29' },
+  { id: 108, category: '구조물공학', question: '구조물 강도계산에서 최대풍속 ( )[m/s], 기울기 계산 순간풍속 ( )[m/s]이다.', answer: '40, 30', difficulty: 1, tag: '수치', source: 'B-Ⅰ·22' },
+  { id: 109, category: '구조물공학', question: '경사재를 설치하는 방법으로 경사각도는 단경사재일 때 ( )도, 복경사재일 때 ( )도로 한다.', answer: '40, 45', difficulty: 1, tag: '수치', source: 'B-Ⅵ·15' },
+  { id: 110, category: '전기철도공학', question: '교류 강체 R-BAR 방식에서 한 개 섹션의 기준길이는?', answer: '400~600[m]', difficulty: 1, tag: '수치', source: 'A-Ⅲ·33' },
+  { id: 111, category: '구조물공학', question: '가공전차선로에서 지지점과 인접 지지점간에 설치하여야 할 전주의 경간으로 적합한 것은?(단, 전차선의 편위는 0.2m, 곡선 반경은 500m이다.)', answer: '40m 정도', difficulty: 1, tag: '수치', source: 'B-Ⅴ·12' },
+  { id: 112, category: '전기철도공학', question: '제3궤조방식에서 적용하는 최고풍속[m/s]은?', answer: '45[m/s ]', difficulty: 1, tag: '수치', source: 'A-Ⅴ·21' },
+  { id: 113, category: '구조물공학', question: '전차선로 속도등급이 시속250킬로급 이하인 커티너리식 가공전차선로에서 곡선반경 R=800m인 경우 지지물의 최대경간[m]은?', answer: '45m', difficulty: 1, tag: '수치', source: 'B-Ⅴ·11' },
+  { id: 114, category: '구조물공학', question: '가공전차선로에서 전주에 대한 지선의 취부 표준각도는?', answer: '45도', difficulty: 1, tag: '수치', source: 'B-Ⅴ·31' },
+  { id: 115, category: '구조물공학', question: '지름 D, 길이 ℓ인 원기둥의 세장비(λ=L/r)는?', answer: '4ℓ/D', difficulty: 1, tag: '수치', source: 'B-Ⅲ·41' },
+  { id: 116, category: '구조물공학', question: '프와송 비(Poisson\'s ratio)가 0.2일 때 프와송수는?', answer: '5', difficulty: 1, tag: '수치', source: 'B-Ⅲ·34' },
+  { id: 117, category: '전기철도공학', question: '전차선과 조가선 전체를 자동장력조정할 때 장력 변화는 표준장력의 몇 [%] 이내인가?', answer: '5%', difficulty: 1, tag: '수치', source: 'A-Ⅲ·28' },
+  { id: 118, category: '전기철도공학', question: '직류 T-bar 방식 전차선로에서 지지점의 표준간격은?', answer: '5[m]', difficulty: 1, tag: '수치', source: 'A-Ⅲ·32' },
+  { id: 119, category: '전기철도공학', question: '심플커티너리 조가방식에서 행거간격과 드로퍼 간격은 각각 몇 [m]를 표준으 로 하는가?', answer: '5[m] , 10[m]', difficulty: 1, tag: '수치', source: 'A-Ⅲ·29' },
+  { id: 120, category: '구조물공학', question: '전철구조물인 철주 또는 비임 조립에 사용하는 볼트에서 너트를 체결한 후 남는 표준길이는 몇 ㎜ 정도인가?', answer: '5∼10', difficulty: 1, tag: '수치', source: 'B-Ⅵ·17' },
+  { id: 121, category: '구조물공학', question: '우리나라의 일반 전철구간에 전철주를 건식할 때 곡선반지 름이 1000m이상인 경우의 표준경간은 몇 m로 하는가?', answer: '50', difficulty: 1, tag: '수치', source: 'B-Ⅴ·12' },
+  { id: 122, category: '전기철도공학', question: '급전선으로 사용하는 경알루미늄연선을 경동연선과 동일한 저항치로 하였을 때 중량은 동의 몇% 정도인가?', answer: '50[%]', difficulty: 1, tag: '수치', source: 'A-Ⅲ·21' },
+  { id: 123, category: '전기철도공학', question: '교류 단권변압기 급전방식에서 전차선과 급전선간 표준전압은?', answer: '50[㎸]', difficulty: 1, tag: '수치', source: 'A-Ⅱ·21' },
+  { id: 124, category: '전기철도공학', question: '고속철도에서 두 전차선 상호간을 이격시켜 공기절연을 이용하는 에어섹션(Air Section) 평행구간의 두 전차선간 이격거리[㎜]는?', answer: '500', difficulty: 1, tag: '수치', source: 'A-Ⅲ·24' },
+  { id: 125, category: '전기철도공학', question: '에어섹션의 평행부부분에서 전차선 상호간의 이격거리[㎜] 로 맞는 것은? (단, 속도등급 300킬로급 이상)', answer: '500 이상', difficulty: 1, tag: '수치', source: 'A-Ⅲ·24' },
+  { id: 126, category: '전기철도공학', question: '에어섹션 평행부분 전차선의 등고 부분은 몇 [mm] 이상이어야 하는가?', answer: '500[mm]', difficulty: 1, tag: '수치', source: 'A-Ⅲ·24' },
+  { id: 127, category: '전기철도공학', question: '우리나라 도시전철 지상구간(커티너리 조가방식)에서 전차선의 레일면상 표준높이는 몇[㎜]인가?', answer: '5200 [㎜]', difficulty: 1, tag: '수치', source: 'A-Ⅲ·13' },
+  { id: 128, category: '전기철도공학', question: '우리나라 도시전철 지상구간에서 전차선의 레일면상 표준높이는?', answer: '5200[mm]', difficulty: 1, tag: '수치', source: 'A-Ⅲ·21' },
+  { id: 129, category: '전기철도공학', question: '지상구간 커티너리 가선방식에서 급전선과 합성전차선간의 최소 이격거리로 적당한 것은 몇 [㎜] 인가?', answer: '550', difficulty: 1, tag: '수치', source: 'A-Ⅲ·29' },
+  { id: 130, category: '전기철도공학', question: '가공급전선이 철도를 횡단할 때의 높이는 몇 [m] 이상이어야 하는가?', answer: '6.5[m] 이상', difficulty: 1, tag: '수치', source: 'A-Ⅲ·21' },
+  { id: 131, category: '전기철도공학', question: '철도횡단 궤도면상 가공 급전선의 높이는 얼마이상으로 하는가?', answer: '6.5[m] 이상', difficulty: 1, tag: '수치', source: 'A-Ⅲ·21' },
+  { id: 132, category: '구조물공학', question: '우리나라의 일반 전철구간(심플 커티너리 방식)에 전철주를 건식할 때 곡선 반지름이 2000[m] 초과인 경우의 최대경간 [m]은?', answer: '60[m]', difficulty: 1, tag: '수치', source: 'B-Ⅴ·11' },
+  { id: 133, category: '전기철도공학', question: '속도등급 300킬로급 이상의 전차선과 가동브래킷의 수평파이프 중심간 표준거리[㎜]는?', answer: '600', difficulty: 1, tag: '수치', source: 'A-Ⅲ·27' },
+  { id: 134, category: '전기철도공학', question: '데드섹션 절연구분장치가 있는 전차선로 인류구간 길이는 몇 [m]이하로 하여야 하는가?', answer: '600[m]', difficulty: 1, tag: '수치', source: 'A-Ⅲ·24' },
+  { id: 135, category: '구조물공학', question: '전차선로 속도등급 300킬로급 이상에서 전차선로 전주경간은 최대 몇 m까지 가능한가?', answer: '65', difficulty: 1, tag: '수치', source: 'B-Ⅴ·11' },
+  { id: 136, category: '전기철도공학', question: '전차선 110[㎟]의 허용 마모한도: 잔존지름 ( )[mm], 잔존단면적 ( )[㎟]', answer: '7.5, 67.6', difficulty: 1, tag: '수치', source: 'A-Ⅲ·21' },
+  { id: 137, category: '전기철도공학', question: '전기차의 최고허용속도는 일반적으로 전차선 파동전파속도의 약( ) % 정도로 보는가?', answer: '70 ~ 80%', difficulty: 1, tag: '수치', source: 'A-Ⅴ·21' },
+  { id: 138, category: '전기철도공학', question: '교류 전기철도 변전소에서 사용되는 재폐로 계전기를 나타 내는 것은?', answer: '79F', difficulty: 1, tag: '수치', source: 'A-Ⅵ·22' },
+  { id: 139, category: '전기철도공학', question: '인류구간 길이가 몇 [m] 이하이면 활차식 자동장력조정장치를 한쪽에만 시설해도 되는가?', answer: '800[m] 이하', difficulty: 1, tag: '수치', source: 'A-Ⅲ·28' },
+  { id: 140, category: '전기철도공학', question: '전차선의 마모한도에 있어 온도상승 허용온도는?', answer: '90[℃]', difficulty: 1, tag: '수치', source: 'A-Ⅴ·23' },
+  { id: 141, category: '전기철도공학', question: '스코트 결선 변압기의 2차측 M상과 T상의 위상차는?', answer: '90°', difficulty: 1, tag: '수치', source: 'A-Ⅱ·24' },
+  { id: 142, category: '전기철도공학', question: '교류 전철변전소 주변압기의 M상과 T상간의 위상차는 몇도 인가?', answer: '90°', difficulty: 1, tag: '수치', source: 'A-Ⅱ·24' },
+  { id: 143, category: '전기철도공학', question: '활차비 1:4의 경우 장력추 유효동작 범위가 3,600[㎜]이면 전차선의 신축허용 범위[㎜]는?', answer: '900', difficulty: 1, tag: '수치', source: 'A-Ⅲ·28' },
+  { id: 144, category: '전기철도공학', question: '가동브라켓 수평방향 회전 가능 각도 ( )도, 전차선 위치 변동 좌우 ( ) 미만에서 조가점 변동이 없어야 한다.', answer: '90도, ±500[mm]', difficulty: 1, tag: '수치', source: 'A-Ⅲ·27' },
+  { id: 145, category: '전기철도공학', question: '커티너리 가선 역간 표준가고는 얼마인가?', answer: '960[㎜]', difficulty: 1, tag: '수치', source: 'A-Ⅲ·21' },
+  { id: 146, category: '구조물공학', question: '밑변 b, 높이 h인 삼각형 단면인 경우 밑변을 지니는 수평축에 대한 단면 2차 모멘트는?', answer: 'bh3/12', difficulty: 1, tag: '수치', source: 'B-Ⅳ·21' },
+  { id: 147, category: '전기철도공학', question: '지지점과 경간중앙에서 기울기량이 같을 때 전차선의 기울기량 d식은? (S: 경간, R: 곡선반경)', answer: 'd = S²/16R', difficulty: 1, tag: '수치', source: 'A-Ⅲ·21' },
+  { id: 148, category: '구조물공학', question: '지름이 D인 원(圓)의 도심 축에 대한 회전 반지름은?', answer: 'D/4', difficulty: 1, tag: '수치', source: 'B-Ⅳ·22' },
+  { id: 150, category: '구조물공학', question: '그림과 같이 균일 단면봉이 축하중을 받고 평형을 이룰때. T=2P가 되려면 W는 얼마가 되어야 하는가?', answer: 'P/3', difficulty: 1, tag: '수치', source: 'B-Ⅱ·31' },
+  { id: 151, category: '전기철도공학', question: '전철변전설비중 가스차단기(GCB)의 소호매질로 사용되는 것은?', answer: 'SF6', difficulty: 1, tag: '수치', source: 'A-Ⅱ·24' },
+  { id: 152, category: '전기철도공학', question: '직류 강체 전차선로(T-Bar 방식)의 브래킷의 표준 간격(m) 은?', answer: '5[m]', difficulty: 1, tag: '수치', source: 'A-Ⅲ·32' },
+  { id: 153, category: '전기철도공학', question: '고속철도 전차선 4경간의 에어섹션에서 주축전주 (2e 및 2i) 쌍브래킷에 관한 설명이다. 빈칸을 채우시오. • 쌍브래킷 간격 : 중심전주 ( ㉠ )m, 중간전주 ( ㉡ )m', answer: '㉠ 1.6m ㉡ 1m', difficulty: 1, tag: '수치', source: 'A-Ⅲ·24' },
+  { id: 154, category: '전기철도공학', question: '고속철도 전차선 4경간의 에어섹션에서 주축전주 (2e 및 2i) 쌍브래킷에 관한 설명이다. 빈칸을 채우시오. • 쌍브래킷 주축전주 가고 : 2e ( ㉠ )m, 2i ( ㉡ )m', answer: '㉠ 2.0[m] ㉡ 1.3[m]', difficulty: 1, tag: '수치', source: 'A-Ⅲ·24' },
+  { id: 155, category: '전기철도공학', question: '일반전기철도 이선율 ( ㉠ )% 이하, 고속전철 이선율 ( ㉡ )% 이하로 제한한다.', answer: '㉠ 3, ㉡ 1%', difficulty: 1, tag: '수치', source: 'A-Ⅴ·21' },
+  { id: 156, category: '전기철도공학', question: '경부고속철도 전차선로에서 사용한 전차선의 규격으로 맞는 것은?', answer: '동 150[㎟]', difficulty: 1, tag: '수치', source: 'A-Ⅴ·23' },
+  { id: 157, category: '구조물공학', question: '지름 10[㎜], 길이 15[m]의 강철봉에 무게 800kg의 물체를 매어 달았을 때 강철봉이 늘어난 길이 [㎝]는? (단, Es=2.1×10⁶[kg/㎠]이다.)', answer: '약 0.73', difficulty: 1, tag: '수치', source: 'B-Ⅲ·31' },
+  { id: 158, category: '전기철도공학', question: '전차선 가선 높이가 한쪽은 5.2[m], 다른 한쪽은 4.85[m] 이며 전차선구배를 3/1000로 시행할 때 소요 연장 구간은 얼마로 하면 되는가?', answer: '약 117[m]', difficulty: 1, tag: '수치', source: 'A-Ⅲ·21' },
+  { id: 159, category: '구조물공학', question: '지름이 5[㎝], 길이가 200[㎝]인 탄성체 강봉을 15[㎜] 만큼 늘어나게 하려면 얼마의 힘[tf]이 필요한가? (단, 종탄 성계수 E=2.1×106[kgf/㎠])', answer: '약 309[tf]', difficulty: 1, tag: '수치', source: 'B-Ⅲ·31' },
+  { id: 160, category: '전기철도공학', question: '곡선반경이 3000[m]이고 캔트가 6[㎜]인 곡선 선로를 열차가 주행할 때 낼 수 있는 최대 속도[km/h]는? (단, 궤간은 1435[㎜]로 한다.)', answer: '약 40', difficulty: 1, tag: '수치', source: 'A-Ⅰ·31' },
+  { id: 161, category: '전기철도공학', question: '직류 1500V 급전선로에서 피뢰기는 급전선 긍장 약 몇 [m]마다 설치하는가?', answer: '약 500[m]', difficulty: 1, tag: '수치', source: 'A-Ⅵ·21' },
+  { id: 162, category: '전기철도공학', question: '선로의 궤간이 1435[㎜], 곡선반경이 R=1000[㎜]인 선로를 70[km/h]로 주행하는데 필요한 캔트[㎜]는?', answer: '약 55', difficulty: 1, tag: '수치', source: 'A-Ⅰ·31' },
+  { id: 163, category: '구조물공학', question: '지름 6[㎝]인 원형 단면에서 도심을 지나는 축에 대한 2차 모멘트[cm⁴]는?', answer: '약 64', difficulty: 1, tag: '수치', source: 'B-Ⅳ·12' },
+  { id: 164, category: '전기철도공학', question: '곡선반지름이 600 [m]인 곡선로에서, 건축한계는 직선로에서의 건축한계에 몇 [㎜]를 추가해야 하는가?', answer: '약 83', difficulty: 1, tag: '수치', source: 'A-Ⅰ·31' },
+  { id: 165, category: '전기철도공학', question: '전차선로의 표준장력이 1000[kgf]이고, 단위중량이 1.839[kgf/m]이며, 전주경간이 55[m]일 때 필요한 가고 H[㎜]는?', answer: '약 845[㎜]', difficulty: 1, tag: '수치', source: 'A-Ⅲ·29' },
+  { id: 166, category: '전기철도공학', question: '경간 60[m], 표준장력 1000[kgf], 합성 전차선의 단위중량 1.795[kg/m], 행거의 최소길이 0.15[m] 일때 전차선 가고 H[㎜]는?', answer: '약 960', difficulty: 1, tag: '수치', source: 'A-Ⅲ·21' },
+  { id: 167, category: '전기철도공학', question: '가공전차선로에서 일반적인 표준가고는 얼마인가? ① 역 간 : ② 역구내 :', answer: '역간 : 960[mm], 역구내 : 710[mm]', difficulty: 1, tag: '수치', source: 'A-Ⅲ·21' },
+  { id: 168, category: '전기철도공학', question: '우리나라 직류와 교류급전방식에서 전차선과 레일간 각각의 표준전압은?', answer: '직류 : 1500[V], 교류 : 25[kV]', difficulty: 1, tag: '수치', source: 'A-Ⅱ·21' },
+  { id: 169, category: '전기철도공학', question: '속도의 급상승과 급제동에 유리한 동력방식은?', answer: '동력분산방식', difficulty: 1, tag: '초성', source: 'A-Ⅳ·31' },
+  { id: 170, category: '전기철도공학', question: '주 전동기를 발전기로 쓰고 운동에너지를 열에너지로 방산시키는 제동 방식은?', answer: '발전제동', difficulty: 1, tag: '초성', source: 'A-Ⅳ·24' },
+  { id: 171, category: '전기철도공학', question: '교류급전방식의 표준 급전방식은?', answer: '단독급전방식', difficulty: 1, tag: '초성', source: 'A-Ⅱ·21' },
+  { id: 172, category: '전기철도공학', question: '교류급전계통에서 변전소 중간위치에 설치하는 구분장치는?', answer: '급전구분소', difficulty: 1, tag: '초성', source: 'A-Ⅱ·22' },
+  { id: 173, category: '전기철도공학', question: '직류전철구간에서 전압강하 보상을 위해 상·하선을 균압하기 위해 설치하는 설비는?', answer: '타이포스트', difficulty: 1, tag: '초성', source: 'A-Ⅴ·22' },
+  { id: 174, category: '전기철도공학', question: '전압강하 보상과 통신유도장해 경감을 목적으로 말단에 단권변압기만 설치하는 곳은? ※ 문제 오류 (현행 ATP에서는 AT와 개폐기를 설치)', answer: '변압기 포스트', difficulty: 1, tag: '초성', source: 'A-Ⅴ·22' },
+  { id: 175, category: '전기철도공학', question: '도시철도 지하구간에 적합한 조가방식은?', answer: '강체조가방식', difficulty: 1, tag: '초성', source: 'A-Ⅲ·13' },
+  { id: 176, category: '전기철도공학', question: '가공전차선의 횡진을 방지하는 장치는?', answer: '진동방지장치', difficulty: 1, tag: '초성', source: 'A-Ⅲ·22' },
+  { id: 177, category: '전기철도공학', question: '가공전차선로에서 온도변화에 대응하기 위한 기계적 구분장치는?', answer: '에어죠인트', difficulty: 1, tag: '초성', source: 'A-Ⅲ·24' },
+  { id: 178, category: '전기철도공학', question: '이상전원 접속개소 및 직·교류 접속개소에서 사용하는 구분장치는?', answer: '데드섹션', difficulty: 1, tag: '초성', source: 'A-Ⅲ·24' },
+  { id: 179, category: '전기철도공학', question: '전차선에 공기절연을 이용하는 구분장치는?', answer: '에어섹션', difficulty: 1, tag: '초성', source: 'A-Ⅲ·24' },
+  { id: 180, category: '전기철도공학', question: '가공전차선로에서 고속운전에 가장 적합한 전기적 구분장치는?', answer: '에어섹션', difficulty: 1, tag: '초성', source: 'A-Ⅲ·24' },
+  { id: 181, category: '전기철도공학', question: '본선 가공전차선로에서 주로 사용하는 장력조정장치는?', answer: '활차식 장력조정장치', difficulty: 1, tag: '초성', source: 'A-Ⅲ·28' },
+  { id: 182, category: '전기철도공학', question: '직류 강체 전차선로에서 T-bar에 전차선을 연속적으로 고정시키는 연결금구는?', answer: '롱 이어', difficulty: 1, tag: '초성', source: 'A-Ⅲ·32' },
+  { id: 183, category: '전기철도공학', question: '교류강체방식 전차선로에서 R-bar의 팽창을 상쇄시켜주는 장치는?', answer: '확장장치', difficulty: 1, tag: '초성', source: 'A-Ⅲ·33' },
+  { id: 184, category: '전기철도공학', question: '전철변전소 실리콘정류기의 내부 단락사고 검출계전기는?', answer: '역전류 계전기', difficulty: 1, tag: '초성', source: 'A-Ⅵ·22' },
+  { id: 185, category: '전기철도공학', question: '직류급전방식에서 차단지령을 전송하기 위한 장치는?', answer: '연락차단장치', difficulty: 1, tag: '초성', source: 'A-Ⅱ·21' },
+  { id: 186, category: '전기철도공학', question: '전차선로에 단락 또는 지락고장 발생 시 고장점까지의 거리를 나타내는 장치는?', answer: '고장점 표정장치', difficulty: 1, tag: '초성', source: 'A-Ⅵ·22' },
+  { id: 187, category: '전기철도공학', question: '직류급전방식에서 직류고압의 지락사고를 검출하는 장치는?', answer: '직류고압 지락계전기', difficulty: 1, tag: '초성', source: 'A-Ⅱ·21' },
+  { id: 188, category: '전기철도공학', question: '팬터그래프와 전차선의 접촉력이 순간적으로 0이 되는 현상은?', answer: '이선현상', difficulty: 1, tag: '초성', source: 'A-Ⅴ·21' },
+  { id: 189, category: '전기철도공학', question: '전철변전설비 중 가스차단기(GCB)의 소호매질은?', answer: 'SF6', difficulty: 1, tag: '초성', source: 'A-Ⅱ·24' },
+  { id: 190, category: '전기철도공학', question: '직류변전소에서 실리콘 정류기의 출력단자간 저항의 역할은?', answer: '무부하 시 출력전압 상승 억제', difficulty: 1, tag: '초성', source: 'A-Ⅱ·24' },
+  { id: 191, category: '전기철도공학', question: '직류전철 변전소에서 교류를 직류로 변환시키는 설비는?', answer: '정류기', difficulty: 1, tag: '초성', source: 'A-Ⅱ·24' },
+  { id: 192, category: '전기철도공학', question: '교류급전방식에서 정전구간 단축을 목적으로 설치하는 보조 구분장치는?', answer: '보조급전 구분소', difficulty: 1, tag: '초성', source: 'A-Ⅱ·21' },
+  { id: 193, category: '구조물공학', question: '가공전차선로에서 두 금속간의 상대전위차로부터 알 수 있는 것은?', answer: '부식의 정도', difficulty: 1, tag: '초성', source: 'B-Ⅴ·44' },
+  { id: 194, category: '전기철도공학', question: 'BT급전방식에서 부급전선과 레일을 접속하는 선은?', answer: '흡상선', difficulty: 1, tag: '초성', source: 'A-Ⅱ·21' },
+  { id: 195, category: '전기철도공학', question: '전차선 인류용으로 가장 많이 사용되는 지선은?', answer: 'V형 지선', difficulty: 1, tag: '초성', source: 'A-Ⅴ·31' },
+  { id: 196, category: '전기철도공학', question: '단독지지주 설계 시 전선중량에 대한 응력계산은 주로 어떤 하중을 적용하는가?', answer: '수직편심하중', difficulty: 1, tag: '초성', source: 'A-Ⅴ·32' },
+  { id: 197, category: '전기철도공학', question: '전선에 가해지는 풍압하중은 응력계산에서 어떤 하중으로 하는가?', answer: '수평분포하중', difficulty: 1, tag: '초성', source: 'A-Ⅰ·22' },
+  { id: 198, category: '구조물공학', question: '물체 내부에서 외력에 저항하는 힘을 무엇이라 하는가?', answer: '응력', difficulty: 1, tag: '초성', source: 'B-Ⅲ·11' },
+  { id: 199, category: '전기철도공학', question: '모든 재료는 탄성한도 내에서 응력과 변형율이 비례한다는 법칙은?', answer: '후크의 법칙', difficulty: 1, tag: '초성', source: 'A-Ⅲ·22' },
+  { id: 200, category: '전기철도공학', question: '구조용 강재에서 응력과 변형도의 비를 무엇이라 하는가?', answer: '영 계수', difficulty: 1, tag: '초성', source: 'A-Ⅲ·31' },
+  { id: 201, category: '구조물공학', question: '단면에 비해 길이가 긴 기둥이 압축 극한강도에 도달하기 전에 휘어져 파괴되는 현상은?', answer: '좌굴현상', difficulty: 1, tag: '초성', source: 'B-Ⅲ·41' },
+  { id: 202, category: '전기철도공학', question: '세장비가 클 때 의미하는 바는?', answer: '좌굴되기 쉽다', difficulty: 1, tag: '초성', source: 'A-Ⅲ·41' },
+  { id: 203, category: '전기철도공학', question: '한 점에 작용하는 3개의 힘이 평형을 이룰 때 각 힘이 다른 두 힘 사이의 sine에 정비례한다는 정리는?', answer: '라미의 정리', difficulty: 1, tag: '초성', source: 'A-Ⅱ·34' },
+  { id: 204, category: '전기철도공학', question: '압축력과 인장력이 가해지는 개소에 사용되는 애자는?', answer: '장간애자', difficulty: 1, tag: '초성', source: 'A-Ⅴ·35' },
+  { id: 205, category: '구조물공학', question: '역구내, 차량기지 등 빔의 길이가 길어질 경우 사용하는 빔은?', answer: '스팬선식 빔', difficulty: 1, tag: '초성', source: 'B-Ⅴ·21' },
+  { id: 206, category: '전기철도공학', question: '교류 급전선로에서 거리계전기의 후비보호로 사용되는 계전기는?', answer: '고장선택 계전기', difficulty: 1, tag: '초성', source: 'A-Ⅵ·22' },
+  { id: 207, category: '전기철도공학', question: '교류AT 급전방식에 가장 적합한 고장점 표정 검출방식은?', answer: '흡상전류비방식 고장점표정장치', difficulty: 1, tag: '초성', source: 'A-Ⅱ·21' },
+  { id: 208, category: '전기철도공학', question: '전차선로에서 커티너리 가선구간과 강체가선구간의 접속구간을 무엇이라 하는가?', answer: '이행구간', difficulty: 1, tag: '초성', source: 'A-Ⅲ·13' },
+  { id: 209, category: '구조물공학', question: '전차선로에서 전주중심과 궤도중심과의 직선 이격거리를 무엇이라 하는가?', answer: '건식게이지', difficulty: 1, tag: '초성', source: 'B-Ⅴ·12' },
+  { id: 210, category: '전기철도공학', question: '영상변류기와 조합하여 차단기를 동작시키는 계전기는?', answer: '지락계전기', difficulty: 1, tag: '초성', source: 'A-Ⅵ·22' },
+  { id: 211, category: '전기철도공학', question: '곡선구간에서 전차선을 외측으로 잡아당겨 편위를 유지시키는 장치는?', answer: '곡선당김장치', difficulty: 1, tag: '초성', source: 'A-Ⅲ·22' },
+  { id: 212, category: '전기철도공학', question: '무효 인류개소에서의 균압선 접속방법은?', answer: 'M-T 접속', difficulty: 1, tag: '초성', source: 'A-Ⅲ·21' },
+  { id: 213, category: '전기철도공학', question: '교류 급전계통에서 차단기·단로기 등의 개폐장치와 단권변압기 등을 설치한 곳은?', answer: '급전구분소', difficulty: 1, tag: '초성', source: 'A-Ⅱ·22' },
+  { id: 214, category: '전기철도공학', question: '지상부 가공전차선이 터널 내 강체전차선으로 바뀌는 이행구간에 설치하는 장치는?', answer: '직접유도장치', difficulty: 1, tag: '초성', source: 'A-Ⅲ·21' },
+  { id: 215, category: '전기철도공학', question: '직류강체 전차선로에서 전차선을 구조물에 지지하는 기초 부품으로 콘크리트 타설 시 설치하는 것은?', answer: '절연 매립전', difficulty: 1, tag: '초성', source: 'A-Ⅲ·21' },
+  { id: 216, category: '전기철도공학', question: '직류 T-bar 방식에서 가공전차선로와 강체전차선로가 만나는 부분에 설치하는 장치는?', answer: '지상부 이행장치', difficulty: 1, tag: '초성', source: 'A-Ⅲ·32' },
+  { id: 217, category: '전기철도공학', question: '전원 차단 후 완전하게 분리하는 스위치는?', answer: '단로기', difficulty: 1, tag: '초성', source: 'A-Ⅱ·24' },
+  { id: 218, category: '전기철도공학', question: '강풍구간, 염해가 심한 해안구간에 적정한 급전선은?', answer: '경동연선', difficulty: 1, tag: '초성', source: 'A-Ⅲ·21' },
+  { id: 219, category: '구조물공학', question: '가공전차선로에서 두 금속간의 상대전위차가 0.2~0.8인 경우 부식층 금속의 부식정도는?', answer: '약간의 부식진행', difficulty: 1, tag: '초성', source: 'B-Ⅴ·44' },
+  { id: 220, category: '전기철도공학', question: '가공전차선로에서 사용하는 전철주 중에서 제작이 용이하고 시공이 간편하여 많이 사용하고 있으나 비틀림 현상을 고려 하여야 하는 전철주는?', answer: 'H형 강주', difficulty: 1, tag: '초성', source: 'A-Ⅵ·14' },
+  { id: 221, category: '전기철도공학', question: '가공전차선로에서 전차선 인류용으로 가장 많이 사용되는 지선은?', answer: 'V형 지선', difficulty: 1, tag: '초성', source: 'A-Ⅴ·31' },
+  { id: 222, category: '전기철도공학', question: '강도계산시 전선,애자,구조물의 자체 무게가 적용되는 하중은?', answer: '수직하중', difficulty: 1, tag: '초성', source: 'A-Ⅰ·33' },
+  { id: 223, category: '전기철도공학', question: '곡선구간에서 정적인 상태로 가선측정기에 의한 가선의 편위를 측정할 때 어디를 기준으로 하는가?', answer: '외측궤도', difficulty: 1, tag: '초성', source: 'A-Ⅲ·29' },
+  { id: 224, category: '전기철도공학', question: '곡선로 부분에서 후렌지가 레일 측면에 끼어서 탈선하는 것을 방지하기 위하 여 궤간을 직선부보다 약간 넓게 하는 것을 무엇이라 하는가?', answer: '슬랙', difficulty: 1, tag: '초성', source: 'A-Ⅰ·31' },
+  { id: 225, category: '전기철도공학', question: '교류 급전계통을 구분하고 연장 급전등을 하기 위하여 변전소와 변전소의 중간위치 또는 이종전원을 구분하기 위한 위치에 차단기,단로기의 개폐장 치 와 단권변압기 등을 설치한곳을 무엇이라 하는가?', answer: '급전구분소', difficulty: 1, tag: '초성', source: 'A-Ⅱ·22' },
+  { id: 226, category: '전기철도공학', question: '교류 전차선로에서 지상부 가공전차선이 터널내로 들어와 강체전차선으로 바 뀌어 지는 이행구간 부분에 설치하는 장치로서, 전기차의 판타그래프가 원활하게 통과 할 수 있도록 하는 장치는?', answer: '직접유도장치', difficulty: 1, tag: '초성', source: 'A-Ⅴ·21' },
+  { id: 227, category: '전기철도공학', question: '교류급전계통을 구분하고 필요시 연장급전을 하기 위하여 변전소와 변전소의 중간위치에 설치하는 것은?', answer: '급전구분소', difficulty: 1, tag: '초성', source: 'A-Ⅱ·22' },
+  { id: 228, category: '구조물공학', question: '구조물에서 부재는 직선재를 삼각형으로 구성하되 절점은 마찰이 없는 회전 절점으로 연결하여 만든구조로서, 각부재는 압축력과 인장력만 받는 구조물을 무엇이라 하는가?', answer: '트러스', difficulty: 1, tag: '초성', source: 'B-Ⅵ·16' },
+  { id: 229, category: '전기철도공학', question: '다음 전철전력 표준도기호가 의마하는 것이 무엇인가? .', answer: '에어조인트 흐름방지장치', difficulty: 1, tag: '초성', source: 'A-Ⅲ·24' },
+  { id: 230, category: '전기철도공학', question: '단권변압기 방식의 지하구간 및 공용접지방식구간에서 섬락보호를 위하여 철재, 지지물을 연접하여 귀선레일에 접속하는 가공전선으로서 대지에 절연하지 아니하는 전선은?', answer: '비절연 보호선', difficulty: 1, tag: '초성', source: 'A-Ⅵ·17' },
+  { id: 231, category: '전기철도공학', question: '단선의 염려가 없으며 터널이나 지하구간에서 주로 사용되는 조가방식은?', answer: '강체조가방식', difficulty: 1, tag: '초성', source: 'A-Ⅲ·13' },
+  { id: 232, category: '전기철도공학', question: '본선에서 제일 많이 사용하는 자동장력장치는 ?', answer: '활차식', difficulty: 1, tag: '초성', source: 'A-Ⅲ·28' },
+  { id: 233, category: '전기철도공학', question: '본선이 아닌 차량기지 구내등 에서 인류구간의 길이가 짧을 경우에 사용하는 자동장력 조정장치로서, 인류구간의 길이가 300[m]이하의 경우는 한쪽에만, 300[m]를 넘고 600[m]이하의 경우는 양쪽에 설치하는 것은?', answer: '스프링식 자동장력 조정장치', difficulty: 1, tag: '초성', source: 'A-Ⅲ·28' },
+  { id: 234, category: '전기철도공학', question: '속도의 급상승과 급제동에 유리하도록 전기차와 객차가 1개의 편성으로 구성되어 있는 동력방식은?', answer: '동력분산방식', difficulty: 1, tag: '초성', source: 'A-Ⅳ·31' },
+  { id: 235, category: '구조물공학', question: '아래 그림은 무엇을 말하는가? .', answer: 'V형 트러스', difficulty: 1, tag: '초성', source: 'B-Ⅴ·21' },
+  { id: 236, category: '전기철도공학', question: '에어섹션개소에서 구분용 애자의 하단과 본선의 전차선간의 최저 이격거리는?', answer: '200', difficulty: 1, tag: '초성', source: 'A-Ⅲ·24' },
+  { id: 237, category: '전기철도공학', question: '전기차 집전장치의 습동면의 편마모를 방지하기 위한 대책은?', answer: '전차선을 지그재그로 가선', difficulty: 1, tag: '초성', source: 'A-Ⅲ·42' },
+  { id: 238, category: '전기철도공학', question: '전기철도 교류급전방식에서 전차선로 지락, 단락사고 발생시 고장지점 또는 고장구간을 쉽게 찾아내어 사고 복구시간 단축에 기여하는 장치는?', answer: '고장점 표정장치', difficulty: 1, tag: '초성', source: 'A-Ⅱ·21' },
+  { id: 239, category: '전기철도공학', question: '전동차의 전기제동에서 주 전동기를 발전기로 쓰고 차량의 운동에너지를 전기에너지로 변환하여 저항기에 의하여 열에너지로 방산시키는 제동을 무엇이라 하는가?', answer: '발전제동', difficulty: 1, tag: '초성', source: 'A-Ⅳ·24' },
+  { id: 240, category: '전기철도공학', question: '전주 또는 고정빔등에 취부하여 급전선,부급전선, 보호선등을 지지하거나 인 류하기 위한 구조물을 무엇이라 하는가?', answer: '완금', difficulty: 1, tag: '초성', source: 'A-Ⅴ·22' },
+  { id: 241, category: '구조물공학', question: '전주에 가해지는 풍압 하중은 응력 계산에서 어떤 하중으로 계산하는가?', answer: '수평분포 하중', difficulty: 1, tag: '초성', source: 'B-Ⅰ·33' },
+  { id: 242, category: '구조물공학', question: '전주의 건식이 곤란한 개소 또는 고정빔이나 터널의 현장에서 아래로 가동브라켓, 곡선 당김장치 등을 지지하기 위한 구조물은?', answer: '하수강', difficulty: 1, tag: '초성', source: 'B-Ⅴ·23' },
+  { id: 243, category: '전기철도공학', question: '전차선로 급전선의 안전율 이란?', answer: '항장력/ 허용장력', difficulty: 1, tag: '초성', source: 'A-Ⅲ·41' },
+  { id: 244, category: '전기철도공학', question: '전차선로 순환전류 방지를 위한 무효 인류개소에서의 균압선 접속방법은?', answer: 'M-T접속', difficulty: 1, tag: '초성', source: 'A-Ⅴ·24' },
+  { id: 245, category: '전기철도공학', question: '전차선로의 AT급전선 및 보호선의 지지를 위해 사용하는 애자는?', answer: '지지애자', difficulty: 1, tag: '초성', source: 'A-Ⅲ·29' },
+  { id: 246, category: '전기철도공학', question: '전차선의 이선 종류 중에서 전차선의 경성점 또는 연성점에 의하여 일어나는 것으로서 보통 이선시간이 1-2초인 이선은?', answer: '대이선', difficulty: 1, tag: '초성', source: 'A-Ⅴ·21' },
+  { id: 247, category: '전기철도공학', question: '전차선의 재질은 무엇인가?', answer: '홈 경동선', difficulty: 1, tag: '초성', source: 'A-Ⅲ·21' },
+  { id: 248, category: '전기철도공학', question: '직류 T-bar 방식 전차선로에서 강체전차선의 높이를 일정하게 유지시키고, 열차운행시 진동이나 탈락 또는 변형이 되지 않도록 지지해 주는 것은?', answer: '지지금구', difficulty: 1, tag: '초성', source: 'A-Ⅲ·22' },
+  { id: 249, category: '전기철도공학', question: '직류 T-bar 방식 전차선로에서 전차선과 구조물간을 절연시키면서 또한 T-BAR를 고정하는 역할을 하는 것은?', answer: '애자', difficulty: 1, tag: '초성', source: 'A-Ⅲ·32' },
+  { id: 251, category: '전기철도공학', question: '직류 전기철도 방식의 전철 변전소에서 현재 가장 많이 사용되고 있는 정류기의 정류방식을 쓰시오.', answer: '6상12펄스 정류방식', difficulty: 1, tag: '초성', source: 'A-Ⅱ·24' },
+  { id: 252, category: '전기철도공학', question: '직류급전계통 변전소에서 주 정류기와 조합시켜 부하가 정격값보다 작은 영역은 전압이 상승하는 것을 막고, 정격값 보다 큰 영역에서는 전압이 저하되는 것을 구재하도록 설치하는 싸이리스터형 장치는?', answer: '직류전압 조정장치', difficulty: 1, tag: '초성', source: 'A-Ⅱ·24' },
+  { id: 253, category: '구조물공학', question: '철주 주체를 상부와 기초부로 분할하여 기초부 완료후 기초부 주체와 상부 주체를 볼트로 체결하여 시공하는 방식은?', answer: '근계매입', difficulty: 1, tag: '초성', source: 'B-Ⅴ·13' },
+  { id: 254, category: '구조물공학', question: '철주다리의 구조에서 기초콘크리트 또는 교량구조물에 기초볼트를 매입해 넣 고 철주를 볼트로 체결하는 방식을 무슨 방식이라 하는가?', answer: '앵커볼트 매입 방식', difficulty: 1, tag: '초성', source: 'B-Ⅴ·13' },
+  { id: 255, category: '전기철도공학', question: '콘크리트 설치가 곤란한 고가교, 난간개소 등에 주로 이용되며 설계굽힘모멘 트가 15000[kg.m]를 넘는 큰 하중을 갖는 단독지지주에 사용하는 철주는?', answer: '강관주', difficulty: 1, tag: '초성', source: 'A-Ⅱ·12' },
+  { id: 256, category: '전기철도공학', question: '직류 변전설비에서 실리콘 정류기의 정류소자는?', answer: '다이오드', difficulty: 1, tag: '초성', source: 'A-Ⅱ·24' },
+  { id: 257, category: '전기철도공학', question: '전기철도 전기방식 중 전기차의 설비가 간단하고, 절연이 쉬우며, 절연거리도 짧게 할 수 있어 활선작업을 하기가 쉬워지는 장점을 가진 전기철도는?', answer: '직류 전기철도', difficulty: 1, tag: '초성', source: 'A-Ⅰ·22' },
+  { id: 258, category: '전기철도공학', question: '본선의 가공전차선로에 주로 사용하는 장력조정장치는?', answer: '활차식', difficulty: 1, tag: '초성', source: 'A-Ⅲ·28' },
+  { id: 259, category: '전기철도공학', question: '직선구간에서 가공전차선로의 트롤리선(전차선)을 지그재그 편위로 하는 이유는?', answer: '팬타그래프의 특정부분 마모 방지', difficulty: 1, tag: '초성', source: 'A-Ⅲ·29' },
+  { id: 260, category: '전기철도공학', question: '교류 전철변전소의 주변압기로 사용하는 결선방식은?', answer: '스코트 결선', difficulty: 1, tag: '초성', source: 'A-Ⅱ·24' },
+  { id: 261, category: '전기철도공학', question: 'AT방식 전철변전소에 직렬콘덴서를 설치하는 주된 이유는?', answer: '분수조파 발생 억제', difficulty: 1, tag: '초성', source: 'A-Ⅴ·22' },
+  { id: 262, category: '전기철도공학', question: '2이상의 급전점에서 급전할 수 있는 급전구간을 1급전점에서 급전하는 방식을 무엇이라 하는가?', answer: '연장급전', difficulty: 1, tag: '초성', source: 'A-Ⅱ·21' },
+  { id: 263, category: '전기철도공학', question: '단선의 염려가 없으며, 터널이나 지하철용으로 많이 사용되는 전차선의 가선방식은?', answer: '강체 가선방식', difficulty: 1, tag: '초성', source: 'A-Ⅱ·21' },
+  { id: 264, category: '전기철도공학', question: '두 개의 금속의 상대 전위차로부터 알 수 있는 것은?', answer: '부식의 정도', difficulty: 1, tag: '초성', source: 'A-Ⅴ·26' },
+  { id: 265, category: '전기철도공학', question: '전차선로의 설치목적은?', answer: '전기차에 전력을 공급하기 위하여', difficulty: 1, tag: '초성', source: 'A-Ⅲ·21' },
+  { id: 266, category: '전기철도공학', question: '교류 강체 가선방식에서 커티너리 가선방식의 인류장치와 같은 역할을 하는 장치는?', answer: '제한점장치', difficulty: 1, tag: '초성', source: 'A-Ⅲ·25' },
+  { id: 267, category: '전기철도공학', question: '강체 가선방식의 편위 형태는?', answer: '완만한 사인곡선의 형태', difficulty: 1, tag: '초성', source: 'A-Ⅲ·29' },
+  { id: 268, category: '전기철도공학', question: '전철 급전선로의 과부하전류나 지락, 단락 등으로부터 전기 시설물을 보호하기 위하여 등전위 접지망을 구성하는 방식은?', answer: '매설 접지방식', difficulty: 1, tag: '초성', source: 'A-Ⅲ·21' },
+  { id: 269, category: '전기철도공학', question: '조가선과 전차선의 2조로 구성되고 조가선으로 전차선을 궤도면에 대하여 평행이 되도록 한 방식은?', answer: '심플 커티너리 조가방식', difficulty: 1, tag: '초성', source: 'A-Ⅲ·29' },
+  { id: 270, category: '구조물공학', question: '가공전차선로에서 두 개의 금속의 조합 즉, 피접촉금속과 접촉금속의 사용이 불가능한 조합은?', answer: '알루미늄-동', difficulty: 1, tag: '초성', source: 'B-Ⅴ·44' },
+  { id: 271, category: '전기철도공학', question: '직류 전차선로에서 귀선로(레일)의 전기저항이 높아 전압강하 및 레일 전위의 상승을 억제 하기 위해 설치하는 것은?', answer: '보조귀선', difficulty: 1, tag: '초성', source: 'A-Ⅴ·22' },
+  { id: 272, category: '전기철도공학', question: '자동신호에 사용하는 궤도 변압기에서 고저압 혼촉방지장치는?', answer: '금속성 이격판', difficulty: 1, tag: '초성', source: 'A-Ⅰ·32' },
+  { id: 273, category: '전기철도공학', question: '조가선에 만곡하중이 걸리는 곳은?', answer: '지지점', difficulty: 1, tag: '초성', source: 'A-Ⅲ·21' },
+  { id: 274, category: '전기철도공학', question: '전차선의 이선시간이 수십분의 일초 정도의 것으로 전차선 또는 팬터그래프 습판의 미세한 진동에 따른 이선은?', answer: '소이선', difficulty: 1, tag: '초성', source: 'A-Ⅴ·21' },
+  { id: 275, category: '전기철도공학', question: '전차선로의 가선방식에서 모노레일, 경전철에 적합한 가선방식은?', answer: '강체복선식', difficulty: 1, tag: '초성', source: 'A-Ⅲ·12' },
+  { id: 276, category: '전기철도공학', question: '직류 급전계통에서 전동차의 전동기 방식은 일반적으로 어떤 것을 사용하는가?', answer: '직권전동기', difficulty: 1, tag: '초성', source: 'A-Ⅳ·22' },
+  { id: 277, category: '전기철도공학', question: '직류 전차선로의 복선구간에서 전차선을 병렬 급전할 수 없는 단말 부분의 상선과 하선을 차단기를 통하여 접속할 수 있도록 한 설비는?', answer: '급전 타이 포스트', difficulty: 1, tag: '초성', source: 'A-Ⅴ·22' },
+  { id: 278, category: '전기철도공학', question: '단상 교류식 전기철도에서 3상 전원을 평형으로 얻기위해서 사용되는 방법은?', answer: '스코트 결선', difficulty: 1, tag: '초성', source: 'A-Ⅱ·24' },
+  { id: 279, category: '전기철도공학', question: '전기차 팬터그래프에 의한 가공전차선의 전기적 마모의 주된 원인은?', answer: '불완전 접촉', difficulty: 1, tag: '초성', source: 'A-Ⅴ·21' },
+  { id: 280, category: '전기철도공학', question: '직류 T-Bar 방식 전차선로에서 강체 가선을 일정한 높이로 유지시키고 열차 운행시 진동이나 탈락 또는 변형이 되지 않게 지지해 주는 것은?', answer: '지지금물', difficulty: 1, tag: '초성', source: 'A-Ⅲ·21' },
+  { id: 281, category: '전기철도공학', question: '전동차가 직선구간에서 곡선구간으로 진입하는 경우에 급격한 변화를 주지 않게 하는 곡선은?', answer: '완화곡선', difficulty: 1, tag: '초성', source: 'A-Ⅰ·31' },
+  { id: 282, category: '전기철도공학', question: '교류 전기철도 커티너리 가선방식의 곡선구간에서 전차선의 위치를 소정의 범위내로 끌어 당기는 장치는?', answer: '곡선당김장치', difficulty: 1, tag: '초성', source: 'A-Ⅲ·22' },
+  { id: 283, category: '전기철도공학', question: '팬터그래프와 전차선은 계속 접촉된 상태로 있어야 하나, 팬터그래프의 이동에 따라 순간적으로 이탈이 발생하게 되는데 이러한 현상을 무엇이라 하는가?', answer: '이선현상', difficulty: 1, tag: '초성', source: 'A-Ⅴ·21' },
+  { id: 284, category: '전기철도공학', question: '직류 T-bar 방식 전차선로의 지상부 이행장치에서 지상부 전차선의 가선방식으로 가장 적당한 것은?', answer: '더블 심플 커터너리 가선방식', difficulty: 1, tag: '초성', source: 'A-Ⅲ·12' },
+  { id: 285, category: '전기철도공학', question: '단상 교류식 전기철도에서 전압 불평형을 경감하는데 사용되는 방법은?', answer: '스코트 결선', difficulty: 1, tag: '초성', source: 'A-Ⅱ·24' },
+  { id: 286, category: '전기철도공학', question: '교류방식 전철구간의 이상구분과 교류 및 직류를 구분하기 위해 주로 사용되는 구분장치는?', answer: '데드섹션', difficulty: 1, tag: '초성', source: 'A-Ⅲ·24' },
+  { id: 287, category: '전기철도공학', question: '전차선로에서 전압강하의 보상과 통신유도장해의 경감을 목적으로 말단에 단권변압기만 설치하고 개폐장치는 설치하지 않는 곳을 무엇이라 하는가? ※ 문제 오류 (현행 ATP에서는 AT와 개폐기를 설치)', answer: '변압기포스트', difficulty: 1, tag: '초성', source: 'A-Ⅴ·22' },
+  { id: 288, category: '전기철도공학', question: '도시철도 지하구간에 적합하도록 개발된 가선방식은?', answer: '강체 가선방식', difficulty: 1, tag: '초성', source: 'A-Ⅲ·12' },
+  { id: 289, category: '전기철도공학', question: '전기철도에서 전기차는 무엇으로 취급하는가?', answer: '전철부하설비', difficulty: 1, tag: '초성', source: 'A-Ⅱ·24' },
+  { id: 290, category: '전기철도공학', question: '가공전차선이나 보조 조가선의 횡진을 방지하기 위한 장치는?', answer: '진동방지장치', difficulty: 1, tag: '초성', source: 'A-Ⅲ·22' },
+  { id: 291, category: '전기철도공학', question: '전차선과 병렬로 설치하여 전차선로의 전류용량과 전압강하를 구제할 목적으로 설치하는 전선은?', answer: '직류 급전선', difficulty: 1, tag: '초성', source: 'A-Ⅴ·22' },
+  { id: 292, category: '전기철도공학', question: '커티너리 조가방식의 전차선로 지지점에서 전차선과 조가선의 수직중심 간격을 가르키는 것은?', answer: '가고', difficulty: 1, tag: '초성', source: 'A-Ⅲ·29' },
+  { id: 293, category: '전기철도공학', question: '가공전차선로와 강체 전차선로가 상호 만나는 부분에 설치하는 장치는?', answer: '지상부 이행장치', difficulty: 1, tag: '초성', source: 'A-Ⅲ·21' },
+  { id: 294, category: '전기철도공학', question: '직류 급전방식에서 전차선 대신에 운전용 궤도와 병행으로 급전궤도를 부설하여 집전하는 방식은?', answer: '제3궤조식', difficulty: 1, tag: '초성', source: 'A-Ⅳ·41' },
+  { id: 295, category: '전기철도공학', question: '전철용 변전소에서 일반 전력계통으로부터 수전한 특별고압의 교류 전력을 변압기로 적절한 전압으로 낮추고 정류기 등으로 변환하여 전차선로에 전력을 공급하여 운전하는 전기철도 전기방식은?', answer: '직류 전기철도 전기방식', difficulty: 1, tag: '초성', source: 'A-Ⅱ·24' },
+  { id: 296, category: '전기철도공학', question: '변전소의 부하전류는 시시각각 그 값이 변동하고 있다. 1일 중 최대값에 해당되는 것은?', answer: '순시최대전류', difficulty: 1, tag: '초성', source: 'A-Ⅱ·24' },
+  { id: 297, category: '전기철도공학', question: '교류 강체 전차선로(R-bar방식)에서 단권변압기방식의 급전계통 보호선은 어떤 보호방식을 사용하고 있는가?', answer: '비절연 보호방식', difficulty: 1, tag: '초성', source: 'A-Ⅲ·33' },
+  { id: 298, category: '전기철도공학', question: '주로 모노레일이나 경량전철에 사용되는 가선방식은?', answer: '강체 복선식', difficulty: 1, tag: '초성', source: 'A-Ⅲ·12' },
+  { id: 299, category: '전기철도공학', question: '가공전차선로에서 두 금속간의 상대 전위차가 0~0.2인 경우 부식층 금속의 부식 정도에 대한 설명으로 옳은 것은?', answer: '거의 부식되지 않는다.', difficulty: 1, tag: '초성', source: 'A-Ⅴ·26' },
+  { id: 300, category: '전기철도공학', question: '심플 커티너리식의 조가선의 전차선에 보조 조가선 을 가설하여 조가선으로부터 드로퍼로 보조 조가선을 조가하고, 행거로 보조 조가선에 전차선을 조가하는 방식은?', answer: '콤파운드커티너리 조가방식', difficulty: 1, tag: '초성', source: 'A-Ⅲ·29' },
+  { id: 301, category: '전기철도공학', question: '전력선과 통신선과의 상호 정전용량에 의해 발생하는 유도 장해는?', answer: '정전유도', difficulty: 1, tag: '초성', source: 'A-Ⅰ·22' },
+  { id: 302, category: '전기철도공학', question: '전차선만 1조로 구성되며 전차선을 스팬선 또는 빔 등의 지지점에 고정하는 구조와 전차선의 지지점에 짧은 로드나 와이어로 3각형을 구성하는 구조의 조가방식은?', answer: '직접 조가방식', difficulty: 1, tag: '초성', source: 'A-Ⅲ·29' },
+  { id: 303, category: '전기철도공학', question: '교류 전기철도에서 통신선에 전자유도장해를 경감하기 위하여 전차선과 부급전선사이에 시설하는 권선비가 1:1인 것은?', answer: '흡상변압기', difficulty: 1, tag: '초성', source: 'A-Ⅴ·27' },
+  { id: 304, category: '전기철도공학', question: '전차선로의 가선방식에서 지하구간에 개발되어진 가선방식으로 도시 지하철구간의 대표적인 방식은?', answer: '강체단선식', difficulty: 1, tag: '초성', source: 'A-Ⅲ·12' },
+  { id: 305, category: '전기철도공학', question: '전기철도 교류 급전방식 가공전차선로에서 통신유도장해를 경감하기 위해 귀선레일에 병렬로 시설 하여 운전용 전기를 변전소로 통하게 하는 전선은?', answer: '부급전선', difficulty: 1, tag: '초성', source: 'A-Ⅱ·24' },
+  { id: 306, category: '전기철도공학', question: '직류 강체 가선방식에서 전차선의 이동을 방지하기 위하여 설치하는 장치는?', answer: '흐름방지장치', difficulty: 1, tag: '초성', source: 'A-Ⅲ·28' },
+  { id: 307, category: '전기철도공학', question: '레일에서 대지에 누설되는 전기차 귀전류를 변압기 작용에 의해 강제적으로 부급전선에 흡상시켜 통신선로의 유도장애를 경감하는 급전방식은?', answer: '흡상변압기 급전방식', difficulty: 1, tag: '초성', source: 'A-Ⅱ·21' },
+  { id: 308, category: '전기철도공학', question: '고속철도 전차선의 일반개소 곡선당김장치의 표준길이[m]는?', answer: '곡선당김장치 표준길이 = 1.2m', difficulty: 1, tag: '초성', source: 'A-Ⅲ·22' },
+  { id: 309, category: '전기철도공학', question: '25[㎸] 교류강체방식의 브래킷 부품 중 편위 조정을 위하여 R-bar 위치를 변경할 수 있도록 만든 금구는?', answer: '머리금구', difficulty: 1, tag: '초성', source: 'A-Ⅲ·29' },
+  { id: 310, category: '전기철도공학', question: '전철설비에서 커티너리 가선구간과 강체 가선구간의 접속구간을 무엇이라 하는가?', answer: '이행구간', difficulty: 1, tag: '초성', source: 'A-Ⅴ·21' },
+  { id: 311, category: '전기철도공학', question: '고속철도 전차선의 에어죠인트는 몇 경간을 구성하는 것이 원칙인가?', answer: '4경간', difficulty: 1, tag: '초성', source: 'A-Ⅲ·21' },
+  { id: 312, category: '전기철도공학', question: '주행용 레일 외에 궤도 측면에 설치된 급전용 레일로부터 전기차에 전기를 공급하여 귀선으로 주행 레일을 사용하는 전차선로의 가선방식은?', answer: '제3궤조식', difficulty: 1, tag: '초성', source: 'A-Ⅳ·41' },
+  { id: 313, category: '전기철도공학', question: '급전구간의 레일과 대지간의 누설전류를 경감하기 위하여 설치한 것은?', answer: '정류포스트', difficulty: 1, tag: '초성', source: 'A-Ⅴ·22' },
+  { id: 314, category: '전기철도공학', question: '교류 전차 선로의 전압강하를 계산할 때 고려하는 자기임피던스는 무엇을 말하는가?', answer: '내부 임피던스와 외부임피던스의 합', difficulty: 1, tag: '초성', source: 'A-Ⅴ·22' },
+  { id: 315, category: '전기철도공학', question: '교류 전기철도에서 3상전원의 부하 불평형을 해소하기 위한 결선 방식은?', answer: '스코트결선', difficulty: 1, tag: '초성', source: 'A-Ⅱ·24' },
+  { id: 317, category: '전기철도공학', question: '팬터그래프 압상력을 억제하기 위해 지하 및 지상구간의 연결되는 구간에 사용하는 조가방식은?', answer: '트윈 심플커티너리 방식', difficulty: 1, tag: '초성', source: 'A-Ⅲ·29' },
+  { id: 318, category: '전기철도공학', question: '1급전 구간에 2이상의 급전점을 가진 급전방식은?', answer: '병렬급전', difficulty: 1, tag: '초성', source: 'A-Ⅱ·21' },
+  { id: 319, category: '전기철도공학', question: '지상부의 가공전차선이 터널내로 들어와 강체 전차선으로 변경되는 부분에 설치하는 장치는?', answer: '지상부 이행장치', difficulty: 1, tag: '초성', source: 'A-Ⅲ·24' },
+  { id: 320, category: '전기철도공학', question: '팬터그래프(pantograph)의 이선시간이 수십분의 1초 정도이 고 전차선 또는 팬터그래프 습판의 미세진동에 의한 이선의 종류로 맞는 것은?', answer: '소이선', difficulty: 1, tag: '초성', source: 'A-Ⅴ·21' },
+  { id: 321, category: '전기철도공학', question: '교류 급전회로에서 고장점 표정장치의 방식 중 AT급전회로에 주로 사용하는 검출 방식은?', answer: 'AT흡상 전류비 방식', difficulty: 1, tag: '초성', source: 'A-Ⅱ·21' },
+  { id: 322, category: '전기철도공학', question: '조가선과 전차선을 경간 중앙에서 교차되도록 각 지지점에서 각기 다른 편위를 갖도록 하는 전차선로의 조가방식 은?', answer: '연 사조식', difficulty: 1, tag: '초성', source: 'A-Ⅲ·22' },
+  { id: 323, category: '전기철도공학', question: 'T-bar 방식의 전차선로에서 흐름방지장치를 터널 내 및 역 승강장에 설치할 때 어떤 종류의 흐름방지장치를 설치하는가?', answer: '마름모꼴 및 특수 흐름방지장치', difficulty: 1, tag: '초성', source: 'A-Ⅲ·28' },
+  { id: 324, category: '전기철도공학', question: '순시최대출력 Z=Y+C√Y에서 "Y"가 의미하는 것은?', answer: '1시간 최대출력[kW]', difficulty: 1, tag: '초성', source: 'A-Ⅱ·24' },
+  { id: 325, category: '전기철도공학', question: '제3궤조방식 급전레일(Power Rail) 가선방식 3가지를 쓰시오.', answer: '상면 측면 하면', difficulty: 1, tag: '초성', source: 'A-Ⅲ·12' },
+  { id: 326, category: '전기철도공학', question: '25[㎸] 교류강체방식의 브래킷 부품 중 전차선을 구조물과 절연하고 R-Bar를 붙들어 주는 역할을 하는 것은?', answer: '애자', difficulty: 1, tag: '초성', source: 'A-Ⅲ·21' },
+  { id: 327, category: '전기철도공학', question: '교류 급전방식에서 스코트변압기의 1차 전압을 66[㎸], 2차 전압을 25[㎸]라고 할 때 T상 의 1차 전투 I 1 [A]은? (단, 1, 2차 전류를 I 1 , I 2 라 한다.)', answer: 'T상의 1차 전류', difficulty: 1, tag: '초성', source: 'A-Ⅱ·21' },
+  { id: 328, category: '전기철도공학', question: '두 전차선 상호에 평행 부분을 일정간격으로 이격시켜 공기절연을 이용한 동상용 절연구분 장치는?', answer: '에어섹션', difficulty: 1, tag: '초성', source: 'A-Ⅲ·24' },
+  { id: 329, category: '전기철도공학', question: '직류 강체 전차선로에서 T-Bar에 전차선이 잘 밀착하도록 하여 연속적으로 고정시키는 연결금구는?', answer: '롱이어', difficulty: 1, tag: '초성', source: 'A-Ⅲ·29' },
+  { id: 330, category: '전기철도공학', question: '교류 강체 전차선로(R-Bar 방식)에서 단권변압기방식의 급전 계통 보호선은 어떤 보호방식을 사용하고 있는가?', answer: '비절연 보호방식', difficulty: 1, tag: '초성', source: 'A-Ⅲ·21' },
+  { id: 331, category: '전기철도공학', question: '교류 R-Bar방식 전차선로에서 가공전차선로의 인류장치와 같은 용도로 사용하며, 컨덕트 레일로 들어오는 전차선의 작용을 흡수하는 장치는?', answer: '제한점', difficulty: 1, tag: '초성', source: 'A-Ⅲ·25' },
+  { id: 332, category: '전기철도공학', question: '열차운전 중의 속도, 시간, 주행거리, 전류, 전력량 등의 상호관계를 도표로 표시하는 것은?', answer: '운전선도', difficulty: 1, tag: '초성', source: 'A-Ⅳ·45' },
+  { id: 333, category: '전기철도공학', question: '직류강체방식(T-bar)에서 지상부의 가공전차선이 터널 내로 들어와 강체전차선으로 바뀌어지는 부분에 팬터그래프가 자연스럽게 옮겨지면서 원활하게 운행할 수 있도록 하는 장치는?', answer: '지상부 이행장치', difficulty: 1, tag: '초성', source: 'A-Ⅲ·24' },
+  { id: 334, category: '전기철도공학', question: '가공전차선로에서 흐름방지장치의 설치 위치는?', answer: '인류구간 중앙점', difficulty: 1, tag: '초성', source: 'A-Ⅲ·28' },
+  { id: 335, category: '전기철도공학', question: '교류강체방식(R-bar)에서 가공전차선로의 흐름방지장치와 같은 역할을 하는 것은?', answer: '고정점', difficulty: 1, tag: '초성', source: 'A-Ⅲ·25' },
+  { id: 336, category: '전기철도공학', question: '고속도 차단기 특성에서 회로에 고장이 계속되거나, 폐로되는 순간에 고장이 발생하는 경우에 즉시 차단하도록 되어 있는 것은?', answer: '트립자유', difficulty: 1, tag: '초성', source: 'A-Ⅵ·22' },
+  { id: 337, category: '전기철도공학', question: '교류 25[㎸] 급전방식에서 작업시 또는 사고시에 정전구간의 단축을 주목적으로 하는 것은?', answer: '보조급전구분소', difficulty: 1, tag: '초성', source: 'A-Ⅱ·21' },
+  { id: 338, category: '전기철도공학', question: '원격감시제어장치, 연락차단장치 등의 전송회선을 전력계통 사고 시에 대비하기 위한 기기는?', answer: '보안기', difficulty: 1, tag: '초성', source: 'A-Ⅱ·25' },
+  { id: 339, category: '전기철도공학', question: '그림과 같은 전차선의 조가방식은?', answer: '심플 커티너리식', difficulty: 1, tag: '초성', source: 'A-Ⅲ·29' },
+  { id: 340, category: '전기철도공학', question: '전차선로의 가선방식 중 상호 절연된 정·부 2조의 가공접촉 전선을 가설하고 한 쪽의 전선으로부터 전기차에 전기를 공급하여 다른 쪽의 전선을 통하여 변전소로 돌려보내는 방식은?', answer: '가공복선식', difficulty: 1, tag: '초성', source: 'A-Ⅲ·12' },
+  { id: 341, category: '전기철도공학', question: '정상전류가 급감하는 경우에 역방향 고속도차단기가 트립동작하는 것은?', answer: '불요동작', difficulty: 1, tag: '초성', source: 'A-Ⅵ·22' },
+  { id: 342, category: '전기철도공학', question: 'R-Bar 강체 전차선 방식에서 이행 구간에 설치되는 장치는?', answer: '직접 유도 장치', difficulty: 1, tag: '초성', source: 'A-Ⅲ·26' },
+  { id: 343, category: '전기철도공학', question: '금속체가 레일에 대하여 높은 전위에 있는 경우에만 전류를 유출시키는 방법이며 전식방지에 널리 사용하는 방식은?', answer: '선택 배류 방식', difficulty: 1, tag: '초성', source: 'A-Ⅴ·26' },
+  { id: 344, category: '전기철도공학', question: '차량이 안전하게 운행될 수 있도록 궤도상에 설정한 일정 공간은?', answer: '건축한계', difficulty: 1, tag: '초성', source: 'A-Ⅰ·31' },
+  { id: 345, category: '전기철도공학', question: '고속전철에서 횡진동에 제한 받는 개소 또는 터널 내에서 이격거리 확보개소에 사용하는 급전선의 지지방식은?', answer: 'V형조가방식', difficulty: 1, tag: '초성', source: 'A-Ⅲ·13' },
+  { id: 346, category: '전기철도공학', question: '직류 급전방식에서 실리콘 정류기 내부 단락사고를 검출하여 정류기용 변압기 2차측 권선 소손을 예방하는 계전기는?', answer: '역류 계전기', difficulty: 1, tag: '초성', source: 'A-Ⅵ·22' },
+  { id: 347, category: '전기철도공학', question: '교류강체방식(R-Bar)에서 가공전차선로의 흐름방지장치와 같은 역할을 하는 것은?', answer: '고정점', difficulty: 1, tag: '초성', source: 'A-Ⅲ·25' },
+  { id: 348, category: '전기철도공학', question: '온도변화에 따른 전차선의 신축을 조정하기 위하여 전차선을 일정한 길이로 인류하여 설치한 기계적인 장치는?', answer: '에어 조인트', difficulty: 1, tag: '초성', source: 'A-Ⅲ·24' },
+  { id: 349, category: '전기철도공학', question: '변전소 앞 또는 급전구분소 앞에는 반드시 이상전원을 구분하기 위해 무엇을 설치하는가?', answer: '절연구분장치', difficulty: 1, tag: '초성', source: 'A-Ⅲ·24' },
+  { id: 350, category: '전기철도공학', question: '교류 AT급전방식에서 설명이다. 빈칸을 채우시오. 변전소에서 급전선(AF)을 선로를 따라 보냄. 급전선과 전차선(TF) 사이에 약 10㎞ 간격으로 AT를 ( ㉠ )로 접속 권선 중성점 레일에 연결 유도장해가 적고 전압강하가 작아 변전소 간격을 길게 할 수 있음.', answer: '㉠ 병렬', difficulty: 1, tag: '초성', source: 'A-Ⅱ·21' },
+  { id: 351, category: '전기철도공학', question: '다음 그림과 같은 커티너리 조가방식은?', answer: '콤파운드 커티너리', difficulty: 1, tag: '초성', source: 'A-Ⅲ·29' },
+  { id: 352, category: '전기철도공학', question: '가공전차선 구간과 지하 강체 전차선과의 이행구간에 압사특성을 점진적으로 같게하여 팬터그래프가 원활히 통과할 수 있도록 하는 장치는?', answer: '직접 유도장치', difficulty: 1, tag: '초성', source: 'A-Ⅲ·24' },
+  { id: 353, category: '전기철도공학', question: '교류전기철도의 BT급전방식에서 흡상변압기의 주요 설치목적은?', answer: '통신유도장해 경감', difficulty: 1, tag: '초성', source: 'A-Ⅴ·27' },
+  { id: 354, category: '전기철도공학', question: '금속체가 레일에 대하여 높은 전위에 있는 경우에만 전류를 유출시키는 방식으로써 전식 방지에 널리 사용하는 방식은?', answer: '선택 배류 방식', difficulty: 1, tag: '초성', source: 'A-Ⅴ·26' },
+  { id: 355, category: '전기철도공학', question: '변전소로부터 송출된 전류가 급전선 등을 통하여 전기차에 집전되기까지의 사이에 주회로인 전차선 이외의 전선, 가선금 구 등에 흐르는 전류를 순환전류라 한다. 다음 중 순환전류의 경로로 볼 수 없는 것은 어느 것인가?', answer: '보호선', difficulty: 1, tag: '초성', source: 'A-Ⅴ·24' },
+  { id: 356, category: '전기철도공학', question: '직류강체방식에 사용되는 AL T-bar를 상호 연결하는데 사용하는 용접방법은?', answer: '아르곤가스용접', difficulty: 1, tag: '초성', source: 'A-Ⅲ·32' },
+  { id: 357, category: '전기철도공학', question: '직선개소에서 조가선에 편위를 크게 주어 전차선을 측면에서 조가하는 것으로 진동방지장치가 불필요한 조가방식은?', answer: '연 사조식', difficulty: 1, tag: '초성', source: 'A-Ⅲ·22' },
+  { id: 358, category: '전기철도공학', question: '전차용 전동기의 사용 대수를 배수로 하는 이유 중 가장 중요한 이유는?', answer: '고장의 대비', difficulty: 1, tag: '초성', source: 'A-Ⅳ·23' },
+  { id: 359, category: '전기철도공학', question: '전식방지법에서 매설관 등에 누설된 전류가 흙으로 흘러나오는 것을 방지하여 전식을 줄이는 방법은?', answer: '배류법', difficulty: 1, tag: '초성', source: 'A-Ⅴ·26' },
+  { id: 360, category: '전기철도공학', question: '회생제동에 적당한 변전소의 직류 변환장치는?', answer: '인버터', difficulty: 1, tag: '초성', source: 'A-Ⅳ·22' },
+  { id: 361, category: '전기철도공학', question: '전압강하를 보상하기 위하여 전차선과 병렬로 설치하는 전선은?', answer: '직류 급전선', difficulty: 1, tag: '초성', source: 'A-Ⅴ·22' },
+  { id: 362, category: '전기철도공학', question: '지하철 구간의 대표적인 가선 방식은?', answer: '강체 가선방식', difficulty: 1, tag: '초성', source: 'A-Ⅲ·12' },
+  { id: 363, category: '전기철도공학', question: '교류 강체 가선방식에서 컨덕터 레일구간의 온도변화에 의한 리지드바의 팽창을 상쇄시켜주는 장치는?', answer: '확장장치', difficulty: 1, tag: '초성', source: 'A-Ⅲ·28' },
+  { id: 364, category: '구조물공학', question: '전철주 기초로 가장 많이 사용하는 기초는?', answer: '콘크리트 기초', difficulty: 1, tag: '초성', source: 'B-Ⅰ·33' },
+  { id: 365, category: '구조물공학', question: '그림과 같은 구조물의 부정정차수는?', answer: '4차 부정정', difficulty: 1, tag: '초성', source: 'B-Ⅱ·31' },
+  { id: 366, category: '구조물공학', question: '토지나 지형의 조건 등으로 인하여 지선을 설치하지 못할 때 지선 대용으로 설치하는 것은?', answer: '지주', difficulty: 1, tag: '초성', source: 'B-Ⅴ·31' },
+  { id: 367, category: '구조물공학', question: '전기철도 구조물에 외력이 작용하면 구조물은 평형상태를 유지하기 위하여 구조물 내부에서 외력의 크기와 같고 방향이 반대인 저항력이 생기는데 이것을 무엇이라 하는가?', answer: '응력', difficulty: 1, tag: '초성', source: 'B-Ⅲ·11' },
+  { id: 368, category: '구조물공학', question: '애자의 전기적 특성에서 가장 높은 전압은?', answer: '유중파괴전압', difficulty: 1, tag: '초성', source: 'B-Ⅴ·35' },
+  { id: 369, category: '전기철도공학', question: '가동브래킷의 종류로서 전차선의 평행개소 구간에 사용하는 타입(Type)은?', answer: 'F 타입', difficulty: 1, tag: '초성', source: 'A-Ⅲ·27' },
+  { id: 370, category: '구조물공학', question: '부재를 절단하려고 하는 응력으로서 보, 기둥, 벽 등에서 일어나는 응력은?', answer: '절단력', difficulty: 1, tag: '초성', source: 'B-Ⅵ·11' },
+  { id: 371, category: '구조물공학', question: '그림과 같이 시설하는 지선으로 큰 장력이나 수평장력이 가해지는 헤비심플 커티너리 가선방식의 인류용으로 사용되고 있는 지선은?', answer: '2단지선', difficulty: 1, tag: '초성', source: 'B-Ⅴ·31' },
+  { id: 372, category: '구조물공학', question: '전철주 기초의 강도계산에서 평지 또는 절취장소 및 성토 장소로 분류하는데 이 지형에 대한 하중방향에 대한 계수 K 를 무엇이라 하는가?', answer: '지형계수', difficulty: 1, tag: '초성', source: 'B-Ⅴ·13' },
+  { id: 373, category: '구조물공학', question: '그림은 완금을 이용하여 제작한 빔의 구조물이다. 전차선로에서 사용하는 용어로 A에 해당되는 것의 명칭은?', answer: '하부주재', difficulty: 1, tag: '초성', source: 'B-Ⅴ·22' },
+  { id: 374, category: '구조물공학', question: '탄성한도내에서 응력과 변형율이 비례한다는 것은?', answer: '후크의 법칙', difficulty: 1, tag: '초성', source: 'B-Ⅲ·22' },
+  { id: 375, category: '구조물공학', question: '전기철도에 사용하는 철강재의 부식방지를 위해 일반적으로 가장 많이 사용하는 아연도금 방법은?', answer: '용융아연도금', difficulty: 1, tag: '초성', source: 'B-Ⅴ·41' },
+  { id: 376, category: '구조물공학', question: '한 단면의 미소면적에서 임의로 설정한 직교 좌표축까지의 거리를 미소면적에 곱한 것과 전단면에 걸쳐서 적분한 것을 나타내는 것은?', answer: '1차 모멘트', difficulty: 1, tag: '초성', source: 'B-Ⅳ·12' },
+  { id: 377, category: '전기철도공학', question: '정적인 상태에서 가선측정기에 의한 곡선구간의 측정은 어느 곳을 기준으로 하는가?', answer: '외측 궤도', difficulty: 1, tag: '초성', source: 'A-Ⅲ·11' },
+  { id: 378, category: '구조물공학', question: '프리텐션 콘크리트주의 호칭이 10-35-N6500 이다. 여기에서 6500은 무엇을 의미하는가?', answer: '설계굽힘모멘트', difficulty: 1, tag: '초성', source: 'B-Ⅱ·12' },
+  { id: 379, category: '구조물공학', question: '가공전차선로의 곡선로에서 전선의 장력에 따라 지지점에 서 곡선 안쪽으로 발생되는 힘은?', answer: '수평장력', difficulty: 1, tag: '초성', source: 'B-Ⅲ·42' },
+  { id: 380, category: '구조물공학', question: '그림과 같은 트러스 빔에서 A에 해당하는 것은?', answer: '절점', difficulty: 1, tag: '초성', source: 'B-Ⅵ·11' },
+  { id: 381, category: '구조물공학', question: '전차선로에서 2본 이상의 빔, 철주 등이 연속 설치된 구간 에 설치하는 보호설비는?', answer: '섬락보호지선', difficulty: 1, tag: '초성', source: 'B-Ⅴ·31' },
+  { id: 382, category: '전기철도공학', question: '가공전차선로에서 경간을 길게 하면 건설비는 적게 소요되 지만 차량 동요나 풍압 등에 의하여 전력을 공급받는 집전 장치에서 이탈될 수 있는 전선은?', answer: '전차선', difficulty: 1, tag: '초성', source: 'A-Ⅴ·21' },
+  { id: 383, category: '구조물공학', question: '가공전차선로에서 전차선의 인류용으로 가장 많이 사용되 는 지선은?', answer: 'V형 지선', difficulty: 1, tag: '초성', source: 'B-Ⅴ·31' },
+  { id: 384, category: '구조물공학', question: '기둥형 전주 기초를 터파기할 때 토양과 기초재의 접촉면에서의 강도 차를 보정하는데 사용하는 계수는?', answer: '형상계수', difficulty: 1, tag: '초성', source: 'B-Ⅴ·13' },
+  { id: 385, category: '구조물공학', question: '응력과 변형도의 그림에서 D점의 명칭은 무엇인가?', answer: '하항복점', difficulty: 1, tag: '초성', source: 'B-Ⅲ·22' },
+  { id: 386, category: '구조물공학', question: '정정(靜定)보의 일단은 고정되었고, 다른 쪽 끝은 자유단인 보(Beam)는?', answer: '캔틸레버보', difficulty: 1, tag: '초성', source: 'B-Ⅴ·21' },
+  { id: 387, category: '구조물공학', question: '고온계 하중(고온계 표준 풍압하중)이라고 하며 여름철의 태풍을 기준으로 설계조건에 적용하는 하중은?', answer: '갑종 풍압하중', difficulty: 1, tag: '초성', source: 'B-Ⅰ·22' },
+  { id: 388, category: '구조물공학', question: '전기철도 구조물에 외력이 작용했을 때 형태가 변하지 않는 경우, 이 구조물은 어떤 상태로 보는가?', answer: '내적 안정', difficulty: 1, tag: '초성', source: 'B-Ⅱ·31' },
+  { id: 389, category: '구조물공학', question: '변전소, 구분소 등에서 급전선, 부급전선 등을 인출하거나 지지하기 위하여 설비되는 고정빔으로 산형강 또는 강관 등을 사용하는 구조의 빔(Beam)은?', answer: '스트럭처 빔', difficulty: 1, tag: '초성', source: 'B-Ⅵ·15' },
+  { id: 390, category: '구조물공학', question: '전주 기초 강도 계산 고려 항목을 보기에서 모두 고르시오. 형상, 지형, 안전율, 하중, 전압', answer: '전압', difficulty: 1, tag: '초성', source: 'B-Ⅲ·41' },
+  { id: 391, category: '구조물공학', question: '가공전차선로의 전철주와 조합하여 전차선, 급전선 등을 지지하기 위한 빔(beam) 중 가동식 빔에 해당되는 것은?', answer: '가동브래킷', difficulty: 1, tag: '초성', source: 'B-Ⅴ·21' },
+  { id: 392, category: '구조물공학', question: '가동브래킷용 애자의 안전율은최대 만곡하중에 대하여  얼마 이상으로 하여야 하는가?', answer: '2.5 이상', difficulty: 1, tag: '초성', source: 'B-Ⅲ·41' },
+  { id: 393, category: '구조물공학', question: '구조용 강재(鋼材)로 가장 많이 사용되는 것은?', answer: '연강', difficulty: 1, tag: '초성', source: 'B-Ⅰ·41' },
+  { id: 394, category: '구조물공학', question: '"어떤 점에 대한 여러 개의 힘의 모멘트의 대수합은 그들 힘의 합력 모멘트와 같다"라는 말은 어느 법칙 또는 정리를 말하는가?', answer: '바리니온의 정리', difficulty: 1, tag: '초성', source: 'B-Ⅱ·12' },
+  { id: 395, category: '구조물공학', question: '철주 주체를 상부와 기초부로 분할하여 기초부 완료 후기초 부 주체와 상부 주체를 볼트로 체결하여 시공하는 방식은?', answer: '근계매입 방식', difficulty: 1, tag: '초성', source: 'B-Ⅴ·13' },
+  { id: 396, category: '구조물공학', question: '허용 응력도를 옳게 표시한 것은?', answer: '파괴강도÷안전율', difficulty: 1, tag: '초성', source: 'B-Ⅲ·41' },
+  { id: 397, category: '구조물공학', question: '전주 또는 고정빔 등에 취부하여 급전선, 부급전선, 보호선 등을 지지 또는 인류하기 위한 구조물은?', answer: '완철', difficulty: 1, tag: '초성', source: 'B-Ⅴ·22' },
+  { id: 398, category: '구조물공학', question: '전철주 기초인 콘크리트 기초의 일종으로 성토 개소이거나 선로의 경사면의 토압이 약한 개소에 사용하여 침하와 전도가 되지 않도록 기초의 상부를 넓게 하는 기초는?', answer: 'T형기초', difficulty: 1, tag: '초성', source: 'B-Ⅴ·13' },
+  { id: 399, category: '구조물공학', question: '그림과 같은 구조물은 몇 차 부정정인가?', answer: '2차 부정정', difficulty: 1, tag: '초성', source: 'B-Ⅵ·11' },
+  { id: 400, category: '구조물공학', question: '전철주와 조립하여 전차선과 급전선 등으 지지하기 위한 것으로서 고정식, 스팬선식, 가동식 등이 있는 강 구조물을 무엇이라 하는가?', answer: '빔', difficulty: 1, tag: '초성', source: 'B-Ⅴ·21' },
+  { id: 401, category: '구조물공학', question: '전기철도 구조물의 강도를 계산할 때, 풍압하중, 눈하중, 곡선로의 횡장력 등이 포함되는 하중은?', answer: '수평하중', difficulty: 1, tag: '초성', source: 'B-Ⅰ·23' },
+  { id: 402, category: '구조물공학', question: '가공전차선로 도면의 철근 콘크리트주에 11-30-N5000으로 표기되어 있다. 여기서 11은 무엇을 나타내는가?', answer: '전주의 길이', difficulty: 1, tag: '초성', source: 'B-Ⅱ·12' },
+  { id: 403, category: '구조물공학', question: '구조재의 하중, 설비의 중량 등 구조물 그 자체로서 구조물에 항상 존재하는 하중은?', answer: '고정하중', difficulty: 1, tag: '초성', source: 'B-Ⅰ·31' },
+  { id: 404, category: '구조물공학', question: '전주의 건식이 곤란한 개소에서 고정빔이나 터널의 천장 아래로 설치하여 가동브래킷, 곡선당김장치 등을 지지하기 위한 것은?', answer: '하수강', difficulty: 1, tag: '초성', source: 'B-Ⅴ·22' },
+  { id: 405, category: '구조물공학', question: '다음 그림과 같은 트러스(truss)의 명칭은 무엇인가?', answer: '핑크 트러스', difficulty: 1, tag: '초성', source: 'B-Ⅵ·16' },
+  { id: 406, category: '구조물공학', question: '가동브래킷를 지지하는 지지용 애자로 사용하는 것은?', answer: '장간애자', difficulty: 1, tag: '초성', source: 'B-Ⅴ·35' },
+  { id: 407, category: '구조물공학', question: '단지선 또는 V형 지선을 상·하 방향으로 2개 시설하는 지선을 말하며, 큰 장력이나 수평장력이 가해지는 헤비심플 커 티너리 가선방식의 인류용으로 사용되는 것은?', answer: '2단지선', difficulty: 1, tag: '초성', source: 'B-Ⅴ·31' },
+  { id: 408, category: '구조물공학', question: '고정식 문형빔 대신에 마주보는 양측 전철주사이에 전선을 가선 하고 이것에 전차선을 조가하는 방식의 빔은?', answer: '스팬선 빔', difficulty: 1, tag: '초성', source: 'B-Ⅴ·21' },
+  { id: 409, category: '구조물공학', question: '압축력을 받는 상부주재를 2본으로 하고 인장력을 받는 하부주재는 1본으로 하여 양단에 부재를 붙여 전주에 취부하는 구조의 빔(Beam)은?', answer: 'V형빔', difficulty: 1, tag: '초성', source: 'B-Ⅴ·21' },
+  { id: 410, category: '구조물공학', question: '구조물을 구성하고 있는 부재와 부재가 연결된 곳을 무엇이라 하는가?', answer: '절점', difficulty: 1, tag: '초성', source: 'B-Ⅱ·11' },
+  { id: 411, category: '구조물공학', question: '전기철도 구조물의 강도 계산시 전선, 애자, 구조물 등의 자체의 자중이 적용되는 하중은?', answer: '수직하중', difficulty: 1, tag: '초성', source: 'B-Ⅰ·33' },
+  { id: 412, category: '구조물공학', question: '‘여러 힘의 한점에 대한 모멘트의 대수합은 그들 합력의 그 점에 대한 모멘트와 같다‘라고 하는데 이것을 바리니온의 정리 라고 한다. 이 정리는 다음 중 무엇을 구할 떄 사용하는가?', answer: '합력의 작용점', difficulty: 1, tag: '초성', source: 'B-Ⅱ·24' },
+  { id: 413, category: '구조물공학', question: '전주 기초를 시공하고자 할 때 하중의 일부를 측면 흙의 압력으로 지지 하도록 한 것으로 빔을 지지하는 철주 및 인류주에 지선을 설치하지 않기 위하여 사용하는 기초는?', answer: '푸싱 기초', difficulty: 1, tag: '초성', source: 'B-Ⅰ·33' },
+  { id: 414, category: '구조물공학', question: '다음 그림과 같은 라멘 구조물의 부정정차수는?', answer: '18차', difficulty: 1, tag: '초성', source: 'B-Ⅱ·31' },
+  { id: 415, category: '구조물공학', question: '구조물의 판별에서 전체 부정정차수(N)가 N＜0 이면?', answer: '불안정', difficulty: 1, tag: '초성', source: 'B-Ⅱ·31' },
+  { id: 416, category: '구조물공학', question: '구조물의 전체 부정정차수가 0보다 큰 경우, 어떻게 판별할 수 있겠는가?', answer: '부정정', difficulty: 1, tag: '초성', source: 'B-Ⅱ·31' },
+  { id: 417, category: '구조물공학', question: '전주의 근원부근에 근가를 시설해서 활모양으로 취부하는 특수한 지선을 말하며 지선을 취부할 수 없는 경우 등 특별한 경우에만 사용되는 지선은?', answer: '궁형 지선', difficulty: 1, tag: '초성', source: 'B-Ⅴ·31' },
+  { id: 418, category: '구조물공학', question: '그림의 보 종류로 맞는 것은?', answer: '단순보', difficulty: 1, tag: '초성', source: 'B-Ⅱ·31' },
+  { id: 419, category: '구조물공학', question: '전기철도 설계시 고온계(여름에서 가을에 걸친 계절)에서 풍속 40[m/s]의 바람이 있다고 가정한 경우 발생하는 하중은?', answer: '갑종 풍압하중', difficulty: 1, tag: '초성', source: 'B-Ⅰ·22' },
+  { id: 420, category: '구조물공학', question: '탄성계수 E와 변형률 ε와의 관계는?', answer: '반비례', difficulty: 1, tag: '초성', source: 'B-Ⅲ·31' },
+  { id: 421, category: '구조물공학', question: '부재를 그 부재의 축과 수직인 방향으로 자르려고 하는 힘 은?', answer: '전단력', difficulty: 1, tag: '초성', source: 'B-Ⅵ·11' },
+  { id: 422, category: '구조물공학', question: '지반에는 기존지반과 신설성토와 같이 불안정 지반이 있는 데 지반조건에 따라 기초강도에 영향을 주게 되므로 보정해야 한다. 이 보정계수를 무엇이라 하는가?', answer: '강도계수', difficulty: 1, tag: '초성', source: 'B-Ⅵ·41' },
+  { id: 423, category: '전기철도공학', question: '직류전기철도에서의 전식을 방지하기 위한 방식 중 레일을 접지 양극으로 하는 외부 전원법으로서 외부에서 직류전원 을 레일과 지중매설 금속체 사이에 가하는 방법은?', answer: '강제배류방식', difficulty: 1, tag: '초성', source: 'A-Ⅴ·26' },
+  { id: 424, category: '구조물공학', question: '주로 기둥과 같이 압축력을 받는 부재희 단면설계에 쓰이는 좌굴저항계수로서, 그 값이 클 때 저항에 대한 효율이 커지는 부재단면의 요소는?', answer: '단면 2차 반지름', difficulty: 1, tag: '초성', source: 'B-Ⅳ·22' },
+  { id: 425, category: '구조물공학', question: '수평반력, 수직반력, 모멘트반력 등 3개의 반력이 발생하는 지점은?', answer: '고정지점', difficulty: 1, tag: '초성', source: 'B-Ⅱ·11' },
+  { id: 426, category: '구조물공학', question: '다음 그림과 같은 라멘 구조물의 부정정차수는?', answer: '12차', difficulty: 1, tag: '초성', source: 'B-Ⅱ·31' },
+  { id: 427, category: '구조물공학', question: '다음 라멘구조물의 부정정차수는? (단, 중앙의 절점은 힌지이다.)', answer: '2차', difficulty: 1, tag: '초성', source: 'B-Ⅱ·31' },
+  { id: 428, category: '구조물공학', question: '크기가 같고 방향이 반대인 나란한 두 힘은?', answer: '우력', difficulty: 1, tag: '초성', source: 'B-Ⅱ·13' },
+  { id: 429, category: '구조물공학', question: '한 점에 작용하는 3개의 힘이 서로 평형을 이루고 있다면 이 3개의 힘은 동일한 평면상에 있고 일정에서 만나는데, 이때 각각의 힘은 다른 두 힘의 사이각의 정현(sine)에 정비례 한다는 이론은?', answer: '라미의 정리', difficulty: 1, tag: '초성', source: 'B-Ⅱ·34' },
+  { id: 430, category: '구조물공학', question: '단선구간의 진동방지 개소와 복선구간의 역간과 역구내 일부에서 사용되는 빔 (Beam)은?', answer: '크로스 빔', difficulty: 1, tag: '초성', source: 'B-Ⅴ·21' },
+  { id: 431, category: '구조물공학', question: '다음 그림과 같은 라멘 구조물의 부정정차수는?', answer: '10차', difficulty: 1, tag: '초성', source: 'B-Ⅱ·31' },
+  { id: 432, category: '구조물공학', question: '구조물이 핀으로 연결되어 이동은 할 수 없고 회전만 가능 한 것으로 반력은 수평반력과 수직반력 2개가 일어나는 지점은?', answer: '힌지지점', difficulty: 1, tag: '초성', source: 'B-Ⅱ·11' },
+  { id: 433, category: '구조물공학', question: '전차선 평행개소 등에서 1본의 전주에 2개의 가동브래킷을 지지하기 위한 구조는?', answer: '평행틀', difficulty: 1, tag: '초성', source: 'B-Ⅴ·23' },
+  { id: 434, category: '구조물공학', question: '비례한도에 대한 설명으로 맞는 것은?', answer: '응력과 변형율이 비례하는 최대점', difficulty: 1, tag: '초성', source: 'B-Ⅲ·22' },
+  { id: 435, category: '구조물공학', question: '구조물 판별에서 트러스의 부정정차수가 m＞2k-3이면? (단, m:부재수, k :절점수)', answer: '내적 부정정', difficulty: 1, tag: '초성', source: 'B-Ⅵ·11' },
+  { id: 436, category: '구조물공학', question: '훅의 법칙이 성립되는 최대한도는?', answer: '비례 한도', difficulty: 1, tag: '초성', source: 'B-Ⅲ·22' },
+  { id: 437, category: '구조물공학', question: '전기철도 구조물의 강도계산에서 비중 0.9의 빙설이 전선류 주위에 6㎜의 두께로 부착되고 외부 기온을 -0.5℃로 적용하는 풍압하중은?', answer: '을종풍압하중', difficulty: 1, tag: '초성', source: 'B-Ⅰ·22' },
+  { id: 438, category: '구조물공학', question: '보(Beam)가 하중에 받게 되면 직선이던 부재축은 변형하여 곡선을 이루게 된다. 이 변형된 축선을 무엇이라 하는가?', answer: '탄성곡선', difficulty: 1, tag: '초성', source: 'B-Ⅴ·21' },
+  { id: 439, category: '구조물공학', question: '압축력(항압용)과 인장력(인장용)이 가해지는 가동브래킷 개소에 사용되는 애자는?', answer: '장간애자', difficulty: 1, tag: '초성', source: 'B-Ⅴ·35' },
+  { id: 440, category: '구조물공학', question: '안전한 구조물에 쓰이는 것으로 힘의 평형조건만으로 구조물의 모든 반력과 부재의 응력을 구할 수 있을 때 이를 무엇이라 하는가?', answer: '정정', difficulty: 1, tag: '초성', source: 'B-Ⅱ·31' },
+  { id: 441, category: '구조물공학', question: '힘의 평형 조건 중 힘의 표시방법에서 선분의 길이로 표시하는 것은?', answer: '힘의 크기', difficulty: 1, tag: '초성', source: 'B-Ⅱ·11' },
+  { id: 442, category: '구조물공학', question: '가공전차선로를 설계할 때 온도변화가 가장 많은 영향을 주는 것은?', answer: '전선의 이도와 장력관계', difficulty: 1, tag: '초성', source: 'B-Ⅰ·21' },
+  { id: 443, category: '구조물공학', question: '트러스에서 전단력이나 모멘트가 생기지 않는다고 가정할 때, 트러스에서 발생하는 부재력은?', answer: '축력', difficulty: 1, tag: '초성', source: 'B-Ⅵ·16' },
+  { id: 444, category: '구조물공학', question: '측면 토압이 연약하여 기초 바닥면의 지지력만으로 하중을 받도록 만들어지는 기초는?', answer: '중력형 블럭 기초', difficulty: 1, tag: '초성', source: 'B-Ⅰ·33' },
+  { id: 445, category: '구조물공학', question: '직류 전차선로의 콘크리트 전주 지선에서 애자의 취부 위치으로 부터 몇 m 지점 인가?', answer: '전주 취부점에서 약 1.5m 지점', difficulty: 1, tag: '초성', source: 'B-Ⅴ·31' }
+];
+
+/* =========================================================
+   2. 순수 로직 함수 (초성 변환 / 정답판정 / 시간계산)
+   ========================================================= */
+
+// 정답 문자열의 초성 힌트를 생성한다.
+// - 완성형 한글 음절 → 초성 자음으로 치환
+// - 숫자, 공백, 그 외 문자(단위기호 등)는 그대로 유지 (1:1 대응)
+function getChosung(str) {
+  return getChosungParts(str).map(function (p) { return p.ch; }).join('');
+}
+
+// 초성 힌트를 화면에 색깔 구분해서 표시하기 위한 분석 함수.
+// 문자 하나하나를 훑으며 { ch: 치환된 글자, cls: 스타일 클래스(null이면 그대로 표기) } 배열로 반환한다.
+// - 완성형 한글 음절 → 초성 자음(cls: 'cho', 기본 힌트색 유지)
+// - 영어 알파벳 → 알파벳 이름의 초성(cls: 'cho cho-en', 진한 파란색)
+// - 숫자 → 숫자 이름의 초성(cls: 'cho cho-digit', 진한 보라색)
+// - 그 외(공백, 쉼표, 붙임표 등) → 원래 글자 그대로, 스타일 없음("그냥 표기")
+function getChosungParts(str) {
+  var s = String(str == null ? '' : str);
+  var parts = [];
+  var i = 0;
+  while (i < s.length) {
+    var ch = s[i];
+    // "25[kV]"처럼 대괄호로 감싼 단위 표기는 초성으로 바꾸지 않고 대괄호 포함
+    // 원문 그대로 보여준다(단위 정답 인정 규칙은 answerVariants 참고).
+    if (ch === '[') {
+      var end = s.indexOf(']', i);
+      if (end !== -1) {
+        var literal = s.slice(i, end + 1);
+        for (var k = 0; k < literal.length; k++) parts.push({ ch: literal[k], cls: null });
+        i = end + 1;
+        continue;
+      }
+    }
+    var code = ch.codePointAt(0);
+    if (code >= 0xAC00 && code <= 0xD7A3) {
+      var choIndex = Math.floor((code - 0xAC00) / 588);
+      parts.push({ ch: CHO[choIndex], cls: 'cho' });
+    } else if (/[A-Za-z]/.test(ch)) {
+      parts.push({ ch: ENG_CHOSUNG[ch.toUpperCase()] || ch, cls: 'cho cho-en' });
+    } else if (/[0-9]/.test(ch)) {
+      parts.push({ ch: DIGIT_CHOSUNG[ch] || ch, cls: 'cho cho-digit' });
+    } else {
+      // 단위 기호(㎸, Ω, ㎾ 등 완성형 한글/영문/숫자가 아닌 특수 기호)도 이 분기에서
+      // 자동으로 원문 그대로 표기된다.
+      parts.push({ ch: ch, cls: null });
+    }
+    i++;
+  }
+  return parts;
+}
+// getChosungParts() 결과를 색깔이 적용된 HTML 문자열로 변환한다(hintBox.innerHTML에 사용).
+function chosungPartsToHtml(parts) {
+  return parts.map(function (p) {
+    var safe = escapeHtml(p.ch);
+    return p.cls ? '<span class="' + p.cls + '">' + safe + '</span>' : safe;
+  }).join('');
+}
+// 정답 문자열을 바로 색깔 있는 초성 힌트 HTML로 변환하는 헬퍼.
+function renderChosungHtml(answer) {
+  return chosungPartsToHtml(getChosungParts(answer));
+}
+
+// 정답 비교를 위한 정규화: 앞뒤 공백 제거 + 내부 공백/줄바꿈 전부 제거.
+// (결정사항: 정답은 한글 또는 숫자만 사용하므로 대소문자 처리 불필요)
+function normalizeAnswer(str) {
+  return String(str == null ? '' : str).trim().replace(/\s+/g, '');
+}
+
+// 정답에 "25[kV]"처럼 대괄호로 단위를 표기해 둔 경우, 단위를 써도/안 써도 모두
+// 정답으로 인정하기 위해 허용 가능한 표기 형태를 전부 모아 반환한다.
+// - 원본 그대로("25[kV]")
+// - 단위 전체 생략("25")
+// - 대괄호 기호만 제거하고 단위는 유지("25kV")
+function answerVariants(answer) {
+  var raw = String(answer == null ? '' : answer);
+  var noUnit = raw.replace(/\[[^\]]*\]/g, '');
+  var noBracketOnly = raw.replace(/[\[\]]/g, '');
+  var variants = [raw, noUnit, noBracketOnly].map(normalizeAnswer);
+  var seen = {}, out = [];
+  variants.forEach(function (v) { if (!seen[v]) { seen[v] = true; out.push(v); } });
+  return out;
+}
+function isCorrectAnswer(input, answer) {
+  return answerVariants(answer).indexOf(normalizeAnswer(input)) !== -1;
+}
+// 음성 안내용: 정답을 읽어줄 때 대괄호 기호("[","]")는 어색하게 들리므로 빼고
+// 안의 단위 글자만 남긴다. 예: "25[kV]" → "25kV 입니다"로 읽음.
+function speakableAnswer(answer) {
+  return String(answer == null ? '' : answer).replace(/[\[\]]/g, '');
+}
+
+// 공백/줄바꿈을 제외한 문제 글자 수
+function countChars(str) {
+  return String(str == null ? '' : str).replace(/\s+/g, '').length;
+}
+
+// 학습모드 문제 표시 시간(ms) = (글자수 × 0.2초 + 1초) × 배율
+function calcDisplayTimeMs(question, multiplier) {
+  var len = countChars(question);
+  var seconds = (len * 0.2 + 1) * (multiplier || 1);
+  return Math.round(seconds * 1000);
+}
+
+function shuffleArray(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+/* =========================================================
+   2-1. TTS(음성 읽어주기)
+   - Web Speech API(window.speechSynthesis)를 사용하며 별도 서버/키 없이
+     브라우저에서 바로 동작한다. 지원하지 않는 브라우저에서는 조용히 무시.
+   ========================================================= */
+// 초성 힌트 문자열("ㄱㄴㄷ" 또는 "구ㅅㅈㅅ" 처럼 숫자/글자가 섞인 문자열)을
+// 사람이 듣기 편한 낱말 나열로 바꾼다. 예: "ㄱㅈㅅ" → "기역, 지읒, 시옷"
+function chosungToSpeech(hint) {
+  var s = String(hint == null ? '' : hint);
+  var parts = [];
+  for (var i = 0; i < s.length; i++) {
+    var ch = s[i];
+    if (JAMO_NAMES[ch]) parts.push(JAMO_NAMES[ch]);
+    else if (ch.trim() !== '') parts.push(ch);
+  }
+  return parts.join(', ');
+}
+function speechSupported() {
+  return typeof window !== 'undefined' && 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined';
+}
+// 텍스트 한 개를 읽는다. 이전에 읽던 음성은 즉시 취소하고 새로 시작한다.
+function speakText(text) {
+  if (!state.settings.ttsEnabled || !speechSupported()) return;
+  try {
+    window.speechSynthesis.cancel();
+    var utter = new SpeechSynthesisUtterance(String(text == null ? '' : text));
+    utter.lang = 'ko-KR';
+    utter.rate = state.settings.ttsRate || 1;
+    window.speechSynthesis.speak(utter);
+  } catch (e) {}
+}
+// 문제 → (짧은 간격 후) 초성 힌트 순으로 이어서 읽는다. speechSynthesis는
+// speak()로 넣은 순서대로 재생하므로 setTimeout 없이 큐에 순서대로 넣으면 된다.
+function speakQuestionAndHint(question, hintChosung) {
+  if (!state.settings.ttsEnabled || !speechSupported()) return;
+  try {
+    window.speechSynthesis.cancel();
+    var rate = state.settings.ttsRate || 1;
+    var u1 = new SpeechSynthesisUtterance(String(question == null ? '' : question));
+    u1.lang = 'ko-KR'; u1.rate = rate;
+    var u2 = new SpeechSynthesisUtterance('초성 힌트, ' + chosungToSpeech(hintChosung));
+    u2.lang = 'ko-KR'; u2.rate = rate;
+    window.speechSynthesis.speak(u1);
+    window.speechSynthesis.speak(u2);
+  } catch (e) {}
+}
+function cancelSpeech() {
+  if (speechSupported()) { try { window.speechSynthesis.cancel(); } catch (e) {} }
+}
+
+/* =========================================================
+   3. 데이터 레이어 (localStorage 영속화)
+   ========================================================= */
+
+function loadSettings() {
+  try {
+    var raw = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+    if (!raw) return Object.assign({}, DEFAULT_SETTINGS);
+    var parsed = JSON.parse(raw);
+    return Object.assign({}, DEFAULT_SETTINGS, parsed);
+  } catch (e) { return Object.assign({}, DEFAULT_SETTINGS); }
+}
+function saveSettings(s) {
+  try { localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(s)); } catch (e) {}
+}
+function loadQBank() {
+  try {
+    var raw = localStorage.getItem(STORAGE_KEYS.QBANK);
+    if (!raw) return null;
+    var parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : null;
+  } catch (e) { return null; }
+}
+function saveQBank(arr) {
+  try { localStorage.setItem(STORAGE_KEYS.QBANK, JSON.stringify(arr)); } catch (e) {}
+}
+
+function nextId(qbank) {
+  var max = 0;
+  for (var i = 0; i < qbank.length; i++) {
+    var n = Number(qbank[i].id);
+    if (!isNaN(n) && n > max) max = n;
+  }
+  return max + 1;
+}
+
+// Excel(sheet_to_json 결과)을 문제 스키마로 변환. 헤더는 대소문자/공백 무시하고 매칭.
+function excelRowsToQuestions(rows, existingQBank) {
+  var questions = [];
+  var skipped = 0;
+  var idCounter = nextId(existingQBank || []);
+  for (var i = 0; i < rows.length; i++) {
+    var row = rows[i];
+    var norm = {};
+    Object.keys(row).forEach(function (k) {
+      norm[String(k).trim().toLowerCase()] = row[k];
+    });
+    var question = norm.question != null ? String(norm.question).trim() : '';
+    var answer = norm.answer != null ? String(norm.answer).trim() : '';
+    if (!question || !answer) { skipped++; continue; }
+    var id = norm.id != null && norm.id !== '' && !isNaN(Number(norm.id)) ? Number(norm.id) : idCounter++;
+    var difficulty = norm.difficulty != null && norm.difficulty !== '' && !isNaN(Number(norm.difficulty)) ? Number(norm.difficulty) : 1;
+    questions.push({
+      id: id,
+      category: norm.category != null && String(norm.category).trim() !== '' ? String(norm.category).trim() : '기타',
+      question: question,
+      answer: answer,
+      difficulty: difficulty,
+      tag: norm.tag != null ? String(norm.tag).trim() : '',
+      source: norm.source != null ? String(norm.source).trim() : ''
+    });
+  }
+  return { questions: questions, skipped: skipped };
+}
+
+// id가 같으면 덮어쓰기, 다르면 추가
+function mergeQuestions(existing, incoming) {
+  var byId = {};
+  existing.forEach(function (q) { byId[q.id] = q; });
+  incoming.forEach(function (q) { byId[q.id] = q; });
+  return Object.keys(byId).map(function (k) { return byId[k]; }).sort(function (a, b) { return a.id - b.id; });
+}
+
+/* =========================================================
+   4. 앱 상태
+   ========================================================= */
+var state = {
+  qbank: [],
+  settings: Object.assign({}, DEFAULT_SETTINGS),
+  session: null,
+  lastWrongIds: [],
+  pendingMode: 'study',
+  editingId: null,
+  studyTimerHandle: null,
+  studyPhase: 'question'
+};
+
+function el(sel) { return document.querySelector(sel); }
+function els(sel) { return Array.prototype.slice.call(document.querySelectorAll(sel)); }
+function getQuestionById(id) {
+  for (var i = 0; i < state.qbank.length; i++) if (state.qbank[i].id === id) return state.qbank[i];
+  return null;
+}
+function distinctCategories() {
+  var set = {};
+  state.qbank.forEach(function (q) { set[q.category] = true; });
+  return Object.keys(set);
+}
+
+/* =========================================================
+   5. 화면 전환
+   ========================================================= */
+function showScreen(id) {
+  cancelSpeech();
+  els('.screen').forEach(function (s) { s.classList.remove('active'); });
+  el('#' + id).classList.add('active');
+  if (id !== 'screen-study') clearStudyTimer();
+}
+
+/* =========================================================
+   6. 메인 화면
+   ========================================================= */
+function renderMain() {
+  var count = state.qbank.length;
+  el('#main-qcount-num').textContent = count;
+  el('#main-cat-count').textContent = distinctCategories().length;
+  if (count > 0) {
+    var avg = state.qbank.reduce(function (sum, q) { return sum + (Number(q.difficulty) || 1); }, 0) / count;
+    el('#main-diff-avg').textContent = avg.toFixed(1);
+  } else {
+    el('#main-diff-avg').textContent = '-';
+  }
+  // 진행 링: 100문제를 기준으로 채워지는 정도를 시각적으로 보여준다(장식용 지표, 100문제 이상이면 가득 참).
+  var r = 52, circumference = 2 * Math.PI * r;
+  var pct = Math.max(0, Math.min(100, count));
+  var ring = el('#main-ring-fg');
+  ring.style.strokeDasharray = String(circumference);
+  ring.style.strokeDashoffset = String(circumference * (1 - pct / 100));
+}
+
+/* =========================================================
+   7. 출제 설정 화면
+   ========================================================= */
+function openSetup(mode) {
+  state.pendingMode = mode;
+  el('#setup-title').textContent = mode === 'study' ? '학습모드 설정' : '게임모드 설정';
+  var cats = distinctCategories();
+  var wrap = el('#setup-subjects');
+  wrap.innerHTML = '';
+  cats.forEach(function (c) {
+    var id = 'subj-' + c.replace(/\s+/g, '_');
+    var line = document.createElement('div');
+    line.className = 'checkline';
+    line.innerHTML = '<input type="checkbox" id="' + id + '" value="' + c + '" checked><label for="' + id + '">' + c + '</label>';
+    wrap.appendChild(line);
+  });
+  var wrongOnlyBox = el('#setup-wrong-only');
+  wrongOnlyBox.checked = false;
+  wrongOnlyBox.disabled = state.lastWrongIds.length === 0;
+  showScreen('screen-setup');
+}
+
+function buildQueueFromSetup() {
+  var checked = els('#setup-subjects input[type=checkbox]:checked').map(function (c) { return c.value; });
+  var wrongOnly = el('#setup-wrong-only').checked;
+  var order = el('#setup-order').value;
+  var pool = state.qbank.filter(function (q) {
+    if (checked.indexOf(q.category) === -1) return false;
+    if (wrongOnly && state.lastWrongIds.indexOf(q.id) === -1) return false;
+    return true;
+  });
+  if (order === 'random') pool = shuffleArray(pool);
+  return pool.map(function (q) { return q.id; });
+}
+
+/* =========================================================
+   8. 학습모드
+   ========================================================= */
+function clearStudyTimer() {
+  if (state.studyTimerHandle) { clearTimeout(state.studyTimerHandle); state.studyTimerHandle = null; }
+}
+function startStudySession(queueIds) {
+  state.session = { mode: 'study', queue: queueIds, index: 0, startedAt: Date.now() };
+  showScreen('screen-study');
+  showStudyQuestion();
+}
+function updateStudyProgress() {
+  var total = state.session.queue.length;
+  var cur = state.session.index + 1;
+  el('#study-progress-text').textContent = cur + ' / ' + total;
+  el('#study-progress-fill').style.width = Math.round((state.session.index / total) * 100) + '%';
+  var q = getQuestionById(state.session.queue[state.session.index]);
+  el('#study-subject-tag').textContent = q ? q.category : '';
+}
+function showStudyQuestion() {
+  clearStudyTimer();
+  state.studyPhase = 'question';
+  var q = getQuestionById(state.session.queue[state.session.index]);
+  el('#study-question-text').textContent = q.question;
+  var hintBox = el('#study-hint-box');
+  hintBox.textContent = '생각해 보세요';
+  hintBox.classList.add('placeholder');
+  var answerBox = el('#study-answer-box');
+  answerBox.textContent = '';
+  answerBox.classList.add('hidden');
+  updateStudyProgress();
+  speakText(q.question);
+  var ms = calcDisplayTimeMs(q.question, state.settings.timeMultiplier);
+  state.studyTimerHandle = setTimeout(showStudyHint, ms);
+}
+function showStudyHint() {
+  clearStudyTimer();
+  state.studyPhase = 'hint';
+  var q = getQuestionById(state.session.queue[state.session.index]);
+  var hintBox = el('#study-hint-box');
+  hintBox.innerHTML = '초성 : ' + renderChosungHtml(q.answer);
+  hintBox.classList.remove('placeholder');
+  // 학습모드에서는 초성 힌트를 화면에는 그대로 보여주되, 음성으로는 읽지 않는다(사용자 요청).
+  state.studyTimerHandle = setTimeout(showStudyAnswer, state.settings.hintDelaySec * 1000);
+}
+// 초성 힌트 표시 후 일정 시간이 지나면(또는 클릭하면) 정답을 별도의 칸에 추가로 보여준다.
+// 초성 힌트는 그대로 남겨두고 그 아래에 정답 칸을 새로 띄워서 둘을 함께 볼 수 있게 한다.
+function showStudyAnswer() {
+  clearStudyTimer();
+  state.studyPhase = 'answer';
+  var q = getQuestionById(state.session.queue[state.session.index]);
+  var answerBox = el('#study-answer-box');
+  answerBox.textContent = '정답 : ' + q.answer;
+  answerBox.classList.remove('hidden');
+  speakText('정답은, ' + speakableAnswer(q.answer) + ' 입니다.');
+  state.studyTimerHandle = setTimeout(nextStudyQuestion, state.settings.hintDelaySec * 1000);
+}
+function nextStudyQuestion() {
+  clearStudyTimer();
+  state.session.index++;
+  if (state.session.index >= state.session.queue.length) finishStudySession();
+  else showStudyQuestion();
+}
+function finishStudySession() {
+  renderResult({ mode: 'study', total: state.session.queue.length });
+  showScreen('screen-result');
+}
+function onStudyBoxClick() {
+  if (!state.session) return;
+  if (state.studyPhase === 'question') showStudyHint();
+  else if (state.studyPhase === 'hint') showStudyAnswer();
+  else nextStudyQuestion();
+}
+// 현재 학습 단계(문제/힌트/정답)에 맞는 음성을 다시 읽어준다("🔊 다시 듣기" 버튼용).
+function replayStudyTTS() {
+  if (!state.session) return;
+  var q = getQuestionById(state.session.queue[state.session.index]);
+  if (!q) return;
+  // 학습모드는 초성 힌트를 음성으로 읽지 않으므로, 힌트 단계에서 다시 듣기를 누르면 문제를 다시 읽어준다.
+  if (state.studyPhase === 'question' || state.studyPhase === 'hint') speakText(q.question);
+  else speakText('정답은, ' + speakableAnswer(q.answer) + ' 입니다.');
+}
+
+/* =========================================================
+   9. 게임모드
+   ========================================================= */
+function startGameSession(queueIds) {
+  state.session = {
+    mode: 'game', queue: queueIds, index: 0, phase: 'answer',
+    score: 0, combo: 0, maxCombo: 0, correctFirst: 0, correctAfterWrong: 0,
+    wrongIds: [], startedAt: Date.now()
+  };
+  showScreen('screen-game');
+  showGameQuestion();
+}
+function updateGameProgress() {
+  var total = state.session.queue.length;
+  var cur = state.session.index + 1;
+  el('#game-progress-text').textContent = cur + ' / ' + total;
+  el('#game-progress-fill').style.width = Math.round((state.session.index / total) * 100) + '%';
+  el('#game-score').textContent = state.session.score;
+  el('#game-combo').textContent = state.session.combo + ' COMBO';
+  var q = getQuestionById(state.session.queue[state.session.index]);
+  el('#game-subject-tag').textContent = q ? q.category : '';
+}
+function showGameQuestion() {
+  state.session.phase = 'answer';
+  var q = getQuestionById(state.session.queue[state.session.index]);
+  var chosung = getChosung(q.answer);
+  el('#game-question-text').textContent = q.question;
+  el('#game-hint-text').innerHTML = '초성 : ' + renderChosungHtml(q.answer);
+  var fb = el('#game-feedback'); fb.textContent = ''; fb.className = 'feedback';
+  var input = el('#game-answer-input');
+  input.value = ''; input.disabled = false;
+  el('#game-submit-btn').textContent = '정답 확인';
+  updateGameProgress();
+  speakQuestionAndHint(q.question, chosung);
+  setTimeout(function () { input.focus(); }, 50);
+}
+// 현재 게임 화면 상태(문제+힌트, 또는 오답 후 정답 공개)에 맞는 음성을 다시 읽어준다.
+function replayGameTTS() {
+  if (!state.session) return;
+  var q = getQuestionById(state.session.queue[state.session.index]);
+  if (!q) return;
+  if (state.session.phase === 'reinput') speakText('정답은, ' + speakableAnswer(q.answer) + ' 입니다.');
+  else speakQuestionAndHint(q.question, getChosung(q.answer));
+}
+function submitGameAnswer() {
+  if (!state.session) return;
+  var q = getQuestionById(state.session.queue[state.session.index]);
+  var input = el('#game-answer-input');
+  var val = input.value;
+  var fb = el('#game-feedback');
+
+  if (state.session.phase === 'answer') {
+    if (isCorrectAnswer(val, q.answer)) {
+      state.session.score += SCORE_RULES.CORRECT;
+      state.session.combo += 1;
+      state.session.maxCombo = Math.max(state.session.maxCombo, state.session.combo);
+      state.session.correctFirst += 1;
+      fb.textContent = '정답! +' + SCORE_RULES.CORRECT + '점';
+      fb.className = 'feedback good';
+      input.disabled = true;
+      updateGameProgress();
+      setTimeout(nextGameQuestion, 700);
+    } else {
+      state.session.combo = 0;
+      state.session.wrongIds.push(q.id);
+      state.session.phase = 'reinput';
+      el('#game-hint-text').textContent = '정답 : ' + q.answer;
+      fb.textContent = '오답입니다. 정답을 확인했습니다. 정답을 직접 입력하면 다음 문제로 이동합니다.';
+      fb.className = 'feedback bad';
+      input.value = '';
+      el('#game-submit-btn').textContent = '정답 재입력 확인';
+      updateGameProgress();
+      speakText('정답은, ' + speakableAnswer(q.answer) + ' 입니다.');
+      input.focus();
+    }
+  } else if (state.session.phase === 'reinput') {
+    if (isCorrectAnswer(val, q.answer)) {
+      state.session.score += SCORE_RULES.AFTER_WRONG;
+      state.session.correctAfterWrong += 1;
+      fb.textContent = '입력 확인! +' + SCORE_RULES.AFTER_WRONG + '점';
+      fb.className = 'feedback good';
+      input.disabled = true;
+      updateGameProgress();
+      setTimeout(nextGameQuestion, 700);
+    } else {
+      fb.textContent = '아직 정답과 일치하지 않습니다. 정답을 다시 확인해 입력해 주세요.';
+      fb.className = 'feedback bad';
+      input.value = '';
+      input.focus();
+    }
+  }
+}
+function nextGameQuestion() {
+  state.session.index++;
+  if (state.session.index >= state.session.queue.length) finishGameSession();
+  else showGameQuestion();
+}
+function finishGameSession() {
+  state.lastWrongIds = state.session.wrongIds.slice();
+  renderResult(state.session);
+  showScreen('screen-result');
+}
+
+/* =========================================================
+   10. 결과 화면
+   ========================================================= */
+function renderResult(session) {
+  var card = el('#result-card');
+  if (session.mode === 'study') {
+    card.innerHTML =
+      '<h2 style="margin-top:0;">학습 완료</h2>' +
+      '<div class="result-grid">' +
+      '<div class="result-item"><div class="num">' + session.total + '</div><div class="label">학습한 문제</div></div>' +
+      '</div>';
+  } else {
+    var total = session.queue.length;
+    var solved = session.correctFirst + session.correctAfterWrong;
+    var rate = total > 0 ? Math.round((solved / total) * 100) : 0;
+    card.innerHTML =
+      '<h2 style="margin-top:0;">게임 완료</h2>' +
+      '<div class="result-grid">' +
+      '<div class="result-item"><div class="num">' + total + '</div><div class="label">전체 문제</div></div>' +
+      '<div class="result-item"><div class="num">' + session.correctFirst + '</div><div class="label">최초 정답</div></div>' +
+      '<div class="result-item"><div class="num">' + session.correctAfterWrong + '</div><div class="label">오답 후 정답</div></div>' +
+      '<div class="result-item"><div class="num">' + rate + '%</div><div class="label">정답률</div></div>' +
+      '<div class="result-item"><div class="num">' + session.maxCombo + '</div><div class="label">최고 COMBO</div></div>' +
+      '<div class="result-item"><div class="num">' + session.score.toLocaleString() + '</div><div class="label">획득 점수</div></div>' +
+      '</div>';
+  }
+  window._lastFinishedMode = session.mode;
+}
+
+function resultRestart(kind) {
+  var mode = window._lastFinishedMode || 'game';
+  var pool;
+  if (kind === 'wrong') {
+    pool = state.qbank.filter(function (q) { return state.lastWrongIds.indexOf(q.id) !== -1; });
+  } else {
+    pool = state.qbank.slice();
+    if (kind === 'random') pool = shuffleArray(pool);
+  }
+  var ids = pool.map(function (q) { return q.id; });
+  if (ids.length === 0) { alert('해당 조건에 문제가 없습니다.'); return; }
+  if (mode === 'study') startStudySession(ids); else startGameSession(ids);
+}
+
+/* =========================================================
+   11. 문제은행 관리 화면
+   ========================================================= */
+function renderBankScreen() {
+  el('#bank-count').textContent = state.qbank.length;
+  var catSelect = el('#bank-filter-category');
+  var curVal = catSelect.value;
+  catSelect.innerHTML = '<option value="">전체 과목</option>';
+  distinctCategories().forEach(function (c) {
+    var opt = document.createElement('option');
+    opt.value = c; opt.textContent = c;
+    catSelect.appendChild(opt);
+  });
+  catSelect.value = curVal || '';
+  renderBankTable();
+}
+function renderBankTable() {
+  var search = el('#bank-search').value.trim().toLowerCase();
+  var cat = el('#bank-filter-category').value;
+  var rows = state.qbank.filter(function (q) {
+    if (cat && q.category !== cat) return false;
+    if (search && q.question.toLowerCase().indexOf(search) === -1 && q.answer.toLowerCase().indexOf(search) === -1) return false;
+    return true;
+  });
+  var tbody = el('#bank-tbody');
+  tbody.innerHTML = '';
+  el('#bank-empty').style.display = rows.length === 0 ? 'block' : 'none';
+  rows.forEach(function (q) {
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td><span class="tag">' + escapeHtml(q.category) + '</span></td>' +
+      '<td class="q-cell">' + escapeHtml(q.question) + '</td>' +
+      '<td>' + escapeHtml(q.answer) + '</td>' +
+      '<td>' + q.difficulty + '</td>' +
+      '<td style="white-space:nowrap;">' +
+      '<button class="btn btn-sm btn-ghost" data-edit="' + q.id + '">수정</button> ' +
+      '<button class="btn btn-sm btn-danger" data-delete="' + q.id + '">삭제</button>' +
+      '</td>';
+    tbody.appendChild(tr);
+  });
+  tbody.querySelectorAll('[data-edit]').forEach(function (btn) {
+    btn.addEventListener('click', function () { openEditModal(Number(btn.getAttribute('data-edit'))); });
+  });
+  tbody.querySelectorAll('[data-delete]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var id = Number(btn.getAttribute('data-delete'));
+      if (confirm('이 문제를 삭제할까요?')) {
+        state.qbank = state.qbank.filter(function (q) { return q.id !== id; });
+        saveQBank(state.qbank);
+        renderBankScreen(); renderMain();
+      }
+    });
+  });
+}
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
+function openEditModal(id) {
+  state.editingId = id;
+  var modal = el('#edit-modal');
+  if (id == null) {
+    el('#edit-modal-title').textContent = '문제 추가';
+    el('#edit-category').value = '';
+    el('#edit-question').value = '';
+    el('#edit-answer').value = '';
+    el('#edit-difficulty').value = '1';
+  } else {
+    var q = getQuestionById(id);
+    el('#edit-modal-title').textContent = '문제 수정';
+    el('#edit-category').value = q.category;
+    el('#edit-question').value = q.question;
+    el('#edit-answer').value = q.answer;
+    el('#edit-difficulty').value = String(q.difficulty);
+  }
+  modal.classList.remove('hidden');
+}
+function closeEditModal() { el('#edit-modal').classList.add('hidden'); state.editingId = null; }
+function saveEditModal() {
+  var category = el('#edit-category').value.trim() || '기타';
+  var question = el('#edit-question').value.trim();
+  var answer = el('#edit-answer').value.trim();
+  var difficulty = Number(el('#edit-difficulty').value);
+  if (!question || !answer) { alert('문제와 정답을 모두 입력해 주세요.'); return; }
+  if (state.editingId == null) {
+    state.qbank.push({ id: nextId(state.qbank), category: category, question: question, answer: answer, difficulty: difficulty, tag: '', source: '' });
+  } else {
+    var q = getQuestionById(state.editingId);
+    q.category = category; q.question = question; q.answer = answer; q.difficulty = difficulty;
+  }
+  saveQBank(state.qbank);
+  closeEditModal();
+  renderBankScreen(); renderMain();
+}
+
+function downloadBlob(blob, filename) {
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+}
+function dateStr() {
+  var d = new Date();
+  function p(n) { return String(n).padStart(2, '0'); }
+  return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate());
+}
+
+// 문제은행을 Excel(.xlsx)로 내보낸다. 가져오기와 동일한 컬럼 순서(id, category, question,
+// answer, difficulty, tag, source)로 저장하므로, 그대로 채워서 다시 가져오기 할 수 있는 양식이 된다.
+function exportExcel() {
+  var header = ['id', 'category', 'question', 'answer', 'difficulty', 'tag', 'source'];
+  var rows = [header];
+  state.qbank.forEach(function (q) {
+    rows.push([q.id, q.category, q.question, q.answer, q.difficulty, q.tag || '', q.source || '']);
+  });
+  var ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{ wch: 6 }, { wch: 14 }, { wch: 50 }, { wch: 16 }, { wch: 8 }, { wch: 10 }, { wch: 12 }];
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '문제은행');
+  var wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  var blob = new Blob([wbout], { type: 'application/octet-stream' });
+  downloadBlob(blob, 'qbank_export_' + dateStr() + '.xlsx');
+}
+
+function handleExcelFile(file) {
+  var reader = new FileReader();
+  reader.onload = function (e) {
+    try {
+      var data = new Uint8Array(e.target.result);
+      var wb = XLSX.read(data, { type: 'array' });
+      var sheet = wb.Sheets[wb.SheetNames[0]];
+      var rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+      var result = excelRowsToQuestions(rows, state.qbank);
+      if (result.questions.length === 0) {
+        alert('가져올 수 있는 문제가 없습니다. 컬럼명(id, category, question, answer, difficulty)을 확인해 주세요.');
+        return;
+      }
+      state.qbank = mergeQuestions(state.qbank, result.questions);
+      saveQBank(state.qbank);
+      renderBankScreen(); renderMain();
+      alert(result.questions.length + '문제를 가져왔습니다.' + (result.skipped ? ' (형식 오류로 ' + result.skipped + '행 제외됨)' : ''));
+    } catch (err) {
+      alert('엑셀 파일을 읽는 중 오류가 발생했습니다: ' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+function handleJsonFile(file) {
+  var reader = new FileReader();
+  reader.onload = function (e) {
+    try {
+      var parsed = JSON.parse(e.target.result);
+      if (!Array.isArray(parsed)) throw new Error('JSON 최상위는 배열이어야 합니다.');
+      var valid = parsed.filter(function (q) { return q && q.question && q.answer; });
+      valid.forEach(function (q, i) {
+        if (q.id == null) q.id = nextId(state.qbank) + i;
+        if (!q.category) q.category = '기타';
+        if (q.difficulty == null) q.difficulty = 1;
+      });
+      state.qbank = mergeQuestions(state.qbank, valid);
+      saveQBank(state.qbank);
+      renderBankScreen(); renderMain();
+      alert(valid.length + '문제를 가져왔습니다.');
+    } catch (err) {
+      alert('JSON 파일을 읽는 중 오류가 발생했습니다: ' + err.message);
+    }
+  };
+  reader.readAsText(file, 'utf-8');
+}
+
+/* =========================================================
+   12. 설정 화면
+   ========================================================= */
+function renderSettingsScreen() {
+  el('#settings-tts-enabled').checked = !!state.settings.ttsEnabled;
+  el('#settings-tts-rate').value = state.settings.ttsRate;
+  el('#settings-tts-rate-val').textContent = Number(state.settings.ttsRate).toFixed(1);
+  el('#settings-mult').value = state.settings.timeMultiplier;
+  el('#settings-mult-val').textContent = state.settings.timeMultiplier.toFixed(1);
+  el('#settings-hint').value = state.settings.hintDelaySec;
+  el('#settings-hint-val').textContent = state.settings.hintDelaySec;
+  els('.theme-swatch').forEach(function (btn) {
+    btn.classList.toggle('selected', btn.getAttribute('data-theme') === state.settings.theme);
+  });
+}
+
+/* =========================================================
+   13. 이벤트 바인딩
+   ========================================================= */
+function bindEvents() {
+  els('[data-nav]').forEach(function (btn) {
+    btn.addEventListener('click', function () { showScreen(btn.getAttribute('data-nav')); if (btn.getAttribute('data-nav') === 'screen-bank') renderBankScreen(); if (btn.getAttribute('data-nav') === 'screen-settings') renderSettingsScreen(); });
+  });
+  els('[data-open-setup]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      if (state.qbank.length === 0) { alert('먼저 문제은행에 문제를 등록해 주세요.'); showScreen('screen-bank'); renderBankScreen(); return; }
+      openSetup(btn.getAttribute('data-open-setup'));
+    });
+  });
+
+  el('#setup-start-btn').addEventListener('click', function () {
+    var ids = buildQueueFromSetup();
+    if (ids.length === 0) { el('#setup-empty').style.display = 'block'; return; }
+    el('#setup-empty').style.display = 'none';
+    if (state.pendingMode === 'study') startStudySession(ids); else startGameSession(ids);
+  });
+
+  el('#study-qbox').addEventListener('click', onStudyBoxClick);
+  el('#study-hint-box').addEventListener('click', onStudyBoxClick);
+  el('#study-answer-box').addEventListener('click', onStudyBoxClick);
+  el('#study-replay-btn').addEventListener('click', function (e) { e.stopPropagation(); replayStudyTTS(); });
+
+  el('#game-replay-btn').addEventListener('click', function (e) { e.stopPropagation(); replayGameTTS(); });
+  el('#game-submit-btn').addEventListener('click', submitGameAnswer);
+  el('#game-answer-input').addEventListener('keydown', function (e) { if (e.key === 'Enter') submitGameAnswer(); });
+
+  el('#result-all-btn').addEventListener('click', function () { resultRestart('all'); });
+  el('#result-wrong-btn').addEventListener('click', function () { resultRestart('wrong'); });
+  el('#result-random-btn').addEventListener('click', function () { resultRestart('random'); });
+
+  el('#bank-search').addEventListener('input', renderBankTable);
+  el('#bank-filter-category').addEventListener('change', renderBankTable);
+  el('#bank-add-btn').addEventListener('click', function () { openEditModal(null); });
+  el('#bank-export-btn').addEventListener('click', function () {
+    var blob = new Blob([JSON.stringify(state.qbank, null, 2)], { type: 'application/json' });
+    downloadBlob(blob, 'qbank_export_' + dateStr() + '.json');
+  });
+  el('#bank-export-excel-btn').addEventListener('click', exportExcel);
+  el('#bank-excel-input').addEventListener('change', function (e) { if (e.target.files[0]) handleExcelFile(e.target.files[0]); e.target.value = ''; });
+  el('#bank-json-input').addEventListener('change', function (e) { if (e.target.files[0]) handleJsonFile(e.target.files[0]); e.target.value = ''; });
+
+  el('#edit-cancel-btn').addEventListener('click', closeEditModal);
+  el('#edit-save-btn').addEventListener('click', saveEditModal);
+
+  els('.theme-swatch').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var theme = btn.getAttribute('data-theme');
+      state.settings.theme = theme;
+      applyTheme(theme);
+      saveSettings(state.settings);
+      els('.theme-swatch').forEach(function (b) { b.classList.toggle('selected', b === btn); });
+    });
+  });
+  el('#settings-tts-rate').addEventListener('input', function () { el('#settings-tts-rate-val').textContent = Number(el('#settings-tts-rate').value).toFixed(1); });
+  el('#settings-mult').addEventListener('input', function () { el('#settings-mult-val').textContent = Number(el('#settings-mult').value).toFixed(1); });
+  el('#settings-hint').addEventListener('input', function () { el('#settings-hint-val').textContent = el('#settings-hint').value; });
+  el('#settings-save-btn').addEventListener('click', function () {
+    state.settings.ttsEnabled = el('#settings-tts-enabled').checked;
+    state.settings.ttsRate = Number(el('#settings-tts-rate').value);
+    state.settings.timeMultiplier = Number(el('#settings-mult').value);
+    state.settings.hintDelaySec = Number(el('#settings-hint').value);
+    saveSettings(state.settings);
+    if (!state.settings.ttsEnabled) cancelSpeech();
+    alert('설정이 저장되었습니다.');
+  });
+  el('#settings-sample-btn').addEventListener('click', function () {
+    if (confirm('현재 문제은행을 기본 탑재된 전기철도공학·구조물공학 428문제로 교체할까요? (지금 등록된 문제는 사라집니다)')) {
+      state.qbank = SAMPLE_QUESTIONS.slice();
+      saveQBank(state.qbank);
+      renderMain();
+      alert('기본 문제(전기철도공학·구조물공학 428문제)로 초기화되었습니다.');
+    }
+  });
+  el('#settings-reset-btn').addEventListener('click', function () {
+    if (confirm('문제은행을 전부 삭제합니다. 계속할까요?')) {
+      state.qbank = [];
+      saveQBank(state.qbank);
+      renderMain();
+    }
+  });
+}
+
+/* =========================================================
+   14. 초기화
+   ========================================================= */
+/* =========================================================
+   15. 접근 암호 게이트
+   본 자료의 무단 상업적 이용을 막기 위한 최소한의 접근 확인.
+   비밀번호는 실행 시점의 "연도 뒤 2자리 + 월 2자리"로 매달 자동 계산되며
+   코드에 고정된 값으로 저장돼 있지 않다(예: 2026년 9월 실행 → "2609").
+   ========================================================= */
+function computeGatePassword() {
+  var d = new Date();
+  var yy = String(d.getFullYear() % 100);
+  if (yy.length < 2) yy = '0' + yy;
+  var mm = String(d.getMonth() + 1);
+  if (mm.length < 2) mm = '0' + mm;
+  return yy + mm;
+}
+function tryGateUnlock() {
+  var input = el('#gate-password').value.trim();
+  if (input === computeGatePassword()) {
+    el('#gate-overlay').classList.add('hidden');
+  } else {
+    el('#gate-error').textContent = '비밀번호가 올바르지 않습니다.';
+    el('#gate-password').value = '';
+    el('#gate-password').focus();
+  }
+}
+function bindGateEvents() {
+  el('#gate-submit-btn').addEventListener('click', tryGateUnlock);
+  el('#gate-password').addEventListener('keydown', function (e) { if (e.key === 'Enter') tryGateUnlock(); });
+  setTimeout(function () { el('#gate-password').focus(); }, 50);
+}
+
+/* ---------------------------------------------------------
+   15-1. 최초 실행 후 3일간 암호 없이 입장 허용(유예기간)
+   - 이 브라우저에서 처음 연 시각을 localStorage에 저장해두고,
+     그 시각으로부터 GATE_GRACE_DAYS일이 지나기 전까지는
+     비밀번호 입력 없이 바로 이용 가능하게 한다.
+   - localStorage를 쓸 수 없는 환경(프라이빗 모드 등)에서는
+     유예기간을 인정하지 않고(=null 반환) 항상 비밀번호를 요구한다(fail-closed).
+   - 주의: 브라우저 저장공간을 지우거나, 다른 브라우저/시크릿창으로 열거나,
+     시스템 시계를 바꾸면 유예기간 판단이 초기화/우회될 수 있다.
+     (이 게이트 자체가 소스가 보이는 클라이언트 측 장치라 완전한 보안은 아님)
+   --------------------------------------------------------- */
+var GATE_GRACE_DAYS = 3;
+var GATE_FIRST_OPEN_KEY = 'agame_rail_first_open_v1';
+function getOrInitFirstOpenTime() {
+  try {
+    var raw = localStorage.getItem(GATE_FIRST_OPEN_KEY);
+    if (raw) return Number(raw);
+    var now = Date.now();
+    localStorage.setItem(GATE_FIRST_OPEN_KEY, String(now));
+    return now;
+  } catch (e) {
+    return null;
+  }
+}
+function isWithinGracePeriod() {
+  var first = getOrInitFirstOpenTime();
+  if (first == null) return false;
+  return (Date.now() - first) < GATE_GRACE_DAYS * 24 * 60 * 60 * 1000;
+}
+(function applyGateGraceImmediately() {
+  var overlay = el('#gate-overlay');
+  if (overlay && isWithinGracePeriod()) {
+    overlay.classList.add('hidden');
+  }
+})();
+
+function init() {
+  state.settings = loadSettings();
+  applyTheme(state.settings.theme);
+  var loaded = loadQBank();
+  state.qbank = (loaded && loaded.length > 0) ? loaded : SAMPLE_QUESTIONS.slice();
+  if (!loaded) saveQBank(state.qbank);
+  renderMain();
+  bindEvents();
+  bindGateEvents();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+
+// 테스트 목적으로 내부 함수를 노출 (Playwright 검증용)
+window.__AGAME_TEST__ = {
+  getChosung: getChosung, normalizeAnswer: normalizeAnswer, isCorrectAnswer: isCorrectAnswer,
+  countChars: countChars, calcDisplayTimeMs: calcDisplayTimeMs, chosungToSpeech: chosungToSpeech,
+  computeGatePassword: computeGatePassword,
+  getOrInitFirstOpenTime: getOrInitFirstOpenTime, isWithinGracePeriod: isWithinGracePeriod,
+  GATE_GRACE_DAYS: GATE_GRACE_DAYS, GATE_FIRST_OPEN_KEY: GATE_FIRST_OPEN_KEY,
+  state: state
+};
+
+})();
+</script>
+</body>
+</html>

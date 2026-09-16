@@ -126,6 +126,11 @@
 
   .tap-hint{text-align:center;color:var(--muted);font-size:.82rem;margin-top:10px;}
 
+  /* 학습모드 SKIP(-2)/KEEP(+2) 버튼: 정답 공개 후에만 노출, 레벨(난이도) 값을 조정 */
+  #study-review-btns{margin-top:12px;}
+  .btn-skip{border-color:var(--good);color:var(--good);}
+  .btn-keep{border-color:var(--bad);color:var(--bad);}
+
   .answer-input{
     width:100%;padding:16px;font-size:1.15rem;border-radius:14px;border:1.5px solid var(--line);
     margin-top:16px;text-align:center;
@@ -362,6 +367,10 @@
     </div>
     <div class="hintbox placeholder" id="study-hint-box">생각해 보세요</div>
     <div class="hintbox answer-reveal hidden" id="study-answer-box"></div>
+    <div class="btn-row hidden" id="study-review-btns">
+      <button type="button" class="btn btn-skip" id="study-skip-btn">✅ 아는 문제 SKIP (-2)</button>
+      <button type="button" class="btn btn-keep" id="study-keep-btn">🔁 한번더 KEEP (+2)</button>
+    </div>
     <div class="tap-hint">화면을 탭하면 바로 다음 단계로 진행합니다</div>
     <div class="color-legend">한글은 <span class="lg-kr">검은색</span>, 영어는 <span class="lg-en">초록색</span>, 숫자는 <span class="lg-num">분홍색</span></div>
   </section>
@@ -1342,6 +1351,7 @@ function showStudyQuestion() {
   var answerBox = el('#study-answer-box');
   answerBox.textContent = '';
   answerBox.classList.add('hidden');
+  el('#study-review-btns').classList.add('hidden');
   updateStudyProgress();
   speakText(q.question);
   var ms = calcDisplayTimeMs(q.question, state.settings.timeMultiplier);
@@ -1366,6 +1376,7 @@ function showStudyAnswer() {
   var answerBox = el('#study-answer-box');
   answerBox.textContent = '정답 : ' + q.answer;
   answerBox.classList.remove('hidden');
+  el('#study-review-btns').classList.remove('hidden');
   speakText('정답은, ' + q.answer + ' 입니다.');
   state.studyTimerHandle = setTimeout(nextStudyQuestion, state.settings.hintDelaySec * 1000);
 }
@@ -1374,6 +1385,26 @@ function nextStudyQuestion() {
   state.session.index++;
   if (state.session.index >= state.session.queue.length) finishStudySession();
   else showStudyQuestion();
+}
+// 학습모드 SKIP(-2)/KEEP(+2): 정답 공개 단계에서만 동작. 레벨(difficulty)을 조정하고
+// 바로 다음 문제로 넘어간다(자동 타이머 대기 없이). 0 밑으로는 내려가지 않음(게임모드와 동일 규칙).
+function adjustStudyDifficulty(delta) {
+  var q = getQuestionById(state.session.queue[state.session.index]);
+  if (!q) return;
+  q.difficulty = Math.max(0, (Number(q.difficulty) || 0) + delta);
+  saveQBank(state.qbank);
+}
+function handleStudySkip(e) {
+  if (e) e.stopPropagation();
+  if (!state.session || state.studyPhase !== 'answer') return;
+  adjustStudyDifficulty(-2);
+  nextStudyQuestion();
+}
+function handleStudyKeep(e) {
+  if (e) e.stopPropagation();
+  if (!state.session || state.studyPhase !== 'answer') return;
+  adjustStudyDifficulty(2);
+  nextStudyQuestion();
 }
 function finishStudySession() {
   renderResult({ mode: 'study', total: state.session.queue.length });
@@ -1835,6 +1866,8 @@ function bindEvents() {
   el('#study-answer-box').addEventListener('click', onStudyBoxClick);
   el('#study-replay-btn').addEventListener('click', function (e) { e.stopPropagation(); replayStudyTTS(); });
   el('#study-edit-btn').addEventListener('click', function (e) { e.stopPropagation(); openEditModalFromStudy(); });
+  el('#study-skip-btn').addEventListener('click', handleStudySkip);
+  el('#study-keep-btn').addEventListener('click', handleStudyKeep);
 
   el('#game-replay-btn').addEventListener('click', function (e) { e.stopPropagation(); replayGameTTS(); });
   el('#game-hint-btn').addEventListener('click', useGameHint);

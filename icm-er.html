@@ -337,6 +337,7 @@
         <select id="setup-order">
           <option value="order">등록 순서</option>
           <option value="random">랜덤</option>
+          <option value="level-desc">레벨 높은 문제부터</option>
         </select>
       </div>
       <div class="checkline">
@@ -1317,7 +1318,12 @@ function buildQueueFromSetup() {
     if (state.pendingMode === 'game' && (Number(q.difficulty) || 0) <= 0) return false;
     return true;
   });
-  if (order === 'random') pool = shuffleArray(pool);
+  if (order === 'random') {
+    pool = shuffleArray(pool);
+  } else if (order === 'level-desc') {
+    // 레벨이 높은(=자주 틀려서 아직 안 익숙한) 문제부터 풀도록 내림차순 정렬.
+    pool = pool.slice().sort(function (a, b) { return (Number(b.difficulty) || 0) - (Number(a.difficulty) || 0); });
+  }
   return pool.map(function (q) { return q.id; });
 }
 

@@ -164,6 +164,13 @@
   .modal-backdrop{position:fixed;inset:0;background:rgba(20,30,50,.45);display:flex;align-items:flex-end;justify-content:center;z-index:50;}
   .modal-backdrop.hidden{display:none;}
   .modal{background:var(--card);border-radius:18px 18px 0 0;padding:20px;width:100%;max-width:640px;max-height:85vh;overflow-y:auto;}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .modal-close-btn{
+    background:var(--bad-bg);color:var(--bad);border:none;border-radius:50%;
+    width:32px;height:32px;font-size:1rem;font-weight:800;line-height:1;cursor:pointer;flex:none;
+  }
+  .modal-close-btn:active{transform:scale(.92);}
+  .modal-close-btn.hidden{display:none;}
   @media (min-width:680px){
     .modal-backdrop{align-items:center;}
     .modal{border-radius:18px;}
@@ -322,7 +329,7 @@
     </div>
 
     <div class="encourage-banner">🌱 오늘도 한 걸음씩, 초성 힌트로 즐겁게 외워봐요!</div>
-    <div class="app-footer">Created by <a href="https://blog.naver.com/zzizik" target="_blank" rel="noopener">zzizik</a>, with Claude AI</div>
+    <div class="app-footer">Created by <a href="https://blog.naver.com/zzizik" target="_blank" rel="noopener">zzizik</a>, with Claude AI · rev. 260917</div>
   </section>
 
   <!-- ================= 출제 설정 (학습/게임 공통) ================= -->
@@ -379,6 +386,7 @@
     </div>
     <div class="tap-hint">화면을 탭하면 바로 다음 단계로 진행합니다</div>
     <div class="color-legend">한글은 <span class="lg-kr">검은색</span>, 영어는 <span class="lg-en">초록색</span>, 숫자는 <span class="lg-num">분홍색</span></div>
+    <div class="color-legend">🔊 다시 듣기 · ⚙️ 잠깐 멈추고 문제 수정</div>
   </section>
 
   <!-- ================= 게임모드 ================= -->
@@ -386,7 +394,10 @@
     <div class="topbar">
       <button class="back" data-nav="screen-main">← 종료</button>
       <span class="tag" id="game-subject-tag"></span>
-      <button type="button" class="tts-replay-btn" id="game-replay-btn" title="다시 듣기">🔊</button>
+      <div class="topbar-tools">
+        <button type="button" class="tts-replay-btn" id="game-replay-btn" title="다시 듣기">🔊</button>
+        <button type="button" class="tts-replay-btn" id="game-edit-btn" title="이 문제 바로 수정">⚙️</button>
+      </div>
     </div>
     <div class="stat-row">
       <span id="game-progress-text">0 / 0</span>
@@ -402,6 +413,7 @@
     <div class="feedback" id="game-feedback"></div>
     <button class="btn btn-primary" id="game-submit-btn">정답 확인</button>
     <div class="color-legend">한글은 <span class="lg-kr">검은색</span>, 영어는 <span class="lg-en">초록색</span>, 숫자는 <span class="lg-num">분홍색</span></div>
+    <div class="color-legend">🔊 다시 듣기 · ⚙️ 잠깐 멈추고 문제 수정</div>
   </section>
 
   <!-- ================= 결과 화면 ================= -->
@@ -510,7 +522,10 @@
   <!-- ================= 문제 추가/수정 모달 ================= -->
   <div class="modal-backdrop hidden" id="edit-modal">
     <div class="modal">
-      <h2 id="edit-modal-title">문제 추가</h2>
+      <div class="modal-head">
+        <h2 id="edit-modal-title" style="margin:0;">문제 추가</h2>
+        <button type="button" class="modal-close-btn hidden" id="edit-delete-btn" title="이 문제 삭제">✕</button>
+      </div>
       <div class="field"><label>과목</label><input type="text" id="edit-category" placeholder="예: 전기철도공학"></div>
       <div class="field"><label>문제</label><textarea id="edit-question"></textarea></div>
       <div class="field"><label>정답 (한글 또는 숫자)</label><input type="text" id="edit-answer"></div>
@@ -1244,7 +1259,7 @@ var state = {
   editingId: null,
   studyTimerHandle: null,
   studyPhase: 'question',
-  editReturnToStudy: false
+  editReturnMode: null // 'study' | 'game' | null — 편집모달을 닫거나(취소/저장) 삭제했을 때 어디로/어떻게 돌아갈지
 };
 
 function el(sel) { return document.querySelector(sel); }
@@ -1700,12 +1715,14 @@ function escapeHtml(s) {
 function openEditModal(id) {
   state.editingId = id;
   var modal = el('#edit-modal');
+  var deleteBtn = el('#edit-delete-btn');
   if (id == null) {
     el('#edit-modal-title').textContent = '문제 추가';
     el('#edit-category').value = '';
     el('#edit-question').value = '';
     el('#edit-answer').value = '';
     el('#edit-difficulty').value = '5';
+    deleteBtn.classList.add('hidden');
   } else {
     var q = getQuestionById(id);
     el('#edit-modal-title').textContent = '문제 수정';
@@ -1713,10 +1730,11 @@ function openEditModal(id) {
     el('#edit-question').value = q.question;
     el('#edit-answer').value = q.answer;
     el('#edit-difficulty').value = String(q.difficulty);
+    deleteBtn.classList.remove('hidden');
   }
   modal.classList.remove('hidden');
 }
-// 학습모드 화면에서 스피커 바로 밑 "✏️" 버튼으로 현재 보고 있는 문제를 바로 수정할 수 있게 한다.
+// 학습모드 화면에서 스피커 옆 "⚙️" 버튼으로 현재 보고 있는 문제를 바로 수정할 수 있게 한다.
 // 진행 중이던 타이머·음성은 멈추고, 모달을 닫으면(저장/취소 모두) 같은 문제를 다시 처음부터 보여준다.
 function openEditModalFromStudy() {
   if (!state.session || state.session.mode !== 'study') return;
@@ -1724,15 +1742,57 @@ function openEditModalFromStudy() {
   cancelSpeech();
   var q = getQuestionById(state.session.queue[state.session.index]);
   if (!q) return;
-  state.editReturnToStudy = true;
+  state.editReturnMode = 'study';
+  openEditModal(q.id);
+}
+// 게임모드 화면에서도 스피커 옆 "⚙️" 버튼으로 현재 문제를 바로 수정할 수 있게 한다.
+// 재생 중이던 음성만 멈추고(게임모드는 학습모드 같은 자동 진행 타이머가 없음),
+// 모달을 닫으면(저장/취소 모두) 같은 문제를 처음(입력 전) 상태로 다시 보여준다.
+function openEditModalFromGame() {
+  if (!state.session || state.session.mode !== 'game') return;
+  cancelSpeech();
+  var q = getQuestionById(state.session.queue[state.session.index]);
+  if (!q) return;
+  state.editReturnMode = 'game';
   openEditModal(q.id);
 }
 function closeEditModal() {
   el('#edit-modal').classList.add('hidden');
   state.editingId = null;
-  if (state.editReturnToStudy) {
-    state.editReturnToStudy = false;
-    if (state.session && state.session.mode === 'study') showStudyQuestion();
+  var mode = state.editReturnMode;
+  state.editReturnMode = null;
+  if (mode === 'study' && state.session && state.session.mode === 'study') showStudyQuestion();
+  else if (mode === 'game' && state.session && state.session.mode === 'game') showGameQuestion();
+}
+// 편집모달 오른쪽 위 "✕" 버튼: 문제를 문제은행에서 완전히 삭제한다.
+// 학습·게임모드 진행 중에 열었던 경우, 같은 자리(인덱스)에 있던 문제를 큐에서 함께 제거해
+// 자동으로 "다음 문제"가 그 자리를 채우게 한 뒤 이어서 보여준다(취소/저장과 달리 같은 문제로 안 돌아감).
+// 문제은행 관리 화면에서 연 경우에는 원래 관리 화면으로 돌아간다.
+function deleteEditModalQuestion() {
+  if (state.editingId == null) return;
+  if (!confirm('이 문제를 삭제할까요?')) return;
+  var deletedId = state.editingId;
+  state.qbank = state.qbank.filter(function (q) { return q.id !== deletedId; });
+  saveQBank(state.qbank);
+  state.editingId = null;
+  el('#edit-modal').classList.add('hidden');
+
+  var mode = state.editReturnMode;
+  state.editReturnMode = null;
+
+  if (mode === 'study' && state.session && state.session.mode === 'study') {
+    clearStudyTimer();
+    var si = state.session.queue.indexOf(deletedId);
+    if (si !== -1) state.session.queue.splice(si, 1);
+    if (state.session.index >= state.session.queue.length) finishStudySession();
+    else showStudyQuestion();
+  } else if (mode === 'game' && state.session && state.session.mode === 'game') {
+    var gi = state.session.queue.indexOf(deletedId);
+    if (gi !== -1) state.session.queue.splice(gi, 1);
+    if (state.session.index >= state.session.queue.length) finishGameSession();
+    else showGameQuestion();
+  } else {
+    renderBankScreen(); renderMain();
   }
 }
 function saveEditModal() {
@@ -1881,6 +1941,7 @@ function bindEvents() {
   el('#study-keep-btn').addEventListener('click', handleStudyKeep);
 
   el('#game-replay-btn').addEventListener('click', function (e) { e.stopPropagation(); replayGameTTS(); });
+  el('#game-edit-btn').addEventListener('click', function (e) { e.stopPropagation(); openEditModalFromGame(); });
   el('#game-hint-btn').addEventListener('click', useGameHint);
   el('#game-submit-btn').addEventListener('click', submitGameAnswer);
   el('#game-answer-input').addEventListener('keydown', function (e) { if (e.key === 'Enter') submitGameAnswer(); });
@@ -1903,6 +1964,7 @@ function bindEvents() {
 
   el('#edit-cancel-btn').addEventListener('click', closeEditModal);
   el('#edit-save-btn').addEventListener('click', saveEditModal);
+  el('#edit-delete-btn').addEventListener('click', deleteEditModalQuestion);
 
   els('.theme-swatch').forEach(function (btn) {
     btn.addEventListener('click', function () {

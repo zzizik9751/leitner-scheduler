@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>전기철도기사 실기 모의고사 출제기</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['\\(','\\)'], ['$','$']], displayMath: [['\\[','\\]'], ['$$','$$']], processEscapes: true },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'맑은 고딕','Apple SD Gothic Neo','Malgun Gothic',Dotum,sans-serif;font-size:14px;background:#e4e8f0;color:#222;min-height:100vh}
+.screen{display:none;min-height:100vh}
+.screen.active{display:block}
+#screen-load.active{display:flex;align-items:center;justify-content:center;flex-direction:column;background:linear-gradient(150deg,#1a3263 0%,#2a5298 60%,#1a4a8a 100%)}
+
+/* LOAD */
+.load-card{background:#fff;border-radius:14px;padding:40px 44px;width:520px;max-width:94vw;box-shadow:0 12px 48px rgba(0,0,0,.35)}
+.load-logo{text-align:center;margin-bottom:6px;font-size:26px;font-weight:900;color:#1a3263;letter-spacing:-1px}
+.load-logo span{color:#4a90d9}
+.load-sub{text-align:center;color:#888;font-size:12px;margin-bottom:26px}
+.drop-zone{border:2.5px dashed #4a90d9;border-radius:10px;padding:34px 20px;text-align:center;cursor:pointer;background:#f7f9ff;transition:.2s}
+.drop-zone:hover,.drop-zone.drag-over{background:#eef2ff;border-color:#1a3263}
+.dz-icon{font-size:42px;margin-bottom:10px}
+.dz-text{color:#444;font-size:15px;font-weight:bold;margin-bottom:6px}
+.dz-sub{color:#aaa;font-size:12px}
+#file-input{display:none}
+.load-note{text-align:center;margin-top:16px;color:#aaa;font-size:11px;line-height:1.8}
+
+/* BUTTONS */
+.btn-primary{background:#1a3263;color:#fff;border:none;border-radius:7px;padding:10px 24px;font-size:14px;cursor:pointer;font-family:inherit;font-weight:bold;transition:.2s}
+.btn-primary:hover{background:#2a5298}
+.btn-secondary{background:#e8eaf0;color:#333;border:1.5px solid #ccc;border-radius:7px;padding:10px 20px;font-size:14px;cursor:pointer;font-family:inherit;transition:.2s}
+.btn-secondary:hover{background:#d5d8e0}
+.btn-mini{background:#eef2ff;color:#1a3263;border:1.3px solid #b8c6e8;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:bold;cursor:pointer;font-family:inherit;transition:.15s}
+.btn-mini:hover{background:#dde5f8}
+.btn-green{background:#2e7d4f;color:#fff;border:none;border-radius:7px;padding:10px 20px;font-size:14px;cursor:pointer;font-family:inherit;font-weight:bold}
+.btn-green:hover{background:#256a42}
+
+/* OVERLAY / MODAL */
+.loading-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:9999;flex-direction:column;color:#fff}
+.loading-overlay.active{display:flex}
+.spinner{width:50px;height:50px;border:4px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;margin-bottom:14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:1000}
+.modal-overlay.active{display:flex}
+.modal-box{background:#fff;border-radius:14px;padding:32px;width:440px;max-width:94vw;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.35)}
+.modal-title{font-size:18px;font-weight:bold;color:#1a3263;margin-bottom:12px}
+.modal-text{color:#555;margin-bottom:24px;line-height:1.7;font-size:14px;white-space:pre-line}
+.modal-actions{display:flex;gap:12px;justify-content:center}
+
+/* SETUP */
+#screen-setup{padding:24px}
+.setup-container{max-width:1000px;margin:0 auto}
+.card{background:#fff;border-radius:12px;padding:24px 28px;box-shadow:0 2px 14px rgba(0,0,0,.09);margin-bottom:18px}
+.screen-title{font-size:20px;font-weight:900;color:#1a3263;margin-bottom:6px}
+.screen-desc{color:#777;font-size:12.5px;margin-bottom:0;line-height:1.7}
+.section-title{font-size:15px;font-weight:bold;color:#333;margin-bottom:14px;padding-bottom:8px;border-bottom:2.5px solid #e4e8f0;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:820px){.grid2{grid-template-columns:1fr}}
+.row{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.row label.l{min-width:150px;font-size:13px;font-weight:bold;color:#444}
+.row input[type=number],.row input[type=text],.row select{padding:6px 9px;border:1.5px solid #ccc;border-radius:6px;font-size:13px;font-family:inherit}
+.row input[type=number]{width:72px;text-align:center}
+.hint{font-size:11.5px;color:#888;line-height:1.6}
+.tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.tbl th{background:#1a3263;color:#fff;padding:8px 8px;text-align:center;font-weight:normal;white-space:nowrap}
+.tbl td{padding:7px 8px;border-bottom:1px solid #eee;text-align:center;vertical-align:middle}
+.tbl td.left{text-align:left}
+.tbl input[type=number]{width:60px;padding:4px 6px;border:1.5px solid #ccc;border-radius:5px;text-align:center;font-size:12.5px}
+.chip{display:inline-block;padding:2px 8px;border-radius:10px;background:#eef2ff;color:#1a3263;font-size:11.5px;font-weight:bold}
+.chip.p4{background:#e8f5e9;color:#256a42}
+.chip.p5{background:#eef2ff;color:#1a3263}
+.chip.p6{background:#fdecea;color:#b0362b}
+.status-ok{color:#256a42;font-weight:bold}
+.status-bad{color:#c0392b;font-weight:bold}
+.stat-box{background:#f7f9ff;border:1.5px solid #dee3f0;border-radius:8px;padding:12px 14px;font-size:12.5px;line-height:1.8}
+.bar-row{display:flex;align-items:center;gap:8px;font-size:11.5px;margin:2px 0}
+.bar-row .nm{width:150px;text-align:right;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-row .bar{height:11px;background:#4a90d9;border-radius:3px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+#result-card{display:none}
+#result-card.show{display:block}
+.qtxt{max-width:340px;text-align:left;font-size:12px;color:#444}
+
+/* PREVIEW */
+#screen-preview{background:#9199a8}
+.preview-toolbar{position:sticky;top:0;z-index:20;background:#1a3263;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;gap:14px;box-shadow:0 2px 10px rgba(0,0,0,.2);flex-wrap:wrap}
+.preview-toolbar .tb-title{font-weight:bold;font-size:14px;flex-shrink:0}
+.preview-toolbar .tb-hint{font-size:11px;color:#cfe0ff;flex:1;min-width:220px}
+.preview-toolbar .tb-actions{display:flex;gap:10px;flex-shrink:0}
+.tb-btn{padding:8px 18px;border:none;border-radius:6px;font-size:13px;font-weight:bold;cursor:pointer;font-family:inherit}
+.tb-btn.print{background:#3a8a8a;color:#fff}
+.tb-btn.back{background:#e8eaf0;color:#333}
+#pages-container{padding:22px 0 40px}
+.a4-page{position:relative;width:210mm;min-height:297mm;margin:0 auto 22px;background:#fff;box-shadow:0 4px 18px rgba(0,0,0,.3);padding:14mm 12mm;box-sizing:border-box}
+.page-footer{position:absolute;left:12mm;right:12mm;bottom:6mm;display:flex;justify-content:space-between;align-items:center;gap:8px;border-top:1px solid #999;padding-top:2mm;font-size:9.5px;color:#666}
+.page-footer .pf-mid{text-align:center;flex:1}
+.page-footer .pf-pg{font-weight:bold;color:#222;min-width:48px;text-align:right}
+.page-footer .pf-l{min-width:120px}
+.brand{margin-top:14px;text-align:center;font-size:11.5px;color:#aab}
+.brand a{color:#7fb3f0;text-decoration:none}
+#screen-setup .brand{color:#889}
+#screen-setup .brand a{color:#2a5298}
+.page-header{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #111;padding-bottom:6px;margin-bottom:12px}
+.page-header .ph-title{font-size:12px;font-weight:900;color:#111}
+.page-header .ph-meta{font-size:11px;color:#777}
+.intro{border:1.5px solid #111;padding:8px 12px;margin-bottom:12px;display:flex;justify-content:space-between;gap:14px;font-size:12.5px;align-items:center}
+.intro b{font-size:15px}
+.a4-cols{display:flex;gap:9mm;align-items:flex-start}
+.a4-col{flex:1;min-width:0}
+.q-block{break-inside:avoid;margin-bottom:20px;padding-bottom:10px;border-bottom:1px dashed #ccc;font-size:12px;line-height:1.6}
+.q-headline{display:flex;align-items:baseline;gap:6px;margin-bottom:3px;flex-wrap:wrap}
+.q-num{font-weight:900;font-size:13px;color:#111}
+.q-pts{font-size:11.5px;font-weight:bold;color:#111}
+.q-cls{font-size:10.5px;color:#666;font-family:monospace}
+.q-freq{font-size:10.5px;color:#888}
+.q-front{margin:2px 0 6px;color:#111;word-break:keep-all;font-size:12px}
+.ans-space{margin-top:6px;border:1px solid #bbb;border-radius:3px;background-image:repeating-linear-gradient(to bottom,transparent 0,transparent 7.4mm,#e2e2e2 7.4mm,#e2e2e2 7.7mm)}
+.ans-line{margin-top:4px;padding:6px 9px;border:1.5px solid #c0392b;border-radius:4px;color:#c0392b;font-size:12px;line-height:1.55}
+.ans-line .lb{font-weight:bold;margin-right:4px}
+.hint-box,.exp-box{margin-top:6px;padding:6px 9px;border-radius:5px;font-size:11.5px;line-height:1.55;overflow:hidden}
+.hint-box{border:1.3px solid #e6b800;color:#6b5600}
+.exp-box{border:1.3px solid #7fb3f0;color:#1a3a63}
+.q-block img{max-width:80%;height:auto}
+.q-front ul,.q-front ol,.hint-box ul,.hint-box ol,.exp-box ul,.exp-box ol,.ans-line ul,.ans-line ol{padding-left:1.3em;margin:3px 0}
+.score-tbl{width:100%;border-collapse:collapse;font-size:11px}
+.score-tbl th,.score-tbl td{border:1px solid #888;padding:2px 4px;text-align:center}
+.score-tbl th{background:#eee}
+.score-title{font-weight:900;font-size:12.5px;margin-bottom:5px}
+
+.font-noto-serif{font-family:'Noto Serif KR',serif !important}
+.font-noto-sans{font-family:'Noto Sans KR','Apple SD Gothic Neo',sans-serif !important}
+.font-malgun{font-family:'맑은 고딕','Malgun Gothic',sans-serif !important}
+
+@page{size:A4;margin:0}
+@media print{
+  .no-print{display:none !important}
+  body,#screen-preview{background:#fff}
+  #pages-container{padding:0}
+  .a4-page{box-shadow:none;margin:0 auto;break-after:page;width:auto;min-height:0;height:296mm;overflow:hidden}
+  .a4-page:last-child{break-after:auto}
+}
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loading-overlay"><div class="spinner"></div><div id="loading-msg">처리 중...</div></div>
+<div class="modal-overlay" id="modal">
+  <div class="modal-box">
+    <div class="modal-title" id="modal-title">확인</div>
+    <div class="modal-text" id="modal-text"></div>
+    <div class="modal-actions" id="modal-actions"></div>
+  </div>
+</div>
+
+<!-- SCREEN 1 : LOAD -->
+<div class="screen active" id="screen-load">
+  <div class="load-card">
+    <div class="load-logo">📝 실기 <span>모의고사 출제기</span></div>
+    <div class="load-sub">전기철도기사 실기(필답형) · 분류 중복 없는 20문항 / 100점 자동 출제</div>
+    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+      <div class="dz-icon">📂</div>
+      <div class="dz-text">실기 Anki 덱 파일 불러오기</div>
+      <div class="dz-sub">드래그 &amp; 드롭하거나 클릭 · .apkg (노트유형: 기사실기)</div>
+    </div>
+    <input type="file" id="file-input" accept=".apkg">
+    <div class="load-note">⚠️ 인터넷 연결 필요 (라이브러리 CDN 로드)<br>🔒 파일은 브라우저 안에서만 처리되며 외부로 전송되지 않습니다</div>
+  </div>
+  <div class="brand" style="color:#cfe0ff">Created by <a href="https://blog.naver.com/zzizik" target="_blank">zzizik</a>, with Claude AI. / Thanks to <a href="http://hwjy.co.kr/" target="_blank">HWJY Co., Ltd.</a></div>
+</div>
+
+<!-- SCREEN 2 : SETUP -->
+<div class="screen" id="screen-setup">
+  <div class="setup-container">
+
+    <div class="card">
+      <div class="screen-title">📝 실기 모의고사 출제 설정</div>
+      <div class="screen-desc" id="deck-summary"></div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="section-title">① 문항 수 · 배점표</div>
+        <div class="row"><label class="l">총 문항 수</label><input type="number" id="cfg-n" value="20" min="1" max="60" onchange="onNTChange()"></div>
+        <div class="row"><label class="l">만점</label><input type="number" id="cfg-t" value="100" min="1" max="1000" onchange="onNTChange()"> <span class="hint">점</span></div>
+        <table class="tbl" id="pts-table">
+          <thead><tr><th>유형</th><th>배점</th><th>풀 문항 수</th><th>최대 출제</th></tr></thead>
+          <tbody id="pts-tbody"></tbody>
+        </table>
+        <div class="hint" style="margin-top:8px">‘최대 출제’는 한 세트에서 그 유형이 나올 수 있는 상한입니다(비우면 제한 없음). 배점을 바꾸면 구성이 자동 재계산됩니다.</div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">② 배점군별 문항 구성 <button class="btn-mini" onclick="autoCompose(true)">⚖️ 자동 균형 구성</button></div>
+        <table class="tbl">
+          <thead><tr><th>배점</th><th>해당 유형</th><th>문항 수</th><th>소계</th></tr></thead>
+          <tbody id="grp-tbody"></tbody>
+        </table>
+        <div style="margin-top:10px" id="grp-status"></div>
+        <div class="hint" style="margin-top:6px">기본 배점(단답 4 · 계산/선택 5 · 다답/완성/서술 6)에서는 <b>4점 문항 수 = 6점 문항 수</b>일 때 20문항이 항상 100점이 됩니다.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">③ 분류 · 출제 조건</div>
+      <div class="grid2">
+        <div>
+          <div class="row"><label class="l">동일 분류 중복</label><span class="status-ok">금지 (소분류 코드 기준, 고정)</span></div>
+          <div class="row"><label class="l">대분류당 최대 문항</label><input type="number" id="cfg-major" value="5" min="1" max="20"> <span class="hint">예: A-Ⅲ(전차선로)에서 최대 몇 문항</span></div>
+          <div class="row"><label class="l">분류 선택 가중치</label>
+            <select id="cfg-weight">
+              <option value="sqrt" selected>문항 수의 제곱근 비례 (권장·절충)</option>
+              <option value="uniform">균등 (모든 분류 동일 확률)</option>
+              <option value="linear">문항 수 비례 (많은 분류 우선)</option>
+            </select></div>
+          <div class="row"><label class="l">전기철도공학(A) 문항 수</label>
+            <select id="cfg-axis" onchange="document.getElementById('cfg-axis-n').disabled=this.value!=='fix'">
+              <option value="auto" selected>자동(무작위)</option><option value="fix">직접 지정</option></select>
+            <input type="number" id="cfg-axis-n" value="12" min="0" max="60" disabled>
+            <span class="hint">나머지는 구조물공학(B)</span></div>
+        </div>
+        <div>
+          <div class="row"><label class="l">출제 기록 문항 제외</label>
+            <label><input type="checkbox" id="cfg-hist" checked> 이전에 저장한 세트의 문항 제외</label></div>
+          <div class="row"><label class="l">출제 기록</label><span id="hist-count" class="hint"></span>
+            <button class="btn-mini" onclick="clearHistory()">기록 초기화</button></div>
+          <div class="row"><label class="l">문제 배열</label>
+            <select id="cfg-order"><option value="code" selected>분류 순 (전기철도공학 → 구조물공학)</option><option value="random">무작위</option></select></div>
+          <div class="row"><label class="l">난수 시드</label><input type="text" id="cfg-seed" placeholder="비우면 매번 무작위" style="width:170px"></div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn-primary" onclick="doGenerate()">🎲 출제하기</button>
+        <button class="btn-secondary" onclick="document.getElementById('json-input').click()">📂 세트 JSON 불러오기</button>
+        <input type="file" id="json-input" accept=".json" style="display:none">
+        <button class="btn-secondary" onclick="showScreen('load')">← 덱 다시 선택</button>
+      </div>
+    </div>
+
+    <div class="card" id="result-card">
+      <div class="section-title">④ 출제 결과 <span id="result-meta" class="hint"></span></div>
+      <div class="grid2" style="margin-bottom:14px">
+        <div class="stat-box" id="result-stat"></div>
+        <div class="stat-box" id="result-dist"></div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="tbl">
+          <thead><tr><th>No</th><th>분류</th><th>유형</th><th>배점</th><th>문제(요약)</th><th>교체</th></tr></thead>
+          <tbody id="result-tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="section-title" style="margin-top:22px">⑤ 인쇄 옵션</div>
+      <div class="grid2">
+        <div>
+          <div class="row"><label class="l">단 구성</label>
+            <select id="opt-cols"><option value="2" selected>2단</option><option value="1">1단</option></select></div>
+          <div class="row"><label class="l">글꼴</label>
+            <select id="opt-font"><option value="noto-sans" selected>Noto Sans KR (고딕)</option><option value="noto-serif">Noto Serif KR (명조)</option><option value="malgun">맑은 고딕</option></select></div>
+          <div class="row"><label class="l">답안 작성 여백</label>
+            <select id="opt-space"><option value="0">없음</option><option value="1" selected>보통</option><option value="1.4">넉넉하게</option></select></div>
+        </div>
+        <div>
+          <div class="row"><label class="l">시험지에 분류 표시</label><label><input type="checkbox" id="opt-showcls"> 분류 코드 표시(실전에서는 숨김 권장)</label></div>
+          <div class="row"><label class="l">해설지 구성</label>
+            <label><input type="checkbox" id="opt-hint" checked> 힌트</label>
+            <label><input type="checkbox" id="opt-exp" checked> 해설</label></div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn-primary" onclick="openDoc('both')" style="background:#b0362b">📑 시험지 + 정답·해설지 한 번에 (PDF)</button>
+        <button class="btn-primary" onclick="openDoc('exam')">📄 시험지만</button>
+        <button class="btn-green" onclick="openDoc('key')">📗 정답·해설지만 (채점표 포함)</button>
+        <button class="btn-secondary" onclick="saveJson()">💾 세트 JSON 저장</button>
+        <button class="btn-secondary" onclick="saveHistory()">✔ 출제 기록에 저장</button>
+        <button class="btn-secondary" onclick="doGenerate()">🔁 전체 다시 출제</button>
+      </div>
+    </div>
+    <div class="brand">Created by <a href="https://blog.naver.com/zzizik" target="_blank">zzizik</a>, with Claude AI. / Thanks to <a href="http://hwjy.co.kr/" target="_blank">HWJY Co., Ltd.</a></div>
+  </div>
+</div>
+
+<!-- SCREEN 3 : PREVIEW -->
+<div class="screen" id="screen-preview">
+  <div class="preview-toolbar no-print">
+    <div class="tb-title" id="pv-title">미리보기</div>
+    <div class="tb-hint">🖨️ 인쇄 대화상자에서 “배경 그래픽”을 켜고, PDF로 저장하려면 대상에서 PDF 저장(Microsoft Print to PDF)을 선택하세요. ‘한 번에’ 출력은 시험지 뒤에 정답·해설지가 이어집니다.</div>
+    <div class="tb-actions">
+      <button class="tb-btn back" onclick="showScreen('setup')">← 설정으로</button>
+      <button class="tb-btn print" onclick="window.print()">🖨️ 인쇄 / PDF로 저장</button>
+    </div>
+  </div>
+  <div id="pages-container"></div>
+  <div id="measure-box" style="position:absolute;left:-9999px;top:0;visibility:hidden"></div>
+</div>
+
+<script>
+/* ================================================================
+   전기철도기사 실기 모의고사 출제기
+   - Anki(.apkg, 노트유형 "기사실기") → 분류 중복 없는 N문항 / 만점 T점 세트 자동 출제
+   - 시험지(문제+배점+답안여백) / 정답·해설지(채점표 포함) A4 인쇄
+================================================================ */
+
+const CLS_NAMES = {"A":{"mid":{"Ⅰ":"전기철도의 개요","Ⅱ":"전철 수, 변전 설비","Ⅲ":"전차선로","Ⅳ":"전기차","Ⅴ":"전기철도의 특성 및 영향","Ⅵ":"계통 보호방식 및 설비"},"leaf":{"Ⅰ·11":"전기철도의 정의","Ⅰ·12":"전기철도의 구성","Ⅰ·13":"전기철도의 효과","Ⅰ·14":"전기철도의 발전","Ⅰ·21":"전기철도방식의 선정조건","Ⅰ·22":"전기방식에 의한 분류 및 특성","Ⅰ·23":"전기차 형태에 의한 분류 및 특성","Ⅰ·24":"운전속도에 의한 분류 및 특성","Ⅰ·25":"수송목적에 의한 분류 및 특성","Ⅰ·31":"선로","Ⅰ·32":"철도 신호","Ⅰ·33":"철도 차량","Ⅱ·11":"가공선로","Ⅱ·12":"지중선로","Ⅱ·21":"급전방식 및 급전계통의 구성","Ⅱ·22":"변전소 등의 종류","Ⅱ·23":"변전소 등의 배치","Ⅱ·24":"변전소 등의 설비","Ⅱ·25":"변전소 등의 감시제어","Ⅲ·11":"전차선로의 구성","Ⅲ·12":"전차선로의 가선방식","Ⅲ·13":"전차선로의 조가방식","Ⅲ·21":"급전선, 전차선, 조가선, 보호선 및 귀선로","Ⅲ·22":"진동방지, 곡선당김 장치","Ⅲ·23":"건넘선장치","Ⅲ·24":"구분장치","Ⅲ·25":"인류장치","Ⅲ·26":"흐름방지장치","Ⅲ·27":"가동브래킷","Ⅲ·28":"장력조정장치","Ⅲ·29":"기타 전차선로 관련 장치","Ⅲ·31":"강체전차선로의 구성 및 특성","Ⅲ·32":"직류강체전차선로 설비","Ⅲ·33":"교류강체전차선로 설비","Ⅲ·34":"강체전차선로의 해석","Ⅲ·35":"강체전차선로의 설계","Ⅲ·41":"제3궤조의 구성 및 특성","Ⅲ·42":"제3궤조 설비","Ⅲ·43":"제3궤조의 해석","Ⅳ·11":"직류전기차","Ⅳ·12":"교류전기차","Ⅳ·13":"직/교 겸용차","Ⅳ·21":"집전장치","Ⅳ·22":"전력변환장치","Ⅳ·23":"구동장치","Ⅳ·24":"제동장치","Ⅳ·31":"집중방식","Ⅳ·32":"분산방식","Ⅳ·41":"운전속도","Ⅳ·42":"열차저항","Ⅳ·43":"견인력","Ⅳ·44":"전기차의 특성곡선","Ⅳ·45":"운전선도","Ⅴ·11":"전기적 특성","Ⅴ·12":"기계적 특성","Ⅴ·21":"팬터그래프와 전차선의 상호작용","Ⅴ·22":"전압강하","Ⅴ·23":"전류용량 및 온도상승","Ⅴ·24":"순환전류의 발생, 영향 및 대책","Ⅴ·25":"귀선로 및 궤도의 전류와 전압","Ⅴ·26":"전식 및 전식 방지","Ⅴ·27":"전자유도 및 유도방지","Ⅵ·11":"비절연보호선","Ⅵ·12":"차폐선","Ⅵ·13":"매설접지","Ⅵ·21":"피뢰기 및 피뢰설비","Ⅵ·22":"계전보호방식 및 설비","Ⅵ·23":"구조물 상호간의 이격","Ⅵ·24":"기타 건축물과의 이격"}},"B":{"mid":{"Ⅰ":"전기철도 구조물의 개요","Ⅱ":"힘과 구조물","Ⅲ":"응력도와 변형도","Ⅳ":"부재단면의 성질","Ⅴ":"전기철도구조물 설비","Ⅵ":"구조물의 설계"},"leaf":{"Ⅰ·11":"구조물의 정의","Ⅰ·12":"전철 구조물의 종류","Ⅰ·13":"전철 구조물의 특성","Ⅰ·21":"기온","Ⅰ·22":"바람","Ⅰ·23":"눈","Ⅰ·31":"하중의 종류","Ⅰ·32":"하중의 적용","Ⅰ·33":"수평, 수직하중","Ⅰ·41":"구조용 강재","Ⅰ·42":"강재의 단면형상과 표시 방법","Ⅱ·11":"힘의 표시방법과 힘의 3요소","Ⅱ·12":"힘의 모멘트","Ⅱ·13":"우력과 우력 모멘트","Ⅱ·21":"한 점에 작용하는 두 힘의 합성과 분해","Ⅱ·22":"한 점에 작용하는 여러 힘의 합성과 분해","Ⅱ·23":"동일점에 작용하지 않는 여러 힘의 합성과 분해","Ⅱ·24":"작용선이 평행한 힘의 합성","Ⅱ·31":"힘의 평형조건","Ⅱ·32":"여러 힘이 동일점에 작용할 경우의 힘의 평형","Ⅱ·33":"여러 힘이 동일점에 작용하지 않을 경우의 힘의 평형","Ⅱ·34":"라미의 정리","Ⅲ·11":"응력의 종류","Ⅲ·12":"응력 산정법","Ⅲ·21":"변형률의 종류","Ⅲ·22":"응력도와 변형도의 관계","Ⅲ·31":"영계수","Ⅲ·32":"횡 탄성계수","Ⅲ·33":"체적 탄성계수","Ⅲ·34":"푸아송 비","Ⅲ·41":"허용응력과 안전율","Ⅲ·42":"단면설계","Ⅳ·11":"단면 1차 모멘트","Ⅳ·12":"도심","Ⅳ·13":"파프스의 정리","Ⅳ·21":"단면 2차 모멘트","Ⅳ·22":"단면 2차 반지름","Ⅳ·23":"단면계수","Ⅳ·31":"단면 2차 극 모멘트","Ⅴ·11":"지지물의 적용기준","Ⅴ·12":"전철주","Ⅴ·13":"전철주 기초","Ⅴ·21":"빔(Beam)","Ⅴ·22":"완금(腕金)","Ⅴ·23":"하수강, 평행틀","Ⅴ·24":"전주 대용물","Ⅴ·31":"지선","Ⅴ·32":"지주","Ⅴ·33":"보호망","Ⅴ·34":"보호선","Ⅴ·35":"애자","Ⅴ·41":"아연도금의 적용구분","Ⅴ·42":"부식성 유해가스","Ⅴ·43":"염진해","Ⅴ·44":"이종금속의 접속","Ⅵ·11":"부재","Ⅵ·12":"허용 응력도","Ⅵ·13":"단일재의 강도계산","Ⅵ·14":"H형, I형 강주의 강도계산","Ⅵ·15":"조합철주의 강도계산","Ⅵ·16":"트러스 구조재의 강도계산","Ⅵ·17":"볼트접합 및 용접","Ⅵ·18":"철주 각부(脚部)의 설계","Ⅵ·21":"단독주의 응력계산","Ⅵ·22":"철주의 휨","Ⅵ·23":"철주의 비틀림","Ⅵ·31":"문형 지지물의 구성","Ⅵ·32":"문형 지지물의 응력계산","Ⅵ·41":"지내력의 측정","Ⅵ·42":"기초의 저항 모멘트 계산","Ⅵ·43":"지지력","Ⅵ·51":"지선의 설계하중","Ⅵ·52":"지선의 강도계산","Ⅵ·53":"지선용 근가의 강도계산"}}};
+const AXIS_NAME = { A:'전기철도공학', B:'전기철도구조물공학' };
+const ROMAN = ['Ⅰ','Ⅱ','Ⅲ','Ⅳ','Ⅴ','Ⅵ'];
+const TYPES = ['단답형','다답형','완성형','서술형','계산형','선택형'];
+const DEFAULT_PTS  = { '단답형':4, '다답형':6, '완성형':6, '서술형':6, '계산형':5, '선택형':5 };
+const DEFAULT_CAPS = { '서술형':3, '완성형':1, '선택형':1 };
+const ANS_SPACE_MM = { '단답형':16, '다답형':34, '완성형':26, '서술형':52, '계산형':62, '선택형':14 };
+const EXCLUDE_TAGS = ['중복','재분류확인필요'];
+const HIST_KEY = 'rwsMockUsedIds_v1';
+
+const S = {
+  notes: [], modelMap: {}, imgMap: {}, mid: null, idx: null,
+  pool: [], excl: {}, cfg: null,
+  picks: [],            // [{card, pts}]
+  seed: '', lastCfg: null
+};
+
+/* ---------- 유틸 ---------- */
+function $(id){ return document.getElementById(id); }
+function showScreen(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); $('screen-'+id).classList.add('active'); window.scrollTo(0,0); }
+function showLoading(msg){ $('loading-msg').textContent = msg||'처리 중...'; $('loading-overlay').classList.add('active'); }
+function hideLoading(){ $('loading-overlay').classList.remove('active'); }
+function showModal(title,text,btns){
+  $('modal-title').textContent=title; $('modal-text').textContent=text;
+  const ac=$('modal-actions'); ac.innerHTML='';
+  (btns||[{label:'확인',cls:'btn-primary'}]).forEach(b=>{
+    const el=document.createElement('button'); el.className=b.cls||'btn-secondary'; el.textContent=b.label;
+    el.onclick=()=>{ $('modal').classList.remove('active'); b.fn&&b.fn(); }; ac.appendChild(el);
+  });
+  $('modal').classList.add('active');
+}
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function cleanText(html){ if(!html) return ''; const d=document.createElement('div'); d.innerHTML=html; return (d.textContent||'').replace(/\u00a0/g,' ').trim(); }
+function preprocessLatex(html){
+  if(!html) return html;
+  html=html.replace(/\[latex\]([\s\S]*?)\[\/latex\]/gi,'\\($1\\)');
+  html=html.replace(/\[\$\]([\s\S]*?)\[\/\$\]/gi,'\\[$1\\]');
+  return html;
+}
+function cleanHtml(html){
+  if(!html) return '';
+  html=preprocessLatex(html);
+  let out = (typeof DOMPurify!=='undefined') ? DOMPurify.sanitize(html,{USE_PROFILES:{html:true}})
+          : html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi,'').replace(/on\w+="[^"]*"/gi,'');
+  if(Object.keys(S.imgMap).length){
+    out = out.replace(/<img([^>]*?)src="([^"]*)"([^>]*?)>/gi,(m,pre,src,post)=>{
+      const fname=src.replace(/^.*[\\/]/,''); const url=S.imgMap[src]||S.imgMap[fname];
+      return url ? `<img${pre}src="${url}"${post} style="max-width:80%;height:auto;display:block;margin:4px 0;">` : m;
+    });
+  }
+  return out;
+}
+function hasContent(html){ if(!html) return false; return cleanText(html).length>0 || /<img/i.test(html); }
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function hashSeed(s){ let h=2166136261; for(const ch of String(s)){ h^=ch.charCodeAt(0); h=Math.imul(h,16777619);} return h>>>0; }
+function shuffle(a,rng){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(rng()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function pickWeighted(items,wfn,rng){
+  let tot=0; const ws=items.map(i=>{ const w=wfn(i); tot+=w; return w; });
+  let r=rng()*tot; for(let i=0;i<items.length;i++){ r-=ws[i]; if(r<=0) return items[i]; }
+  return items[items.length-1];
+}
+function leafOrder(c){ const [r,n]=c.leaf.split('·'); return ROMAN.indexOf(r)*1000+parseInt(n); }
+function loadHist(){ try{ return new Set(JSON.parse(localStorage.getItem(HIST_KEY)||'[]')); }catch(e){ return new Set(); } }
+function storeHist(set){ try{ localStorage.setItem(HIST_KEY, JSON.stringify([...set])); }catch(e){} }
+
+/* ---------- 파일 로드 ---------- */
+(function initDrop(){
+  const dz=$('drop-zone'), fi=$('file-input');
+  dz.addEventListener('dragover',e=>{ e.preventDefault(); dz.classList.add('drag-over'); });
+  dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
+  dz.addEventListener('drop',e=>{ e.preventDefault(); dz.classList.remove('drag-over'); const f=e.dataTransfer.files[0]; if(f) handleFile(f); });
+  fi.addEventListener('change',e=>{ if(e.target.files[0]) handleFile(e.target.files[0]); fi.value=''; });
+  $('json-input').addEventListener('change',async e=>{ const f=e.target.files[0]; e.target.value=''; if(f) loadJson(f); });
+})();
+
+async function handleFile(file){
+  if(!/\.apkg$/i.test(file.name)){ showModal('파일 오류','.apkg 파일만 지원됩니다.'); return; }
+  showLoading('Anki 덱 압축 해제 중...');
+  try{
+    const zip=await JSZip.loadAsync(file);
+    showLoading('이미지 추출 중...');
+    S.imgMap={}; let manifest={};
+    const mf=zip.file('media');
+    if(mf){ try{ manifest=JSON.parse(await mf.async('string')); }catch(e){} }
+    const mimeMap={png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',gif:'image/gif',svg:'image/svg+xml',webp:'image/webp',bmp:'image/bmp'};
+    for(const zn of Object.keys(zip.files)){
+      const ze=zip.files[zn]; if(ze.dir) continue;
+      const real=manifest[zn]||zn; const ext=(real.split('.').pop()||'').toLowerCase();
+      if(!mimeMap[ext]) continue;
+      try{
+        const blob=new Blob([await ze.async('blob')],{type:mimeMap[ext]});
+        const url=URL.createObjectURL(blob); S.imgMap[real]=url; if(zn!==real) S.imgMap[zn]=url;
+      }catch(e){}
+    }
+    let buf=null;
+    for(const n of ['collection.anki21','collection.anki2']){ const f=zip.file(n); if(f){ buf=await f.async('arraybuffer'); break; } }
+    if(!buf) throw new Error('.apkg 안에서 collection DB를 찾을 수 없습니다.');
+    showLoading('데이터베이스 분석 중...');
+    const SQL=await initSqlJs({ locateFile:f=>`https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/${f}` });
+    const db=new SQL.Database(new Uint8Array(buf));
+    parseDB(db);
+    detectModel();
+    buildPool();
+    initSetup();
+    hideLoading();
+    showScreen('setup');
+  }catch(e){
+    hideLoading(); console.error(e);
+    showModal('오류', e.message||String(e));
+  }
+}
+
+function parseDB(db){
+  let models={};
+  try{ const r=db.exec('SELECT models FROM col LIMIT 1'); if(r.length) models=JSON.parse(r[0].values[0][0]||'{}'); }catch(e){}
+  S.modelMap={};
+  for(const [id,m] of Object.entries(models)){
+    if(!m.flds) continue;
+    S.modelMap[id]={ name:m.name||'', fields:m.flds.slice().sort((a,b)=>(a.ord||0)-(b.ord||0)).map(f=>f.name||'') };
+  }
+  const r=db.exec('SELECT id,mid,flds,tags FROM notes');
+  S.notes=[];
+  if(r.length){
+    S.notes=r[0].values.map(([id,mid,flds,tags])=>({
+      id:String(id), mid:String(mid), f:(flds||'').split('\x1f'),
+      tags:(tags||'').trim().split(/\s+/).filter(Boolean)
+    }));
+  }
+  if(!S.notes.length) throw new Error('노트가 없는 덱입니다.');
+}
+
+function detectModel(){
+  const need={ q:/^(front|문제)$/i, ans:/^(정답|answer)$/i, cls:/^분류$/, type:/^유형$/ };
+  let best=null, bestN=-1;
+  for(const [mid,m] of Object.entries(S.modelMap)){
+    const idx={};
+    let ok=true;
+    for(const [k,re] of Object.entries(need)){ const i=m.fields.findIndex(f=>re.test(f.trim())); if(i<0){ ok=false; break; } idx[k]=i; }
+    if(!ok) continue;
+    const opt=(re)=>m.fields.findIndex(f=>re.test(f.trim()));
+    idx.hint=opt(/^(힌트|hint)$/i); idx.exp=opt(/^(해설|explain)/i); idx.freq=opt(/^빈도$/); idx.round=opt(/^회차$/);
+    const n=S.notes.filter(x=>x.mid===mid).length;
+    if(n>bestN){ best=mid; bestN=n; S.idx=idx; }
+  }
+  if(best===null) throw new Error('필드 [Front/문제, 정답, 분류, 유형]을 가진 노트유형을 찾지 못했습니다.\n(실기 덱: 노트유형 “기사실기”)');
+  S.mid=best;
+}
+
+function buildPool(){
+  const I=S.idx; S.pool=[];
+  S.excl={ dup:0, recls:0, noq:0, noans:0, badcls:0, badtype:0, total:0 };
+  const re=/^([AB])-([ⅠⅡⅢⅣⅤⅥ])·(\d+)$/;
+  for(const n of S.notes){
+    if(n.mid!==S.mid) continue;
+    S.excl.total++;
+    if(n.tags.includes('중복')){ S.excl.dup++; continue; }
+    if(n.tags.includes('재분류확인필요')){ S.excl.recls++; continue; }
+    const q=n.f[I.q], a=n.f[I.ans];
+    if(!hasContent(q)){ S.excl.noq++; continue; }
+    const at=cleanText(a);
+    if(!hasContent(a) || /^확인\s*필요$/.test(at)){ S.excl.noans++; continue; }
+    const cls=cleanText(n.f[I.cls]).replace(/\s/g,'');
+    const m=cls.match(re);
+    if(!m){ S.excl.badcls++; continue; }
+    const type=cleanText(n.f[I.type]);
+    if(!TYPES.includes(type)){ S.excl.badtype++; continue; }
+    S.pool.push({ id:n.id, note:n, cls, axis:m[1], major:`${m[1]}-${m[2]}`, leaf:`${m[2]}·${m[3]}`, type });
+  }
+}
+
+/* ---------- SETUP 화면 ---------- */
+function clsName(c){ const t=CLS_NAMES[c.axis]; return (t&&t.leaf[c.leaf])||''; }
+function majorName(c){ const t=CLS_NAMES[c.axis]; return (t&&t.mid[c.leaf.split('·')[0]])||''; }
+
+function initSetup(){
+  const ex=S.excl, classes=new Set(S.pool.map(c=>c.cls));
+  $('deck-summary').innerHTML =
+    `노트유형 <b>${esc(S.modelMap[S.mid].name)}</b> · 전체 ${ex.total}문항 → <b>출제 가능 ${S.pool.length}문항 / 분류 ${classes.size}개</b><br>` +
+    `제외: 중복태그 ${ex.dup} · 재분류확인필요 ${ex.recls} · 정답 없음 ${ex.noans} · 문제 없음 ${ex.noq} · 분류 형식 오류 ${ex.badcls} · 유형 미지정 ${ex.badtype}`;
+  // 배점표
+  const cnt={}; S.pool.forEach(c=>cnt[c.type]=(cnt[c.type]||0)+1);
+  $('pts-tbody').innerHTML = TYPES.map(t=>`<tr>
+    <td>${t}</td>
+    <td><input type="number" id="pts-${t}" value="${DEFAULT_PTS[t]}" min="1" max="50" onchange="onPtsChange()"></td>
+    <td>${cnt[t]||0}</td>
+    <td><input type="number" id="cap-${t}" value="${DEFAULT_CAPS[t]??''}" min="0" max="60" placeholder="-"></td></tr>`).join('');
+  $('result-card').classList.remove('show');
+  S.picks=[];
+  refreshHist();
+  rebuildGroups(true);
+}
+
+function refreshHist(){ $('hist-count').textContent = `저장된 출제 문항 ${loadHist().size}개`; }
+function clearHistory(){ storeHist(new Set()); refreshHist(); }
+function saveHistory(){
+  if(!S.picks.length) return;
+  const h=loadHist(); S.picks.forEach(p=>h.add(p.card.id)); storeHist(h); refreshHist();
+  showModal('저장 완료',`이 세트의 ${S.picks.length}문항을 출제 기록에 저장했습니다.\n(‘이전에 저장한 세트의 문항 제외’ 옵션을 켜면 다음 출제부터 제외됩니다.)`);
+}
+
+function readPts(){ const p={}; TYPES.forEach(t=>p[t]=parseInt($('pts-'+t).value)||0); return p; }
+function readCaps(){ const c={}; TYPES.forEach(t=>{ const v=$('cap-'+t).value; if(v!=='') c[t]=parseInt(v); }); return c; }
+function onPtsChange(){ rebuildGroups(true); }
+function onNTChange(){ rebuildGroups(true); }
+
+function distinctPts(){
+  const p=readPts(); const m={};
+  TYPES.forEach(t=>{ (m[p[t]]=m[p[t]]||[]).push(t); });
+  return Object.keys(m).map(Number).sort((a,b)=>a-b).map(pts=>({pts,types:m[pts]}));
+}
+
+function rebuildGroups(reset){
+  const groups=distinctPts();
+  const N=parseInt($('cfg-n').value)||20, T=parseInt($('cfg-t').value)||100;
+  let counts=null;
+  const ptsKey=groups.map(g=>g.pts).join(',');
+  if(reset){
+    if(ptsKey==='4,5,6' && N===20 && T===100) counts=[6,8,6];
+    else counts=solveCompose(groups.map(g=>g.pts),N,T);
+  } else {
+    counts=groups.map(g=>parseInt(($('grp-'+g.pts)||{}).value)||0);
+  }
+  const avail={}; // 풀 문항 수(배점군별)
+  S.pool.forEach(c=>{ const p=readPts()[c.type]; avail[p]=(avail[p]||0)+1; });
+  $('grp-tbody').innerHTML = groups.map((g,i)=>`<tr>
+    <td><span class="chip p${g.pts}">${g.pts}점</span></td>
+    <td class="left">${g.types.join(' · ')}<div class="hint">풀 ${avail[g.pts]||0}문항</div></td>
+    <td><input type="number" id="grp-${g.pts}" value="${counts?counts[i]:0}" min="0" max="60" oninput="updateGrpStatus()"></td>
+    <td id="sub-${g.pts}">-</td></tr>`).join('');
+  updateGrpStatus();
+}
+
+function updateGrpStatus(){
+  const groups=distinctPts(); const N=parseInt($('cfg-n').value)||0, T=parseInt($('cfg-t').value)||0;
+  let cnt=0, tot=0;
+  groups.forEach(g=>{ const c=parseInt($('grp-'+g.pts).value)||0; cnt+=c; tot+=c*g.pts; $('sub-'+g.pts).textContent=`${c*g.pts}점`; });
+  const okN=cnt===N, okT=tot===T;
+  $('grp-status').innerHTML = `문항 합계 <b class="${okN?'status-ok':'status-bad'}">${cnt} / ${N}</b> · 점수 합계 <b class="${okT?'status-ok':'status-bad'}">${tot} / ${T}점</b> ${okN&&okT?'<span class="status-ok">✔ 구성 가능</span>':'<span class="status-bad">✖ 구성을 맞춰주세요 (⚖️ 자동 균형 구성 사용 가능)</span>'}`;
+  return okN&&okT;
+}
+function autoCompose(){ const groups=distinctPts(); const N=parseInt($('cfg-n').value)||20, T=parseInt($('cfg-t').value)||100;
+  const sol=solveCompose(groups.map(g=>g.pts),N,T);
+  if(!sol){ showModal('구성 불가',`문항 ${N}개 · 만점 ${T}점을 만족하는 배점군 구성이 없습니다.\n배점 또는 문항 수를 조정하세요.`); return; }
+  groups.forEach((g,i)=>$('grp-'+g.pts).value=sol[i]); updateGrpStatus();
+}
+/* 배점군별 개수 조합 중 (합계=N, 점수=T) 만족하고 개수가 가장 고른 조합 */
+function solveCompose(ptsList,N,T){
+  let best=null,bestVar=Infinity; const G=ptsList.length, mean=N/G;
+  (function rec(i,left,score,cur){
+    if(i===G-1){
+      const c=left; if(score+c*ptsList[i]!==T) return;
+      const v=[...cur,c]; const vr=v.reduce((s,x)=>s+(x-mean)**2,0);
+      if(vr<bestVar){ bestVar=vr; best=v; } return;
+    }
+    for(let c=0;c<=left;c++){ rec(i+1,left-c,score+c*ptsList[i],[...cur,c]); }
+  })(0,N,0,[]);
+  return best;
+}
+
+/* ---------- 출제 알고리즘 ---------- */
+function readCfg(){
+  const groups=distinctPts().map(g=>({pts:g.pts,types:g.types,count:parseInt($('grp-'+g.pts).value)||0}));
+  const N=parseInt($('cfg-n').value)||0, T=parseInt($('cfg-t').value)||0;
+  return {
+    N, T, pts:readPts(), caps:readCaps(), groups,
+    maxMajor: Math.max(1,parseInt($('cfg-major').value)||99),
+    weightMode: $('cfg-weight').value,
+    axisA: $('cfg-axis').value==='fix' ? (parseInt($('cfg-axis-n').value)||0) : null,
+    order: $('cfg-order').value,
+    useHist: $('cfg-hist').checked,
+    seedText: $('cfg-seed').value.trim()
+  };
+}
+function weightOf(size,mode){ return mode==='uniform'?1:(mode==='linear'?size:Math.sqrt(size)); }
+
+function buildClassMap(exclude){
+  const map=new Map();
+  S.pool.forEach(c=>{ if(exclude.has(c.id)) return;
+    if(!map.has(c.cls)) map.set(c.cls,{cls:c.cls,axis:c.axis,major:c.major,cards:[]});
+    map.get(c.cls).cards.push(c); });
+  return [...map.values()];
+}
+
+function generateSet(cfg,rng,exclude){
+  const clsList=buildClassMap(exclude), ptsOf=t=>cfg.pts[t], gkeys=cfg.groups.map(g=>g.pts);
+  const bAxis = cfg.axisA==null?null:(cfg.N-cfg.axisA);
+  for(let attempt=0; attempt<4000; attempt++){
+    const chosen=[], majorCnt={}; let aCnt=0,bCnt=0, ok=true;
+    for(let i=0;i<cfg.N;i++){
+      const cand=clsList.filter(c=>!chosen.includes(c) && (majorCnt[c.major]||0)<cfg.maxMajor &&
+        (cfg.axisA==null || (c.axis==='A'?aCnt<cfg.axisA:bCnt<bAxis)));
+      if(!cand.length){ ok=false; break; }
+      const c=pickWeighted(cand,x=>weightOf(x.cards.length,cfg.weightMode),rng);
+      chosen.push(c); majorCnt[c.major]=(majorCnt[c.major]||0)+1; if(c.axis==='A')aCnt++; else bCnt++;
+    }
+    if(!ok) continue;
+    // 분류별로 가능한 배점군
+    const opts=chosen.map(c=>{ const s=new Set(c.cards.map(cd=>ptsOf(cd.type))); return gkeys.filter(g=>s.has(g)); });
+    if(opts.some(o=>!o.length)) continue;
+    // 배점군 배정(백트래킹)
+    const remain={}; cfg.groups.forEach(g=>remain[g.pts]=g.count);
+    const order=chosen.map((_,i)=>i).sort((a,b)=>(opts[a].length-opts[b].length)||(rng()-0.5));
+    const assign=new Array(chosen.length); let steps=0;
+    const dfs=(k)=>{
+      if(k===order.length) return true; if(++steps>30000) return false;
+      const i=order[k];
+      for(const g of shuffle(opts[i].slice(),rng)){ if(remain[g]>0){ remain[g]--; assign[i]=g; if(dfs(k+1)) return true; remain[g]++; } }
+      return false;
+    };
+    if(!dfs(0)) continue;
+    // 카드 선택(유형 상한 준수)
+    const typeCnt={}, res=new Array(chosen.length);
+    const ord2=chosen.map((_,i)=>i).sort((a,b)=>
+      chosen[a].cards.filter(cd=>ptsOf(cd.type)===assign[a]).length - chosen[b].cards.filter(cd=>ptsOf(cd.type)===assign[b]).length || rng()-0.5);
+    let ok2=true;
+    for(const i of ord2){
+      const cand=chosen[i].cards.filter(cd=>ptsOf(cd.type)===assign[i] && !(cfg.caps[cd.type]!=null && (typeCnt[cd.type]||0)>=cfg.caps[cd.type]));
+      if(!cand.length){ ok2=false; break; }
+      const cd=cand[Math.floor(rng()*cand.length)];
+      typeCnt[cd.type]=(typeCnt[cd.type]||0)+1; res[i]={card:cd,pts:assign[i]};
+    }
+    if(!ok2) continue;
+    return res;
+  }
+  return null;
+}
+
+function sortPicks(picks,mode,rng){
+  if(mode==='random') return shuffle(picks.slice(),rng);
+  return picks.slice().sort((a,b)=>(a.card.axis.localeCompare(b.card.axis))||(leafOrder(a.card)-leafOrder(b.card)));
+}
+
+function validateCfg(cfg){
+  if(cfg.N<1) return '문항 수를 확인하세요.';
+  if(!updateGrpStatus()) return `배점군 구성이 맞지 않습니다.\n문항 합계 ${cfg.N}개, 점수 합계 ${cfg.T}점이 되도록 조정하세요.`;
+  if(cfg.axisA!=null && (cfg.axisA<0||cfg.axisA>cfg.N)) return '전기철도공학(A) 문항 수가 범위를 벗어났습니다.';
+  return null;
+}
+
+function doGenerate(){
+  const cfg=readCfg(); const err=validateCfg(cfg);
+  if(err){ showModal('설정 확인',err); return; }
+  const exclude = cfg.useHist ? loadHist() : new Set();
+  const seedText = cfg.seedText || String(Date.now()%100000000)+Math.floor(Math.random()*1000);
+  const rng=mulberry32(hashSeed(seedText));
+  const res=generateSet(cfg,rng,exclude);
+  if(!res){
+    showModal('출제 실패','조건을 만족하는 세트를 찾지 못했습니다.\n· 대분류당 최대 문항 수 늘리기\n· 유형별 최대 출제 수 완화\n· 출제 기록 초기화(제외 해제)\n중 하나를 시도해 보세요.');
+    return;
+  }
+  S.cfg=cfg; S.seed=seedText; S.picks=sortPicks(res,cfg.order,rng);
+  renderResult();
+}
+
+function replaceOne(i){
+  const cfg=S.cfg; if(!cfg) return;
+  const exclude = cfg.useHist ? loadHist() : new Set();
+  const cur=S.picks[i]; const rng=mulberry32(hashSeed(S.seed+'|'+i+'|'+Date.now()));
+  const usedIds=new Set(S.picks.map(p=>p.card.id));
+  const usedCls=new Set(S.picks.filter((_,k)=>k!==i).map(p=>p.card.cls));
+  const majorCnt={}, typeCnt={}; let aCnt=0,bCnt=0;
+  S.picks.forEach((p,k)=>{ if(k===i) return; majorCnt[p.card.major]=(majorCnt[p.card.major]||0)+1; typeCnt[p.card.type]=(typeCnt[p.card.type]||0)+1; if(p.card.axis==='A')aCnt++; else bCnt++; });
+  const okCap=cd=>!(cfg.caps[cd.type]!=null && (typeCnt[cd.type]||0)>=cfg.caps[cd.type]);
+  const base=S.pool.filter(cd=>cfg.pts[cd.type]===cur.pts && !exclude.has(cd.id) && !usedIds.has(cd.id) && okCap(cd));
+  // 1순위: 새 분류
+  let cand=base.filter(cd=>!usedCls.has(cd.cls) && (majorCnt[cd.major]||0)<cfg.maxMajor &&
+    (cfg.axisA==null || (cd.axis==='A'?aCnt<cfg.axisA:bCnt<(cfg.N-cfg.axisA))));
+  let pickCard=null;
+  if(cand.length){
+    const byCls=new Map(); cand.forEach(cd=>{ if(!byCls.has(cd.cls)) byCls.set(cd.cls,[]); byCls.get(cd.cls).push(cd); });
+    const cl=pickWeighted([...byCls.entries()],e=>weightOf(e[1].length,cfg.weightMode),rng);
+    pickCard=cl[1][Math.floor(rng()*cl[1].length)];
+  } else {
+    // 2순위: 같은 분류의 다른 카드
+    cand=base.filter(cd=>cd.cls===cur.card.cls);
+    if(cand.length) pickCard=cand[Math.floor(rng()*cand.length)];
+  }
+  if(!pickCard){ showModal('교체 불가','같은 배점군에서 교체할 수 있는 문항이 없습니다.'); return; }
+  S.picks[i]={card:pickCard,pts:cur.pts};
+  renderResult();
+}
+
+/* ---------- 결과 표시 ---------- */
+function renderResult(){
+  const P=S.picks, cfg=S.cfg;
+  const total=P.reduce((s,p)=>s+p.pts,0);
+  $('result-card').classList.add('show');
+  $('result-meta').textContent=`시드: ${S.seed}`;
+  const clsSet=new Set(P.map(p=>p.card.cls));
+  const byType={}; P.forEach(p=>byType[p.card.type]=(byType[p.card.type]||0)+1);
+  const byPts={}; P.forEach(p=>byPts[p.pts]=(byPts[p.pts]||0)+1);
+  const aN=P.filter(p=>p.card.axis==='A').length;
+  $('result-stat').innerHTML =
+    `<b>총 ${P.length}문항 · ${total}점</b> ${total===cfg.T&&P.length===cfg.N?'<span class="status-ok">✔</span>':'<span class="status-bad">✖ 검증 실패</span>'}<br>` +
+    `서로 다른 분류 <b>${clsSet.size}</b>개 ${clsSet.size===P.length?'<span class="status-ok">✔ 중복 없음</span>':'<span class="status-bad">✖ 분류 중복</span>'}<br>` +
+    `배점군: ${Object.keys(byPts).sort().map(k=>`${k}점×${byPts[k]}`).join(' · ')}<br>` +
+    `유형: ${TYPES.filter(t=>byType[t]).map(t=>`${t} ${byType[t]}`).join(' · ')}<br>` +
+    `계열: 전기철도공학 ${aN} · 구조물공학 ${P.length-aN}`;
+  const byMajor={}; P.forEach(p=>byMajor[p.card.major]=(byMajor[p.card.major]||0)+1);
+  const keys=Object.keys(byMajor).sort();
+  $('result-dist').innerHTML='<b>대분류 분포</b>'+keys.map(k=>{
+    const c=P.find(p=>p.card.major===k).card;
+    return `<div class="bar-row"><span class="nm">${k} ${esc(majorName(c))}</span><span class="bar" style="width:${byMajor[k]*22}px"></span><span>${byMajor[k]}</span></div>`;
+  }).join('');
+  $('result-tbody').innerHTML=P.map((p,i)=>{
+    const q=cleanText(p.card.note.f[S.idx.q]); const short=(q.length>70?q.slice(0,70)+'…':q)||'(이미지 문제)';
+    return `<tr><td>${i+1}</td>
+      <td class="left"><b>${p.card.cls}</b><div class="hint">${esc(clsName(p.card))}</div></td>
+      <td>${p.card.type}</td><td><span class="chip p${p.pts}">${p.pts}점</span></td>
+      <td class="qtxt">${esc(short)}</td>
+      <td><button class="btn-mini" onclick="replaceOne(${i})">🔄 교체</button></td></tr>`;
+  }).join('');
+  $('result-card').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+/* ---------- 세트 JSON ---------- */
+function saveJson(){
+  if(!S.picks.length) return;
+  const d=new Date(), pad=n=>String(n).padStart(2,'0');
+  const stamp=`${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}`;
+  const data={
+    exam:'전기철도기사 실기 모의고사', created:d.toISOString(), seed:S.seed,
+    total:S.picks.length, points_total:S.picks.reduce((s,p)=>s+p.pts,0),
+    problem_ids:S.picks.map(p=>p.card.id),
+    items:S.picks.map((p,i)=>({no:i+1,id:p.card.id,cls:p.card.cls,type:p.card.type,pts:p.pts}))
+  };
+  const blob=new Blob([JSON.stringify(data,null,1)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`mock_실기_${stamp}.json`; a.click();
+}
+async function loadJson(file){
+  try{
+    const data=JSON.parse(await file.text());
+    if(!Array.isArray(data.problem_ids)) throw new Error('problem_ids 배열이 없습니다.');
+    const map=new Map(S.pool.map(c=>[c.id,c])); const ptsMap=readPts();
+    const picks=[]; let miss=0;
+    data.problem_ids.forEach(id=>{ const c=map.get(String(id)); if(c) picks.push({card:c,pts:ptsMap[c.type]}); else miss++; });
+    if(!picks.length) throw new Error('현재 덱에서 일치하는 문항을 찾지 못했습니다.');
+    S.cfg=readCfg(); S.cfg.N=picks.length; S.seed=String(data.seed||'json'); S.picks=picks; renderResult();
+    if(miss) showModal('일부 누락',`${miss}개 문항은 현재 덱에 없어 제외했습니다.`);
+  }catch(e){ showModal('JSON 오류',e.message); }
+}
+
+/* ---------- 문서(시험지/해설지) ---------- */
+let docKind='exam';
+function openDoc(kind){
+  if(!S.picks.length) return; docKind=kind;
+  showScreen('preview'); showLoading('페이지 구성 중...');
+  requestAnimationFrame(()=>setTimeout(()=>{ renderDocument(kind).catch(e=>{ console.error(e); showModal('오류',e.message); }).finally(hideLoading); },30));
+}
+
+async function renderDocument(kind){
+  const kinds = kind==='both' ? ['exam','key'] : [kind];
+  const titles={exam:'시험지',key:'정답·해설지',both:'시험지 + 정답·해설지'};
+  $('pv-title').textContent='미리보기 — '+titles[kind];
+  const container=$('pages-container'); container.innerHTML=''; container.className='font-'+$('opt-font').value;
+  for(const k of kinds){
+    const pages=await buildPages(k);
+    pages.forEach(pg=>container.appendChild(pg));
+  }
+}
+
+async function buildPages(kind){
+  const cols=parseInt($('opt-cols').value)||2, fontCls='font-'+$('opt-font').value;
+  const spaceScale=parseFloat($('opt-space').value)||0;
+  const showCls = kind==='key' || $('opt-showcls').checked;
+  const showHint=$('opt-hint').checked, showExp=$('opt-exp').checked;
+  const P=S.picks, total=P.reduce((s,p)=>s+p.pts,0);
+  const label = kind==='exam' ? '전기철도기사 실기 모의고사 — 시험지' : '전기철도기사 실기 모의고사 — 정답·해설지';
+
+  const box=$('measure-box'); box.innerHTML=''; box.className=fontCls;
+  const colWrap=document.createElement('div'); colWrap.className='a4-col'; colWrap.style.width = cols===2?'88.5mm':'186mm'; box.appendChild(colWrap);
+
+  const nodes=[];
+  if(kind==='key'){
+    const d=document.createElement('div'); d.className='q-block';
+    d.innerHTML=`<div class="score-title">📋 채점표 (총 ${total}점)  · 성명 ________  득점 ______ / ${total}</div>
+      <table class="score-tbl"><thead><tr><th>No</th><th>분류</th><th>유형</th><th>배점</th><th>득점</th></tr></thead><tbody>${
+        P.map((p,i)=>`<tr><td>${i+1}</td><td>${p.card.cls}</td><td>${p.card.type}</td><td>${p.pts}</td><td></td></tr>`).join('')
+      }</tbody></table>`;
+    nodes.push(d);
+  }
+  P.forEach((p,i)=>{
+    const f=p.card.note.f, I=S.idx, div=document.createElement('div'); div.className='q-block';
+    const freq = I.freq>=0 ? cleanText(f[I.freq]) : '';
+    const head=`<div class="q-headline"><span class="q-num">${i+1}.</span><span class="q-pts">[${p.pts}점]</span>${showCls?`<span class="q-cls">${p.card.cls} ${esc(clsName(p.card))} · ${p.card.type}</span>`:''}${kind==='key'&&freq?`<span class="q-freq">빈도 ${esc(freq)}</span>`:''}</div>`;
+    let body=`<div class="q-front">${cleanHtml(f[I.q])}</div>`;
+    if(kind==='exam'){
+      const h=Math.round((ANS_SPACE_MM[p.card.type]||20)*spaceScale);
+      if(h>0) body+=`<div class="ans-space" style="height:${h}mm"></div>`;
+    } else {
+      body+=`<div class="ans-line"><span class="lb">정답</span>${cleanHtml(f[I.ans])}</div>`;
+      if(showHint && I.hint>=0 && hasContent(f[I.hint])) body+=`<div class="hint-box">${cleanHtml(f[I.hint])}</div>`;
+      if(showExp && I.exp>=0 && hasContent(f[I.exp])) body+=`<div class="exp-box">${cleanHtml(f[I.exp])}</div>`;
+    }
+    div.innerHTML=head+body; nodes.push(div);
+  });
+  nodes.forEach(n=>colWrap.appendChild(n));
+
+  // 이미지·폰트·MathJax 완료 대기 후 실측
+  const imgs=[...colWrap.querySelectorAll('img')];
+  await Promise.all(imgs.map(im=>im.complete?Promise.resolve():new Promise(r=>{ im.onload=im.onerror=r; })));
+  try{ if(document.fonts&&document.fonts.ready) await document.fonts.ready; }catch(e){}
+  await new Promise(res=>{ if(window.MathJax&&MathJax.typesetPromise){ MathJax.typesetPromise([colWrap]).then(res).catch(res); } else setTimeout(res,300); });
+  await new Promise(r=>setTimeout(r,60));
+
+  const heights=nodes.map(n=>n.getBoundingClientRect().height+20);
+  const mm=96/25.4;
+  const pageH=(297-14*2-13)*mm;               // 페이지 본문 높이(헤더 제외)
+  const introH = kind==='exam' ? 15*mm : 0;    // 시험지 1페이지 상단 정보칸
+  const pages=[]; let cur=null, colIdx=0, colH=0;
+  const newPage=()=>{ cur=Array.from({length:cols},()=>[]); pages.push(cur); colIdx=0; colH=0; };
+  const capOf=()=> pageH - (pages.length===1?introH:0);
+  newPage();
+  for(let i=0;i<nodes.length;i++){
+    if(colH+heights[i]>capOf() && colH>0){ colIdx++; colH=0; if(colIdx>=cols) newPage(); }
+    cur[colIdx].push(nodes[i]); colH+=heights[i];
+  }
+
+  const out=[];
+  const today=new Date().toLocaleDateString('ko-KR');
+  pages.forEach((pcols,pIdx)=>{
+    const page=document.createElement('div'); page.className='a4-page';
+    page.innerHTML=`<div class="page-header"><span class="ph-title">${label}</span><span class="ph-meta">${P.length}문항 · ${total}점 · ${today} · 시드 ${esc(S.seed)}</span></div>` +
+      (kind==='exam'&&pIdx===0?`<div class="intro"><div><b>전기철도기사 실기 모의고사</b> <span style="color:#666">(필답형)</span></div><div>성명 ______________ &nbsp; 득점 ________ / ${total}</div></div>`:'') +
+      `<div class="a4-cols"></div>` +
+      `<div class="page-footer"><span class="pf-l">${kind==='exam'?'시험지':'정답·해설지'}</span><span class="pf-mid">Created by zzizik, with Claude AI. / Thanks to HWJY Co., Ltd.</span><span class="pf-pg">${pIdx+1} / ${pages.length}</span></div>`;
+    const wrap=page.querySelector('.a4-cols');
+    pcols.forEach(list=>{ const c=document.createElement('div'); c.className='a4-col'; list.forEach(n=>c.appendChild(n)); wrap.appendChild(c); });
+    out.push(page);
+  });
+  box.innerHTML='';
+  return out;
+}
+</script>
+</body>
+</html>

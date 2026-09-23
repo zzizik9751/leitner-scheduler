@@ -461,7 +461,9 @@ function detectModel(){
 function buildPool(){
   const I=S.idx; S.pool=[];
   S.excl={ dup:0, recls:0, noq:0, noans:0, badcls:0, badtype:0, total:0 };
-  const re=/^([AB])-([ⅠⅡⅢⅣⅤⅥ])·(\d+)$/;
+  // 분류 구분자 허용: - · . ・ ･ ‧ ∙ • _ 등 (예: A-Ⅲ·21, A·Ⅲ·21, A.Ⅲ.21, A-III-21)
+  const re=/^([AB])[-·.．・･‧∙•_]?(VI|IV|V|I{1,3}|[ⅠⅡⅢⅣⅤⅥ])[-·.．・･‧∙•_]?(\d+)$/i;
+  const R2U={I:'Ⅰ',II:'Ⅱ',III:'Ⅲ',IV:'Ⅳ',V:'Ⅴ',VI:'Ⅵ'};
   for(const n of S.notes){
     if(n.mid!==S.mid) continue;
     S.excl.total++;
@@ -471,12 +473,14 @@ function buildPool(){
     if(!hasContent(q)){ S.excl.noq++; continue; }
     const at=cleanText(a);
     if(!hasContent(a) || /^확인\s*필요$/.test(at)){ S.excl.noans++; continue; }
-    const cls=cleanText(n.f[I.cls]).replace(/\s/g,'');
-    const m=cls.match(re);
+    const clsRaw=cleanText(n.f[I.cls]).replace(/\s/g,'');
+    const m=clsRaw.toUpperCase().match(re);
     if(!m){ S.excl.badcls++; continue; }
+    m[1]=m[1].toUpperCase(); m[2]=R2U[m[2].toUpperCase()]||m[2];
+    const cls=`${m[1]}-${m[2]}·${m[3]}`;   // 내부 표준키(중복판정·명칭조회용)
     const type=cleanText(n.f[I.type]);
     if(!TYPES.includes(type)){ S.excl.badtype++; continue; }
-    S.pool.push({ id:n.id, note:n, cls, axis:m[1], major:`${m[1]}-${m[2]}`, leaf:`${m[2]}·${m[3]}`, type });
+    S.pool.push({ id:n.id, note:n, cls, clsRaw, axis:m[1], major:`${m[1]}-${m[2]}`, leaf:`${m[2]}·${m[3]}`, type });
   }
 }
 
@@ -717,7 +721,7 @@ function renderResult(){
   $('result-tbody').innerHTML=P.map((p,i)=>{
     const q=cleanText(p.card.note.f[S.idx.q]); const short=(q.length>70?q.slice(0,70)+'…':q)||'(이미지 문제)';
     return `<tr><td>${i+1}</td>
-      <td class="left"><b>${p.card.cls}</b><div class="hint">${esc(clsName(p.card))}</div></td>
+      <td class="left"><b>${esc(p.card.clsRaw||p.card.cls)}</b><div class="hint">${esc(clsName(p.card))}</div></td>
       <td>${p.card.type}</td><td><span class="chip p${p.pts}">${p.pts}점</span></td>
       <td class="qtxt">${esc(short)}</td>
       <td><button class="btn-mini" onclick="replaceOne(${i})">🔄 교체</button></td></tr>`;
@@ -787,14 +791,14 @@ async function buildPages(kind){
     const d=document.createElement('div'); d.className='q-block';
     d.innerHTML=`<div class="score-title">📋 채점표 (총 ${total}점)  · 성명 ________  득점 ______ / ${total}</div>
       <table class="score-tbl"><thead><tr><th>No</th><th>분류</th><th>유형</th><th>배점</th><th>득점</th></tr></thead><tbody>${
-        P.map((p,i)=>`<tr><td>${i+1}</td><td>${p.card.cls}</td><td>${p.card.type}</td><td>${p.pts}</td><td></td></tr>`).join('')
+        P.map((p,i)=>`<tr><td>${i+1}</td><td>${esc(p.card.clsRaw||p.card.cls)}</td><td>${p.card.type}</td><td>${p.pts}</td><td></td></tr>`).join('')
       }</tbody></table>`;
     nodes.push(d);
   }
   P.forEach((p,i)=>{
     const f=p.card.note.f, I=S.idx, div=document.createElement('div'); div.className='q-block';
     const freq = I.freq>=0 ? cleanText(f[I.freq]) : '';
-    const head=`<div class="q-headline"><span class="q-num">${i+1}.</span><span class="q-pts">[${p.pts}점]</span>${showCls?`<span class="q-cls">${p.card.cls} ${esc(clsName(p.card))} · ${p.card.type}</span>`:''}${kind==='key'&&freq?`<span class="q-freq">빈도 ${esc(freq)}</span>`:''}</div>`;
+    const head=`<div class="q-headline"><span class="q-num">${i+1}.</span><span class="q-pts">[${p.pts}점]</span>${showCls?`<span class="q-cls">${esc(p.card.clsRaw||p.card.cls)} ${esc(clsName(p.card))} · ${p.card.type}</span>`:''}${kind==='key'&&freq?`<span class="q-freq">빈도 ${esc(freq)}</span>`:''}</div>`;
     let body=`<div class="q-front">${cleanHtml(f[I.q])}</div>`;
     if(kind==='exam'){
       const h=Math.round((ANS_SPACE_MM[p.card.type]||20)*spaceScale);

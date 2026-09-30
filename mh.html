@@ -360,6 +360,53 @@ body {
 .list-badge-분류  { background:#e8eaf6; color:#3949ab; font-family:monospace; }
 .list-star { font-size:11px; color:#f4a623; }
 .list-year { font-size:10px; color:#bbb; margin-left:auto; }
+/* 목록 체크박스 터치영역 확대 (본문 클릭 = 팝업) */
+.list-card-chkwrap { flex-shrink:0; display:flex; align-items:flex-start; padding:6px 10px 6px 6px; margin:-6px 0 -6px -6px; cursor:pointer; }
+.list-card-item .list-card-body { cursor:pointer; }
+.list-card-edited { font-size:10px; font-weight:600; padding:1px 5px; border-radius:4px; border:1px solid #e0a040; color:#b26a00; }
+/* 목록 카드 상세 팝업 */
+#lc-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:9998; align-items:center; justify-content:center; padding:12px; }
+#lc-modal .lc-box { background:#fff; border-radius:16px; width:100%; max-width:640px; max-height:92vh; display:flex; flex-direction:column; box-shadow:0 8px 32px rgba(0,0,0,0.2); overflow:hidden; }
+#lc-modal .lc-head { display:flex; align-items:center; gap:6px; padding:12px 14px; border-bottom:1px solid #eee; flex-shrink:0; flex-wrap:wrap; }
+#lc-modal .lc-meta { display:flex; align-items:center; gap:6px; flex:1; min-width:0; flex-wrap:wrap; }
+#lc-modal .lc-pos { font-size:12px; color:#999; font-weight:600; }
+#lc-modal .lc-nav { padding:5px 10px; border-radius:7px; border:1px solid #ddd; background:#fff; font-size:13px; cursor:pointer; color:#555; }
+#lc-modal .lc-nav:disabled { opacity:.35; cursor:default; }
+#lc-modal .lc-body { flex:1; min-height:0; overflow-y:auto; padding:14px 16px; display:flex; flex-direction:column; gap:14px; }
+#lc-modal .lc-sec-label { font-size:11px; font-weight:700; color:#999; letter-spacing:.05em; margin-bottom:4px; }
+#lc-modal .lc-sec-body { font-size:14px; color:#1a1a1a; line-height:1.75; word-break:break-word; }
+#lc-modal .lc-sec-body img { max-width:100%; height:auto; }
+#lc-modal .lc-sec + .lc-sec { border-top:1px solid #eee; padding-top:12px; }
+#lc-modal .lc-sec-body ul, #lc-modal .lc-sec-body ol { margin:4px 0; padding-left:1.4em; list-style-position:outside; }
+#lc-modal .lc-sec-body li { margin:2px 0; }
+#lc-modal .lc-sec-body > :first-child { margin-top:0; }
+#lc-modal .lc-sec-body > :last-child { margin-bottom:0; }
+#lc-modal .lc-sec-body p { margin:4px 0; }
+#lc-modal .lc-sec.back .lc-sec-label { color:#1D9E75; }
+#lc-modal .lc-sec.note .lc-sec-body { font-size:13px; }
+#lc-modal .lc-empty { color:#ccc; font-size:13px; }
+#lc-modal label.lc-f { font-size:12px; font-weight:600; color:#888; display:block; }
+#lc-modal label.lc-f textarea, #lc-modal label.lc-f input { display:block; width:100%; margin-top:4px; padding:8px 10px; border:1.5px solid #ddd; border-radius:8px; font-size:13px; font-family:inherit; line-height:1.6; outline:none; box-sizing:border-box; }
+#lc-modal label.lc-f textarea { resize:vertical; }
+#lc-modal label.lc-f textarea:focus, #lc-modal label.lc-f input:focus { border-color:#1D9E75; }
+#lc-modal .lc-toolbar { position:sticky; top:-14px; z-index:2; display:flex; flex-wrap:wrap; align-items:center; gap:4px; padding:8px 0; margin:-14px 0 -4px; background:#fff; border-bottom:1px solid #eee; }
+#lc-modal .lc-tb { padding:5px 9px; border:1px solid #ddd; border-radius:6px; background:#fff; font-size:12px; color:#444; cursor:pointer; line-height:1.2; font-family:inherit; }
+#lc-modal .lc-tb:hover { border-color:#1D9E75; color:#1D9E75; }
+#lc-modal .lc-tb-raw { margin-left:auto; font-family:monospace; }
+#lc-modal .lc-tb-raw.on { border-color:#1D9E75; color:#1D9E75; font-weight:700; }
+#lc-modal .lc-tb-sep { width:1px; height:16px; background:#e0e0e0; margin:0 2px; }
+#lc-modal div.lc-f { font-size:12px; font-weight:600; color:#888; }
+#lc-modal .lc-rte { margin-top:4px; padding:8px 10px; border:1.5px solid #ddd; border-radius:8px; font-size:14px; font-weight:400; color:#1a1a1a; line-height:1.7; outline:none; overflow-wrap:anywhere; cursor:text; }
+#lc-modal .lc-rte:focus { border-color:#1D9E75; }
+#lc-modal .lc-rte ul, #lc-modal .lc-rte ol { margin:4px 0; padding-left:1.4em; }
+#lc-modal .lc-rte img { max-width:100%; height:auto; }
+#lc-modal textarea.lc-raw { font-family:monospace; font-size:12px; }
+#lc-modal .lc-row3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+#lc-modal .lc-foot { display:flex; gap:8px; padding:12px 14px; border-top:1px solid #eee; flex-shrink:0; flex-wrap:wrap; }
+#lc-modal .lc-btn { padding:10px 14px; border-radius:9px; border:1px solid #ddd; background:#fff; color:#555; font-size:13px; font-weight:600; cursor:pointer; }
+#lc-modal .lc-btn.primary { background:#1D9E75; border-color:#1D9E75; color:#fff; flex:1; }
+#lc-modal .lc-btn.sel-on { border-color:#1D9E75; color:#1D9E75; }
+@media (max-width:480px){ #lc-modal{padding:0;align-items:flex-end;} #lc-modal .lc-box{max-height:94vh;border-radius:16px 16px 0 0;} #lc-modal .lc-row3{grid-template-columns:1fr;} }
 </style>
 <script>
 window.MathJax = {
@@ -695,6 +742,10 @@ window.MathJax = {
           <div id="list-deck-name" style="font-size:14px;font-weight:700;color:#0f1117;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
           <div id="list-stats" style="font-size:11px;color:#aaa;margin-top:1px;"></div>
         </div>
+        <button onclick="saveProgress()" id="btn-list-save" title="수정 내용 + 진도 저장 (ZIP)"
+          style="padding:8px 12px;border-radius:9px;border:1px solid #e0a040;background:#fff;font-size:13px;font-weight:700;color:#b26a00;cursor:pointer;display:none;flex-shrink:0;">
+          💾 저장
+        </button>
         <button onclick="startSelectedCards()" id="btn-start-selected"
           style="padding:8px 16px;border-radius:9px;border:none;background:#1D9E75;font-size:13px;font-weight:700;color:#fff;cursor:pointer;display:none;flex-shrink:0;">
           ▶ 선택 학습
@@ -801,6 +852,21 @@ window.MathJax = {
         <button onclick="closeEditModal()" style="padding:12px 20px;border-radius:10px;border:1px solid #ddd;background:#f5f5f3;color:#666;font-size:14px;cursor:pointer;">취소</button>
       </div>
       <div style="margin-top:8px;font-size:11px;color:#bbb;text-align:center;">HTML 원본 그대로 표시됩니다 · 이미지 태그(&lt;img&gt;)는 건드리지 마세요 · 텍스트만 수정하세요</div>
+    </div>
+  </div>
+
+  <!-- 목록 카드 상세/수정 팝업 -->
+  <div id="lc-modal">
+    <div class="lc-box">
+      <div class="lc-head">
+        <div class="lc-meta" id="lc-meta"></div>
+        <button class="lc-nav" id="lc-prev" onclick="lcNav(-1)" title="이전 (←)">◀</button>
+        <span class="lc-pos" id="lc-pos"></span>
+        <button class="lc-nav" id="lc-next" onclick="lcNav(1)" title="다음 (→)">▶</button>
+        <button class="lc-nav" onclick="closeListCardModal()" title="닫기 (Esc)">✕</button>
+      </div>
+      <div class="lc-body" id="lc-body"></div>
+      <div class="lc-foot" id="lc-foot"></div>
     </div>
   </div>
 
@@ -1556,7 +1622,7 @@ async function saveProgress(){
     // 수정된 카드 데이터 삽입
     if(cardEdited){
       const cardsJson=JSON.stringify(allCards.map(c=>({
-        id:c.id,front:c.front,hint:c.hint,back:c.back,explain:c.explain||'',
+        id:c.id,front:c.front,hint:c.hint,back:c.back,explain:c.explain||'',note:c.note||'',
         star:c.star,year:c.year,분류:c.분류,C:c.C,tags:c.tags
       })),null,2);
       newZip.file('cards_edited.json',cardsJson);
@@ -1571,6 +1637,8 @@ async function saveProgress(){
     a.download=`${deckFileName}_saved_${today()}.zip`;
     a.click();
     cardEdited=false;
+    lcEditedIds.clear();
+    try{ updateListSaveBtn(); renderList(); }catch(e){}
   }catch(err){
     alert('저장 오류: '+err.message);
   }
@@ -1756,7 +1824,7 @@ function renderList(){
     item.dataset.id=c.id;
 
     item.innerHTML=
-      `<input type="checkbox" class="list-card-chk" ${isSelected?'checked':''} onclick="event.stopPropagation();toggleCardSelect('${c.id}',this.checked,event)">`+
+      `<label class="list-card-chkwrap" onclick="event.stopPropagation()" title="선택"><input type="checkbox" class="list-card-chk" ${isSelected?'checked':''} onclick="event.stopPropagation();toggleCardSelect('${c.id}',this.checked,event)"></label>`+
       `<div class="list-card-body">`+
         `<div class="list-card-front">${df}</div>`+
         `<div class="list-card-meta">`+
@@ -1764,19 +1832,218 @@ function renderList(){
           (c.분류?`<span class="list-badge list-badge-분류">${c.분류}</span>`:'')+
           (c.C==='Y'?`<span class="list-badge list-badge-calc">계산</span>`:'')+
           (star?`<span class="list-star">${star}</span>`:'')+
+          (lcEditedIds.has(c.id)?`<span class="list-card-edited">수정됨</span>`:'')+
           (c.year?`<span class="list-year">${c.year}</span>`:'')+
         `</div>`+
       `</div>`;
 
-    item.addEventListener('click',()=>{
-      const chk=item.querySelector('.list-card-chk');
-      chk.checked=!chk.checked;
-      toggleCardSelect(c.id,chk.checked);
-    });
+    item.addEventListener('click',()=>openListCardModal(c.id));
     listEl.appendChild(item);
   });
   updateSelectedBtn();
 }
+
+/* ── 목록 카드 상세/수정 팝업 ── */
+var lcIds=[], lcIdx=-1, lcMode='view', lcEditedIds=new Set();
+function lcEsc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function updateListSaveBtn(){
+  const b=document.getElementById('btn-list-save'); if(!b) return;
+  b.style.display=cardEdited?'inline-block':'none';
+}
+function openListCardModal(id){
+  // 현재 목록(필터·검색·정렬 반영) 순서로 이전/다음 이동
+  lcIds=[...document.querySelectorAll('#card-list .list-card-item')].map(el=>el.dataset.id);
+  lcIdx=lcIds.indexOf(id); if(lcIdx<0){ lcIds=[id]; lcIdx=0; }
+  lcMode='view';
+  document.getElementById('lc-modal').style.display='flex';
+  renderListCardModal();
+}
+function closeListCardModal(force){
+  if(!force && lcMode==='edit' && lcDirty() && !confirm('수정한 내용을 저장하지 않고 닫을까요?')) return;
+  document.getElementById('lc-modal').style.display='none';
+  lcMode='view';
+}
+function lcCard(){ return allCards.find(c=>c.id===lcIds[lcIdx]); }
+function lcNav(d){
+  const n=lcIdx+d; if(n<0||n>=lcIds.length) return;
+  if(lcMode==='edit' && lcDirty() && !confirm('수정한 내용을 저장하지 않고 이동할까요?')) return;
+  lcIdx=n; lcMode='view'; renderListCardModal();
+  const el=document.querySelector(`.list-card-item[data-id="${lcIds[lcIdx]}"]`);
+  if(el) el.scrollIntoView({block:'nearest'});
+}
+async function renderListCardModal(){
+  const c=lcCard(); if(!c){ closeListCardModal(true); return; }
+  const prog=peekProgress(c.id), isNew=isNewCard(c.id);
+  const star=(String(c.star||'').match(/★+/g)||[]).join('');
+  document.getElementById('lc-meta').innerHTML=
+    `<span class="list-badge ${isNew?'list-badge-new':'list-badge-level'}">${isNew?'신규':(prog?prog.level+'단계':'1단계')}</span>`+
+    (c.분류?`<span class="list-badge list-badge-분류">${lcEsc(stripHtml(c.분류))}</span>`:'')+
+    (c.C==='Y'?`<span class="list-badge list-badge-calc">계산</span>`:'')+
+    (star?`<span class="list-star">${star}</span>`:'')+
+    (c.year?`<span style="font-size:11px;color:#aaa;">${lcEsc(stripHtml(c.year))}</span>`:'')+
+    (lcEditedIds.has(c.id)?`<span class="list-card-edited">수정됨</span>`:'');
+  document.getElementById('lc-pos').textContent=`${lcIdx+1} / ${lcIds.length}`;
+  document.getElementById('lc-prev').disabled=lcIdx<=0;
+  document.getElementById('lc-next').disabled=lcIdx>=lcIds.length-1;
+  const body=document.getElementById('lc-body'), foot=document.getElementById('lc-foot');
+  body.scrollTop=0;
+  if(lcMode==='view'){
+    const sec=(cls,label,html)=>`<div class="lc-sec ${cls}"><div class="lc-sec-label">${lcEsc(label)}</div><div class="lc-sec-body">${html||'<span class="lc-empty">(비어 있음)</span>'}</div></div>`;
+    const [f,h,b,x]=await Promise.all([resolveMedia(c.front),resolveMedia(c.hint),resolveMedia(c.back),c.explain?resolveMedia(c.explain):'']);
+    if(lcCard()!==c||lcMode!=='view') return; // 빠른 이동 중 늦게 끝난 렌더 무시
+    body.innerHTML=
+      sec('front',fieldNames[0],f)+
+      (c.hint?sec('hint',fieldNames[1],h):'')+
+      sec('back',fieldNames[2],b)+
+      (c.explain?sec('explain',explainLabel,x):'')+
+      (c.note?sec('note','메모',c.note):'');
+    typesetMath(body);
+    const sel=selectedCards.has(c.id);
+    foot.innerHTML=
+      `<button class="lc-btn primary" onclick="lcStartEdit()">✏️ 수정</button>`+
+      `<button class="lc-btn ${sel?'sel-on':''}" onclick="lcToggleSelect()">${sel?'☑ 선택됨':'☐ 선택'}</button>`+
+      `<button class="lc-btn" onclick="lcStudyOne()" title="이 문제만 바로 풀기">▶ 풀기</button>`+
+      `<button class="lc-btn" onclick="closeListCardModal()">닫기</button>`;
+  } else {
+    await lcRenderEdit(c);
+  }
+}
+/* ── 편집기(WYSIWYG) ── */
+var lcDraft=null, lcTouched=new Set(), lcRaw=false, lcBlobMap={};
+const LC_RICH=[['front',()=>fieldNames[0],3],['hint',()=>fieldNames[1],1],['back',()=>fieldNames[2],3],['explain',()=>explainLabel,3],['note',()=>'메모 (법규·노트)',1]];
+const LC_META=[['분류','분류','예: A-Ⅰ·21'],['star','출제빈도','예: ★★★'],['year','출제연도','예: 2023-1']];
+async function lcResolve(html){
+  if(!html||!zipRef) return html||'';
+  const tags=html.match(/src="([^"]+)"/g)||[];
+  for(const m of tags){
+    const fname=m.slice(5,-1), key=mediaMap[fname];
+    if(!key) continue;
+    const f=zipRef.file(key); if(!f) continue;
+    const u=URL.createObjectURL(await f.async('blob'));
+    lcBlobMap[u]=fname;
+    html=html.split(`src="${fname}"`).join(`src="${u}"`);
+  }
+  return html;
+}
+function lcUnresolve(html){ for(const u in lcBlobMap) html=html.split(u).join(lcBlobMap[u]); return html; }
+function lcCleanHtml(html){
+  const tmp=document.createElement('div'); tmp.innerHTML=html;
+  if(!tmp.textContent.trim() && !tmp.querySelector('img')) return '';
+  return lcUnresolve(html).replace(/<(\/?)strike>/g,'<$1s>').replace(/^(<br\s*\/?>)+|(<br\s*\/?>)+$/g,'').trim();
+}
+async function lcRenderEdit(c){
+  const body=document.getElementById('lc-body'), foot=document.getElementById('lc-foot');
+  const tb=(cmd,label,title)=>`<button type="button" class="lc-tb" title="${title}" onmousedown="event.preventDefault()" onclick="lcCmd('${cmd}')">${label}</button>`;
+  let html=`<div class="lc-toolbar">`+
+    (lcRaw?'':
+      tb('bold','<b>B</b>','굵게 (Ctrl+B)')+tb('underline','<u>U</u>','밑줄 (Ctrl+U)')+tb('italic','<i>I</i>','기울임 (Ctrl+I)')+tb('strikeThrough','<s>S</s>','취소선')+
+      `<span class="lc-tb-sep"></span>`+
+      tb('superscript','x²','위 첨자')+tb('subscript','x₂','아래 첨자')+
+      `<span class="lc-tb-sep"></span>`+
+      `<button type="button" class="lc-tb" title="빨간 글자" onmousedown="event.preventDefault()" onclick="lcColor('foreColor','#d32f2f')"><b style="color:#d32f2f">A</b></button>`+
+      `<button type="button" class="lc-tb" title="파란 글자" onmousedown="event.preventDefault()" onclick="lcColor('foreColor','#1565c0')"><b style="color:#1565c0">A</b></button>`+
+      `<button type="button" class="lc-tb" title="노란 형광펜" onmousedown="event.preventDefault()" onclick="lcColor('hiliteColor','#fff176')"><b style="background:#fff176;padding:0 3px">A</b></button>`+
+      `<span class="lc-tb-sep"></span>`+
+      tb('removeFormat','서식 지우기','선택 영역 서식 지우기'))+
+    `<button type="button" class="lc-tb lc-tb-raw ${lcRaw?'on':''}" onmousedown="event.preventDefault()" onclick="lcToggleRaw()" title="HTML 원본으로 편집">&lt;/&gt; HTML</button>`+
+    `</div>`;
+  for(const [k,lbl,rows] of LC_RICH){
+    const label=lcEsc(lbl());
+    if(lcRaw){
+      html+=`<label class="lc-f">${label}<textarea data-k="${k}" class="lc-raw" rows="${rows+1}">${lcEsc(lcDraft[k])}</textarea></label>`;
+    } else {
+      html+=`<div class="lc-f"><div>${label}</div><div class="lc-rte" data-k="${k}" contenteditable="true" style="min-height:${rows*1.7+1}em"></div></div>`;
+    }
+  }
+  html+=`<div class="lc-row3">`+LC_META.map(([k,l,ph])=>`<label class="lc-f">${l}<input data-m="${k}" type="text" value="${lcEsc(lcDraft[k])}" placeholder="${ph}"></label>`).join('')+`</div>`;
+  html+=`<div style="font-size:11px;color:#bbb;">${lcRaw?'HTML 원본 편집 중 · 이미지 태그(&lt;img&gt;)는 건드리지 마세요':'붙여넣기는 글자만 들어갑니다 · 수식은 \\( \\) 형식 그대로 입력하세요'}</div>`;
+  body.innerHTML=html;
+  if(!lcRaw){
+    for(const el of body.querySelectorAll('.lc-rte')){
+      el.innerHTML=await lcResolve(lcDraft[el.dataset.k]);
+      el.addEventListener('input',()=>lcTouched.add(el.dataset.k));
+      el.addEventListener('paste',e=>{
+        e.preventDefault();
+        const t=(e.clipboardData||window.clipboardData).getData('text/plain');
+        document.execCommand('insertText',false,t);
+      });
+    }
+  } else {
+    body.querySelectorAll('.lc-raw').forEach(t=>t.addEventListener('input',()=>lcTouched.add(t.dataset.k)));
+  }
+  foot.innerHTML=
+    `<button class="lc-btn primary" onclick="lcSaveEdit()">저장</button>`+
+    `<button class="lc-btn" onclick="lcCancelEdit()">취소</button>`;
+  setTimeout(()=>{ const t=body.querySelector('.lc-rte,.lc-raw'); if(t) t.focus(); },50);
+}
+function lcColor(cmd,val){
+  document.execCommand('styleWithCSS',false,true);
+  document.execCommand(cmd,false,val);
+  document.execCommand('styleWithCSS',false,false);
+  const a=document.activeElement; if(a&&a.dataset&&a.dataset.k) lcTouched.add(a.dataset.k);
+}
+function lcCmd(cmd){ document.execCommand(cmd,false,null); const a=document.activeElement; if(a&&a.dataset&&a.dataset.k) lcTouched.add(a.dataset.k); }
+function lcCollect(){
+  // 화면 값을 lcDraft에 반영 (건드린 칸만 → 안 건드린 칸은 원본 HTML 그대로 보존)
+  const body=document.getElementById('lc-body');
+  body.querySelectorAll('.lc-rte').forEach(el=>{ if(lcTouched.has(el.dataset.k)) lcDraft[el.dataset.k]=lcCleanHtml(el.innerHTML); });
+  body.querySelectorAll('.lc-raw').forEach(t=>{ if(lcTouched.has(t.dataset.k)) lcDraft[t.dataset.k]=t.value.trim(); });
+  body.querySelectorAll('input[data-m]').forEach(i=>{ lcDraft[i.dataset.m]=i.value.trim(); });
+}
+function lcToggleRaw(){ lcCollect(); lcRaw=!lcRaw; lcRenderEdit(lcCard()); }
+function lcDirty(){
+  const c=lcCard(); if(!c||!lcDraft) return false;
+  lcCollect();
+  return [...LC_RICH.map(x=>x[0]),...LC_META.map(x=>x[0])].some(k=>String(lcDraft[k]||'').trim()!==String(c[k]||'').trim());
+}
+function lcStartEdit(){
+  const c=lcCard(); if(!c) return;
+  lcDraft={}; [...LC_RICH.map(x=>x[0]),...LC_META.map(x=>x[0])].forEach(k=>lcDraft[k]=c[k]||'');
+  lcTouched=new Set(); lcRaw=false;
+  lcMode='edit'; renderListCardModal();
+}
+function lcCancelEdit(){
+  if(lcDirty() && !confirm('수정한 내용을 취소할까요?')) return;
+  lcMode='view'; renderListCardModal();
+}
+function lcSaveEdit(){
+  const c=lcCard(); if(!c) return;
+  if(!lcDirty()){ lcMode='view'; renderListCardModal(); return; }
+  const vals={...lcDraft};
+  Object.assign(c,vals);
+  (filteredCards||[]).forEach(fc=>{ if(fc!==c && fc.id===c.id) Object.assign(fc,vals); });
+  cardEdited=true; lcEditedIds.add(c.id);
+  lcMode='view';
+  const scroll=document.getElementById('card-list').scrollTop;
+  renderList(); updateListSaveBtn();
+  document.getElementById('card-list').scrollTop=scroll;
+  renderListCardModal();
+  showToast('수정 완료 · 파일에 남기려면 💾 저장을 누르세요');
+}
+function lcToggleSelect(){
+  const c=lcCard(); if(!c) return;
+  const on=!selectedCards.has(c.id);
+  toggleCardSelect(c.id,on);
+  const chk=document.querySelector(`.list-card-item[data-id="${c.id}"] .list-card-chk`); if(chk) chk.checked=on;
+  renderListCardModal();
+}
+function lcStudyOne(){
+  const c=lcCard(); if(!c) return;
+  closeListCardModal(true);
+  filteredCards=[c];
+  cur=0;passCount=0;failCount=0;sessionLog=[];failedCards=[];studyStartTime=new Date();
+  showScreen('screen-study');initCanvas();loadCard();
+}
+document.getElementById('lc-modal').addEventListener('click',function(e){ if(e.target===this) closeListCardModal(); });
+document.addEventListener('keydown',function(e){
+  const m=document.getElementById('lc-modal');
+  if(!m||m.style.display!=='flex') return;
+  if(e.key==='Escape'){ e.preventDefault(); if(lcMode==='edit') lcCancelEdit(); else closeListCardModal(); return; }
+  if(lcMode==='edit'){ if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){ e.preventDefault(); lcSaveEdit(); } return; }
+  if(e.key==='ArrowLeft'){ e.preventDefault(); lcNav(-1); }
+  else if(e.key==='ArrowRight'){ e.preventDefault(); lcNav(1); }
+  else if(e.key==='e'||e.key==='E'){ e.preventDefault(); lcStartEdit(); }
+});
 
 function jumpToCard(cardId){
   const idx=filteredCards.findIndex(c=>c.id===cardId);
@@ -1978,6 +2245,7 @@ function toggleSelectAll(checked){
 }
 
 function updateSelectedBtn(){
+  try{ updateListSaveBtn(); }catch(e){}
   const btn=document.getElementById('btn-start-selected');
   if(selectedCards.size>0){
     btn.style.display='inline-block';
@@ -2233,7 +2501,7 @@ function retryFailed(){
   showScreen('screen-study');loadCard();
 }
 function restartStudy(){sessionLog=[];failedCards=[];applyFilter();cur=0;passCount=0;failCount=0;studyStartTime=new Date();showScreen('screen-study');loadCard();}
-function goImport(){stopTimer();ttsStop();sessionLog=[];failedCards=[];cardEdited=false;allCards=[];filteredCards=[];zipRef=null;mediaMap={};_maxNew=0;_maxReview=0;updateQuotaLabels();setStatus('','');showScreen('screen-import');}
+function goImport(){stopTimer();ttsStop();sessionLog=[];failedCards=[];cardEdited=false;try{lcEditedIds.clear();}catch(e){}allCards=[];filteredCards=[];zipRef=null;mediaMap={};_maxNew=0;_maxReview=0;updateQuotaLabels();setStatus('','');showScreen('screen-import');}
 
 function startTimer(sec,onEnd){
   stopTimer();timerSec=sec;timerPaused=false;updateTimerUI(timerSec,sec);
@@ -2628,6 +2896,7 @@ function saveEditModal(){
   if(target){target.front=nf;target.hint=nh;target.back=nb;target.explain=nx;target.note=nn;}
   c.front=nf;c.hint=nh;c.back=nb;c.explain=nx;c.note=nn;
   cardEdited=true;
+  lcEditedIds.add(c.id);
   closeEditModal();
   loadCard();
 }

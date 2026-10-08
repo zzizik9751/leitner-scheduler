@@ -168,6 +168,7 @@ body{font-family:'맑은 고딕','Apple SD Gothic Neo','Malgun Gothic',Dotum,san
 .font-malgun{font-family:'맑은 고딕','Malgun Gothic',sans-serif !important}
 .font-noto-mono{font-family:'Noto Sans Mono KR',monospace !important}
 
+.fm-row.mc-only.hidden{display:none}
 @page{size:A4;margin:0}
 @media print{
   .no-print{display:none !important}
@@ -219,9 +220,11 @@ body{font-family:'맑은 고딕','Apple SD Gothic Neo','Malgun Gothic',Dotum,san
     <div class="screen-title">📋 필드 매핑 설정</div>
     <div class="screen-desc">Anki 카드의 어느 필드가 문제·보기①②③④·정답·해설·힌트·빈도인지 지정하세요. 자동 감지 후 필요 시 수동 조정하세요.</div>
     <div class="nt-row">
-      <label>📋 문제 세트 JSON 불러오기 (선택사항 — exam_A.json, ○○_100.json 등)</label>
-      <input type="file" id="json-file-input" accept=".json">
-      <div style="font-size:11px;color:#888;margin-top:6px" id="json-status"></div>
+      <label>📚 문제 유형 선택 <span style="font-weight:normal;color:#e05">(먼저 선택 — 유형에 따라 필드 항목이 달라집니다)</span></label>
+      <div class="dockind-tabs" id="fm-kind-tabs">
+        <button type="button" class="dockind-tab sel" data-kind="mc" onclick="switchDocKind('mc')">📝 객관식 (보기 ①②③④ 있음)</button>
+        <button type="button" class="dockind-tab" data-kind="sa" onclick="switchDocKind('sa')">📖 주관식 (보기 없음)</button>
+      </div>
     </div>
     <div class="nt-row">
       <label>노트 유형 선택</label>
@@ -229,11 +232,11 @@ body{font-family:'맑은 고딕','Apple SD Gothic Neo','Malgun Gothic',Dotum,san
     </div>
     <div class="fm-grid">
       <div class="fm-row"><label>📝 문제 필드</label><select id="fm-q"></select></div>
-      <div class="fm-row"><label>① 보기 1</label><select id="fm-o1"></select></div>
-      <div class="fm-row"><label>② 보기 2</label><select id="fm-o2"></select></div>
-      <div class="fm-row"><label>③ 보기 3</label><select id="fm-o3"></select></div>
-      <div class="fm-row"><label>④ 보기 4</label><select id="fm-o4"></select></div>
-      <div class="fm-row"><label>✅ 정답 필드 <span style="font-weight:normal;color:#aaa">(1~4 숫자)</span></label><select id="fm-ans"></select></div>
+      <div class="fm-row mc-only"><label>① 보기 1</label><select id="fm-o1"></select></div>
+      <div class="fm-row mc-only"><label>② 보기 2</label><select id="fm-o2"></select></div>
+      <div class="fm-row mc-only"><label>③ 보기 3</label><select id="fm-o3"></select></div>
+      <div class="fm-row mc-only"><label>④ 보기 4</label><select id="fm-o4"></select></div>
+      <div class="fm-row"><label>✅ 정답 필드 <span id="fm-ans-hint" style="font-weight:normal;color:#aaa">(1~4 숫자)</span></label><select id="fm-ans"></select></div>
       <div class="fm-row"><label>💡 해설 필드 <span style="font-weight:normal;color:#aaa">(선택)</span></label><select id="fm-exp"></select></div>
       <div class="fm-row"><label>🔑 힌트 필드 <span style="font-weight:normal;color:#aaa">(선택)</span></label><select id="fm-hint"></select></div>
       <div class="fm-row"><label>📚 과목 필드 <span style="font-weight:normal;color:#e05">(★ 자동분류 핵심)</span></label><select id="fm-subj"></select></div>
@@ -259,12 +262,21 @@ body{font-family:'맑은 고딕','Apple SD Gothic Neo','Malgun Gothic',Dotum,san
     <div class="screen-title">🖨️ 인쇄 설정</div>
 
     <div class="setup-section">
-      <div class="section-title">시험지 유형 선택</div>
-
-      <div class="dockind-tabs" id="dockind-tabs">
-        <button type="button" class="dockind-tab sel" data-kind="mc" onclick="switchDocKind('mc')">📝 객관식 시험지</button>
-        <button type="button" class="dockind-tab" data-kind="sa" onclick="switchDocKind('sa')">📖 주관식 · 요약형</button>
+      <div class="section-title">📋 문제 세트 지정 <span style="font-weight:normal;font-size:12px;color:#888">(선택사항 — 지정하지 않으면 전체 문제 대상)</span></div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+        <input type="file" id="json-file-input" accept=".json,.txt">
+        <span style="font-size:12px;color:#888">JSON / txt 파일 불러오기 (exam_A.json, ○○_100.json 등)</span>
       </div>
+      <textarea id="nid-paste" rows="3" placeholder="nid:1234567890123,1234567891234,...  형식 그대로 붙여넣기 (쉼표·공백·줄바꿈 구분 모두 가능, JSON 텍스트도 가능)" style="width:100%;padding:8px 10px;border:1.5px solid #ccc;border-radius:7px;font-size:12.5px;font-family:monospace;resize:vertical"></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap">
+        <button type="button" class="btn-mini" onclick="applyPastedNids()">✅ 붙여넣은 nid 적용</button>
+        <button type="button" class="btn-mini" onclick="clearProblemSet()">✖ 문제 세트 해제</button>
+        <span style="font-size:11.5px;color:#888" id="json-status"></span>
+      </div>
+    </div>
+
+    <div class="setup-section">
+      <div class="section-title">시험지 유형 선택 <span id="kind-badge" style="font-weight:normal;font-size:12px;color:#1a3263"></span></div>
 
       <div class="doctype-grid" id="doctype-grid-mc">
         <label class="doctype-opt sel">
@@ -497,6 +509,7 @@ async function handleFile(file) {
     return;
   }
   showLoading('Anki 덱 파일 압축 해제 중...');
+  S.selectedProblemIds = null;
   try {
     const zip = await JSZip.loadAsync(file);
 
@@ -590,15 +603,13 @@ function initJsonLoad() {
       if(!e.target.files[0]) return;
       try {
         const text=await e.target.files[0].text();
-        const data=JSON.parse(text);
-        if(!data.problem_ids || !Array.isArray(data.problem_ids)) throw new Error('problem_ids 배열이 없습니다.');
-        S.selectedProblemIds=data.problem_ids.map(id=>String(id));
-        const st=document.getElementById('json-status');
-        const label = data.exam || data.subject || '문제세트';
-        if(st) st.textContent=`✅ 로드됨: ${label} (${data.total||S.selectedProblemIds.length}문제)`;
+        const {ids,label}=parseIdText(text);
+        if(!ids.length) throw new Error('nid(problem_ids)를 찾지 못했습니다.');
+        document.getElementById('nid-paste').value = ids.join(',');
+        setProblemIds(ids,label);
       } catch(err) {
         const st=document.getElementById('json-status');
-        if(st) st.textContent=`❌ 오류: ${err.message}`;
+        if(st){ st.style.color='#c0392b'; st.textContent=`❌ 오류: ${err.message}`; }
         S.selectedProblemIds=null;
       }
       e.target.value='';
@@ -619,10 +630,7 @@ function renderFieldMap() {
     opt.textContent=m?`${m.name}  (${notes.filter(n=>n.mid===mid).length}개)`:`노트유형 ${mid}`;
     ntSel.appendChild(opt);
   });
-  autoDetect(mids[0]);
-  populateSelectors(mids[0]);
-  updatePreview();
-  initJsonLoad();
+  switchDocKind(docKind); // 유형 상태 반영(내부에서 autoDetect/populate/preview 수행)
 }
 
 function onNtChange() {
@@ -693,6 +701,10 @@ function updatePreview() {
   document.getElementById('preview-q').innerHTML=cleanHtml(note.fields[S.fm.q]||'(비어있음)');
   const OPT_KEYS=['o1','o2','o3','o4'];
   const CIRCLES=['①','②','③','④'];
+  if (docKind==='sa') {
+    document.getElementById('preview-opts').innerHTML = `<div class="preview-opt"><div class="opt-circle">정</div><span>${cleanHtml(note.fields[S.fm.ans]||'(정답 없음)')}</span></div>`;
+    return;
+  }
   document.getElementById('preview-opts').innerHTML=OPT_KEYS.map((k,i)=>`
     <div class="preview-opt">
       <div class="opt-circle">${CIRCLES[i]}</div>
@@ -707,6 +719,54 @@ function switchDocKind(kind) {
   document.querySelectorAll('.dockind-tab').forEach(b=>b.classList.toggle('sel', b.dataset.kind===kind));
   document.getElementById('doctype-grid-mc').style.display = kind==='mc' ? 'flex' : 'none';
   document.getElementById('doctype-grid-sa').style.display = kind==='sa' ? 'flex' : 'none';
+  // 주관식: 보기 1~4 필드 숨김, 정답 필드는 텍스트
+  document.querySelectorAll('.fm-row.mc-only').forEach(el=>el.classList.toggle('hidden', kind==='sa'));
+  const ah=document.getElementById('fm-ans-hint');
+  if (ah) ah.textContent = kind==='sa' ? '(정답 텍스트)' : '(1~4 숫자)';
+  const kb=document.getElementById('kind-badge');
+  if (kb) kb.textContent = kind==='sa' ? '· 주관식 (필드 매핑에서 선택됨)' : '· 객관식 (필드 매핑에서 선택됨)';
+  if (S.dbData) { autoDetect(document.getElementById('nt-select').value); populateSelectors(document.getElementById('nt-select').value); updatePreview(); }
+}
+
+/* ---------- 문제 세트(nid 목록) 지정: 파일 / 붙여넣기 ---------- */
+function setProblemIds(ids, label) {
+  const uniq=[...new Set(ids.map(String))];
+  S.selectedProblemIds = uniq.length ? uniq : null;
+  const st=document.getElementById('json-status');
+  if (!uniq.length) { if(st) st.textContent=''; renderSetup(); return; }
+  const have=new Set(S.dbData.notes.map(n=>n.id));
+  const matched=uniq.filter(id=>have.has(id)).length;
+  if (st) {
+    st.style.color = matched ? '#145a14' : '#c0392b';
+    st.textContent = `${matched?'✅':'❌'} ${label}: nid ${uniq.length}개 중 덱에서 ${matched}개 일치` + (matched<uniq.length?` (${uniq.length-matched}개 미발견)`:'');
+  }
+  if (!matched) S.selectedProblemIds = null;
+  renderSetup();
+}
+function parseIdText(text) {
+  const t=(text||'').trim();
+  if (!t) return {ids:[],label:''};
+  if (/^[\[{]/.test(t)) {
+    try {
+      const d=JSON.parse(t);
+      const arr = Array.isArray(d) ? d : d.problem_ids;
+      if (Array.isArray(arr)) return {ids:arr.map(String), label: (d.exam||d.subject||'JSON')};
+    } catch(e) {}
+  }
+  return {ids:(t.match(/\d{6,}/g)||[]), label:'붙여넣기'};
+}
+function applyPastedNids() {
+  const {ids,label}=parseIdText(document.getElementById('nid-paste').value);
+  if (!ids.length) {
+    const st=document.getElementById('json-status');
+    if(st){ st.style.color='#c0392b'; st.textContent='❌ 인식된 nid가 없습니다 (6자리 이상 숫자).'; }
+    return;
+  }
+  setProblemIds(ids,label);
+}
+function clearProblemSet() {
+  document.getElementById('nid-paste').value='';
+  setProblemIds([],'');
 }
 
 function goSetup() {
@@ -879,9 +939,8 @@ async function renderDocument() {
 
     let ansLine = '';
     if (showAnswer) {
-      const correctTxt = (correct>=1&&correct<=4) ? cleanText(n.fields[fm[['o1','o2','o3','o4'][correct-1]]]) : '';
       ansLine = isSA
-        ? `<div class="ans-line">정답: ${correctTxt}</div>`
+        ? `<div class="ans-line">정답: ${cleanHtml(n.fields[fm.ans]||'')}</div>`
         : `<div class="ans-line">정답: ${correct>=1&&correct<=4?FILLED[correct-1]:'?'} ${correctTxt}</div>`;
     }
     let hintHtml = '';
@@ -1043,6 +1102,7 @@ function cleanText(html) {
 
 /* ---------- INIT ---------- */
 initDrop();
+initJsonLoad();
 
 // 폰트 초기화
 (function(){

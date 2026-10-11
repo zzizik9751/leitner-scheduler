@@ -2114,7 +2114,19 @@ const CATEGORY_NAME={
 
 // 문제 유형 감지 — tags 또는 C 필드 기반 + 텍스트 휴리스틱
 function detectCardType(c){
-  if(c.C==='Y') return '계산';
+  // 1순위: 필드 매핑의 "문제유형"(c.C) 값 — Y는 계산 표시, 그 외 유형명은 그대로 반영
+  const cv=String(c.C||'').trim();
+  if(cv){
+    const lv=cv.toLowerCase();
+    if(lv==='y'||lv==='계산'||lv==='calc'||lv==='calculation') return '계산';
+    if(!/^(n|no|x|-|0|없음|해당없음)$/i.test(cv)){
+      if(lv.includes('빈칸')||lv.includes('fill')||lv.includes('cloze')) return '빈칸';
+      if(lv.includes('서술')||lv.includes('essay')) return '서술형';
+      if(lv.includes('단답')||lv.includes('short')) return '단답형';
+      return cv.length>12 ? cv.slice(0,12) : cv; // 그 외(객관식 등)는 덱의 값을 그대로 유형으로 사용
+    }
+  }
+  // 2순위: 태그 / 3순위: 텍스트 휴리스틱
   const t=(c.tags||'').toLowerCase();
   if(t.includes('빈칸')||t.includes('fill')) return '빈칸';
   if(t.includes('서술')||t.includes('essay')) return '서술형';
@@ -2177,7 +2189,7 @@ function openListScreen(){
   const typeCount={};
   allCards.filter(c=>!isHeart(c.star)).forEach(c=>{const t=detectCardType(c);typeCount[t]=(typeCount[t]||0)+1;});
   typeSel.innerHTML='<option value="">문제유형 전체</option>'+
-    types.map(t=>`<option value="${t}">${t} (${typeCount[t]||0}장)</option>`).join('');
+    types.map(t=>{const e=esc(t);return `<option value="${e}">${e} (${typeCount[t]||0}장)</option>`;}).join('');
   typeSel.value='';
 
   // 출제빈도 버튼 그룹 — 구간별 카드 수 갱신 + 선택 상태 초기화

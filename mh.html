@@ -1944,6 +1944,13 @@ async function handleCombinedFiles(files) {
 function openList(){
   // 학습 → 학습목록으로 돌아가기 (필터·검색·정렬 상태 유지)
   try{ stopTimer(); ttsStop(); }catch(e){}
+  // 이어서 학습으로 진입하면 openListScreen()이 호출되지 않아 분류/유형 셀렉트가 비어 있음 → 최초 1회 채움
+  const _cs=document.getElementById('lf-category'), _ts=document.getElementById('lf-type');
+  if((_cs&&_cs.options.length<=1)||(_ts&&_ts.options.length<=1)){
+    openListScreen(); // 셀렉트 생성 + renderList 포함
+    showScreen('screen-list');
+    return;
+  }
   showScreen('screen-list');
   renderList();
 }

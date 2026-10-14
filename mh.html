@@ -164,6 +164,10 @@ body {
 }
 .footer-level { font-size: 12px; color: #aaa; }
 .footer-right { display: flex; align-items: center; gap: 8px; }
+.footer-type { font-size: 11px; font-weight: 600; color: #0F6E56; background: #e1f5ee; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+.footer-cat { font-size: 11px; color: #3949ab; background: #e8eaf6; padding: 2px 8px; border-radius: 4px; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card-footer { gap: 8px; }
+.footer-right { flex-wrap: wrap; justify-content: flex-end; }
 .footer-star { font-size: 12px; color: #f4a623; letter-spacing: -1px; }
 .footer-year {
   font-size: 11px; color: #888; background: #f0f0ee;
@@ -480,42 +484,6 @@ window.MathJax = {
         <div class="brand-name">Memorization Helper</div>
         <div class="brand-sub">암기도우미 · ANKI 호환 · 260831</div>
       </div>
-      <!-- ① 오늘 목표 -->
-      <div style="background:#fff;border-radius:12px;padding:14px 16px;border:1px solid #eee;margin-bottom:16px;">
-        <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:10px;">🎯 오늘 목표</div>
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-          <div style="display:flex;align-items:center;gap:5px;">
-            <span style="font-size:12px;color:#777;">신규</span>
-            <input type="number" id="daily-new" value="20" min="0" max="9999"
-              style="width:56px;padding:3px 6px;border:1px solid #ddd;border-radius:6px;font-size:13px;text-align:center;"
-              oninput="clampQuotaInput('daily-new','_maxNew')">
-            <span style="font-size:12px;color:#aaa;" id="lbl-max-new"></span>
-            <button onclick="setMaxQuota('new')"
-              style="padding:2px 8px;border-radius:5px;border:1px solid #9fe1cb;background:#f0faf6;font-size:11px;font-weight:600;color:#0F6E56;cursor:pointer;white-space:nowrap;">최대</button>
-          </div>
-          <div style="display:flex;align-items:center;gap:5px;">
-            <span style="font-size:12px;color:#777;">복습</span>
-            <input type="number" id="daily-review" value="50" min="0" max="9999"
-              style="width:56px;padding:3px 6px;border:1px solid #ddd;border-radius:6px;font-size:13px;text-align:center;"
-              oninput="clampQuotaInput('daily-review','_maxReview')">
-            <span style="font-size:12px;color:#aaa;" id="lbl-max-review"></span>
-            <button onclick="setMaxQuota('review')"
-              style="padding:2px 8px;border-radius:5px;border:1px solid #9fe1cb;background:#f0faf6;font-size:11px;font-weight:600;color:#0F6E56;cursor:pointer;white-space:nowrap;">최대</button>
-          </div>
-          <div style="width:1px;height:20px;background:#eee;"></div>
-          <label style="font-size:12px;color:#777;display:flex;align-items:center;gap:5px;">⏱ 타이머
-            <select id="timer-select-import" onchange="changeTimerSec(+this.value)"
-              style="padding:3px 6px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:#fff;cursor:pointer;">
-              <option value="10">10초</option>
-              <option value="20" selected>20초</option>
-              <option value="30">30초</option>
-              <option value="60">60초</option>
-              <option value="0">끄기</option>
-            </select>
-          </label>
-        </div>
-      </div>
-
       <!-- ② 학습 순서 -->
       <div style="background:#fff;border-radius:12px;padding:12px 16px;border:1px solid #eee;margin-bottom:16px;">
         <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:10px;">📋 학습 순서</div>
@@ -603,6 +571,7 @@ window.MathJax = {
         <span id="progress-file-name" style="font-size:12px;color:#1D9E75;font-weight:600;"></span>
       </div>
       <div id="apkg-store-info" style="display:none;margin-top:6px;font-size:12px;color:#888;">
+        <button onclick="continueRecent()" style="width:100%;margin-bottom:6px;padding:12px;border-radius:10px;border:none;background:#1D9E75;color:#fff;font-size:14px;font-weight:700;cursor:pointer;">▶ 최근 파일로 바로 시작 (다시 선택 불필요)</button>
         📌 최근 파일: <span id="apkg-store-name" style="color:#555;font-weight:600;"></span>
         <span id="apkg-store-clear" style="margin-left:8px;color:#c62828;text-decoration:underline;cursor:pointer;">저장된 파일 지우기</span>
       </div>
@@ -707,6 +676,12 @@ window.MathJax = {
         <div class="card-shell">
           <div class="card-scroll" id="card-scroll">
             <div class="block" id="block-front">
+              <div class="footer-right card-meta" style="margin-bottom:8px;justify-content:flex-start;">
+                <span class="footer-type" id="footer-type"></span>
+                <span class="footer-cat" id="footer-cat"></span>
+                <span class="footer-star" id="footer-star"></span>
+                <span class="footer-year" id="footer-year"></span>
+              </div>
               <div class="block-label">문제</div>
               <div class="block-body" id="content-front"></div>
             </div>
@@ -737,10 +712,6 @@ window.MathJax = {
           </div>
           <div class="card-footer">
             <span class="footer-level" id="footer-level">1단계</span>
-            <div class="footer-right">
-              <span class="footer-star" id="footer-star"></span>
-              <span class="footer-year" id="footer-year"></span>
-            </div>
           </div>
         </div>
 
@@ -825,6 +796,42 @@ window.MathJax = {
         </button>
       </div>
 
+      <!-- ① 오늘 목표 -->
+      <div style="background:#fff;border-radius:12px;padding:14px 16px;border:1px solid #eee;margin-bottom:8px;flex-shrink:0;">
+        <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:10px;">🎯 오늘 목표</div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span style="font-size:12px;color:#777;">신규</span>
+            <input type="number" id="daily-new" value="20" min="0" max="9999"
+              style="width:56px;padding:3px 6px;border:1px solid #ddd;border-radius:6px;font-size:13px;text-align:center;"
+              oninput="clampQuotaInput('daily-new','_maxNew')">
+            <span style="font-size:12px;color:#aaa;" id="lbl-max-new"></span>
+            <button onclick="setMaxQuota('new')"
+              style="padding:2px 8px;border-radius:5px;border:1px solid #9fe1cb;background:#f0faf6;font-size:11px;font-weight:600;color:#0F6E56;cursor:pointer;white-space:nowrap;">최대</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span style="font-size:12px;color:#777;">복습</span>
+            <input type="number" id="daily-review" value="50" min="0" max="9999"
+              style="width:56px;padding:3px 6px;border:1px solid #ddd;border-radius:6px;font-size:13px;text-align:center;"
+              oninput="clampQuotaInput('daily-review','_maxReview')">
+            <span style="font-size:12px;color:#aaa;" id="lbl-max-review"></span>
+            <button onclick="setMaxQuota('review')"
+              style="padding:2px 8px;border-radius:5px;border:1px solid #9fe1cb;background:#f0faf6;font-size:11px;font-weight:600;color:#0F6E56;cursor:pointer;white-space:nowrap;">최대</button>
+          </div>
+          <div style="width:1px;height:20px;background:#eee;"></div>
+          <label style="font-size:12px;color:#777;display:flex;align-items:center;gap:5px;">⏱ 타이머
+            <select id="timer-select-import" onchange="changeTimerSec(+this.value)"
+              style="padding:3px 6px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:#fff;cursor:pointer;">
+              <option value="10">10초</option>
+              <option value="20" selected>20초</option>
+              <option value="30">30초</option>
+              <option value="60">60초</option>
+              <option value="0">끄기</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
       <!-- 필터/정렬 바 -->
       <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;margin-bottom:8px;">
 
@@ -841,11 +848,8 @@ window.MathJax = {
             <button type="button" class="list-filter-btn star-bucket-btn" data-bucket="1-" onclick="toggleStarBucket('1-')">★1 이하</button>
           </div>
 
-          <!-- 문제유형 -->
-          <select id="lf-type" onchange="setListDropFilter('type',this.value)"
-            style="font-size:12px;border:1px solid #ddd;border-radius:20px;padding:4px 10px;background:#fff;color:#555;cursor:pointer;outline:none;">
-            <option value="">문제유형 전체</option>
-          </select>
+          <!-- 문제유형 (다중 선택) -->
+          <div id="lf-type-chips" style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;"></div>
 
           <!-- 분류 -->
           <select id="lf-category" onchange="setListDropFilter('category',this.value)"
@@ -911,6 +915,9 @@ window.MathJax = {
         </label>
         <label style="font-size:12px;font-weight:600;color:#888;">해설
           <textarea id="edit-explain" rows="3" style="display:block;width:100%;margin-top:4px;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;font-family:inherit;line-height:1.6;resize:vertical;outline:none;box-sizing:border-box;"></textarea>
+        </label>
+        <label style="font-size:12px;font-weight:600;color:#888;">문제유형
+          <select id="edit-type" style="display:block;margin-top:4px;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;background:#fff;"></select>
         </label>
         <label style="font-size:12px;font-weight:600;color:#888;">메모 (법규·노트)
           <textarea id="edit-note" rows="2" style="display:block;width:100%;margin-top:4px;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;font-family:inherit;line-height:1.6;resize:vertical;outline:none;box-sizing:border-box;"></textarea>
@@ -1588,6 +1595,14 @@ async function resumeWith(file){
     await handleFile(file,false);
   }
 }
+async function continueRecent(){
+  // 첫 화면에서 이미 저장된 최근 파일(IndexedDB)로 파일 재선택 없이 다음 화면(학습/목록)으로 진행
+  const rec=await apkgStoreLoad();
+  if(!rec||!rec.buffer||!rec.buffer.byteLength){ alert('저장된 최근 파일이 없습니다. 파일을 선택해주세요.'); return; }
+  try{ if(studyDir) await dirPerm(true); }catch(e){}
+  const file=new File([rec.buffer],rec.name,{type:'application/octet-stream'});
+  await resumeWith(file);
+}
 async function resumeClick(){
   if(!_resumeFile) return;
   await dirPerm(true); // 클릭 직후라 허용 창을 띄울 수 있음 (거부해도 이 기기의 진도로 계속)
@@ -2069,7 +2084,7 @@ function renderList(){
   let source=allCards.filter(c=>!isHeart(c.star));
   const {star:sf, type:tf, category:cf}=listDropFilters;
   if(sf&&sf.size>0) source=source.filter(c=>sf.has(starBucket(countStars(c.star))));
-  if(tf)  source=source.filter(c=>detectCardType(c)===tf);
+  if(tf&&tf.size>0) source=source.filter(c=>tf.has(detectCardType(c)));
   if(cf)  source=source.filter(c=>catMatch(c.분류,cf));
 
   // 검색
@@ -2089,7 +2104,7 @@ function renderList(){
   }
   // 'order' = 원본 allCards 순서 유지 (기본값, 별도 정렬 불필요)
 
-  const calcCount=matched.filter(c=>c.C==='Y').length;
+  const calcCount=matched.filter(c=>detectCardType(c)==='계산').length;
   statsEl.textContent=kw
     ?`"${kw}" 검색: ${matched.length}장`
     :`${matched.length}장${calcCount?'  (계산 '+calcCount+'장)':''}`;
@@ -2117,7 +2132,7 @@ function renderList(){
         `<div class="list-card-meta">`+
           `<span class="list-badge ${isNew?'list-badge-new':'list-badge-level'}">${isNew?'신규':(prog?prog.level+'단계':'1단계')}</span>`+
           (c.분류?`<span class="list-badge list-badge-분류">${c.분류}</span>`:'')+
-          (c.C==='Y'?`<span class="list-badge list-badge-calc">계산</span>`:'')+
+          (detectCardType(c)==='계산'?`<span class="list-badge list-badge-calc">계산</span>`:'')+
           (star?`<span class="list-star">${star}</span>`:'')+
           (lcEditedIds.has(c.id)?`<span class="list-card-edited">수정됨</span>`:'')+
           (c.year?`<span class="list-year">${c.year}</span>`:'')+
@@ -2165,7 +2180,7 @@ async function renderListCardModal(){
   document.getElementById('lc-meta').innerHTML=
     `<span class="list-badge ${isNew?'list-badge-new':'list-badge-level'}">${isNew?'신규':(prog?prog.level+'단계':'1단계')}</span>`+
     (c.분류?`<span class="list-badge list-badge-분류">${lcEsc(stripHtml(c.분류))}</span>`:'')+
-    (c.C==='Y'?`<span class="list-badge list-badge-calc">계산</span>`:'')+
+    (detectCardType(c)==='계산'?`<span class="list-badge list-badge-calc">계산</span>`:'')+
     (star?`<span class="list-star">${star}</span>`:'')+
     (c.year?`<span style="font-size:11px;color:#aaa;">${lcEsc(stripHtml(c.year))}</span>`:'')+
     (lcEditedIds.has(c.id)?`<span class="list-card-edited">수정됨</span>`:'');
@@ -2198,6 +2213,14 @@ async function renderListCardModal(){
 /* ── 편집기(WYSIWYG) ── */
 var lcDraft=null, lcTouched=new Set(), lcRaw=false, lcBlobMap={};
 const LC_RICH=[['front',()=>fieldNames[0],3],['hint',()=>fieldNames[1],1],['back',()=>fieldNames[2],3],['explain',()=>explainLabel,3],['note',()=>'메모 (법규·노트)',1]];
+const EDIT_TYPES=['단답형','다답형','선택형','계산형','서술형','완성형'];
+function typeSelectOptions(cur){
+  // cur: 카드의 현재 유형(c.C 값). 빈 값=자동 판정. 목록 밖 값(예: '계산','Y')도 유지해서 보여줌
+  const v=String(cur||'').trim();
+  const list=[...EDIT_TYPES]; if(v&&!list.includes(v)) list.push(v);
+  return '<option value=""'+(v===''?' selected':'')+'>(자동 판정)</option>'+
+    list.map(t=>{const e=lcEsc(t);return '<option value="'+e+'"'+(t===v?' selected':'')+'>'+e+'</option>';}).join('');
+}
 const LC_META=[['분류','분류','예: A-Ⅰ·21'],['star','출제빈도','예: ★★★'],['year','출제연도','예: 2023-1']];
 async function lcResolve(html){
   if(!html||!zipRef) return html||'';
@@ -2243,6 +2266,7 @@ async function lcRenderEdit(c){
     }
   }
   html+=`<div class="lc-row3">`+LC_META.map(([k,l,ph])=>`<label class="lc-f">${l}<input data-m="${k}" type="text" value="${lcEsc(lcDraft[k])}" placeholder="${ph}"></label>`).join('')+`</div>`;
+  html+=`<label class="lc-f">문제유형 <span style="font-size:11px;color:#aaa;font-weight:400;">(서술형인데 단답형으로 나올 때 여기서 지정)</span><select data-m="C" style="display:block;margin-top:4px;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;background:#fff;">${typeSelectOptions(lcDraft.C)}</select></label>`;
   html+=`<div style="font-size:11px;color:#bbb;">${lcRaw?'HTML 원본 편집 중 · 이미지 태그(&lt;img&gt;)는 건드리지 마세요':'붙여넣기는 글자만 들어갑니다 · 수식은 \\( \\) 형식 그대로 입력하세요'}</div>`;
   body.innerHTML=html;
   if(!lcRaw){
@@ -2275,17 +2299,17 @@ function lcCollect(){
   const body=document.getElementById('lc-body');
   body.querySelectorAll('.lc-rte').forEach(el=>{ if(lcTouched.has(el.dataset.k)) lcDraft[el.dataset.k]=lcCleanHtml(el.innerHTML); });
   body.querySelectorAll('.lc-raw').forEach(t=>{ if(lcTouched.has(t.dataset.k)) lcDraft[t.dataset.k]=t.value.trim(); });
-  body.querySelectorAll('input[data-m]').forEach(i=>{ lcDraft[i.dataset.m]=i.value.trim(); });
+  body.querySelectorAll('input[data-m],select[data-m]').forEach(i=>{ lcDraft[i.dataset.m]=i.value.trim(); });
 }
 function lcToggleRaw(){ lcCollect(); lcRaw=!lcRaw; lcRenderEdit(lcCard()); }
 function lcDirty(){
   const c=lcCard(); if(!c||!lcDraft) return false;
   lcCollect();
-  return [...LC_RICH.map(x=>x[0]),...LC_META.map(x=>x[0])].some(k=>String(lcDraft[k]||'').trim()!==String(c[k]||'').trim());
+  return [...LC_RICH.map(x=>x[0]),...LC_META.map(x=>x[0]),'C'].some(k=>String(lcDraft[k]||'').trim()!==String(c[k]||'').trim());
 }
 function lcStartEdit(){
   const c=lcCard(); if(!c) return;
-  lcDraft={}; [...LC_RICH.map(x=>x[0]),...LC_META.map(x=>x[0])].forEach(k=>lcDraft[k]=c[k]||'');
+  lcDraft={}; [...LC_RICH.map(x=>x[0]),...LC_META.map(x=>x[0]),'C'].forEach(k=>lcDraft[k]=c[k]||'');
   lcTouched=new Set(); lcRaw=false;
   lcMode='edit'; renderListCardModal();
 }
@@ -2344,7 +2368,7 @@ function jumpToCard(cardId){
 
 // ── 카드 목록 화면 관련 ──
 let listFilter='all'; // 하위 호환
-let listDropFilters={star:new Set(), type:'', category:''}; // star: 선택된 구간들의 Set('5+'|'4'|'3'|'2'|'1-')
+let listDropFilters={star:new Set(), type:new Set(), category:''}; // star: 선택된 구간들의 Set('5+'|'4'|'3'|'2'|'1-')
 function starBucket(n){ n=n||0; if(n>=5) return '5+'; if(n<=1) return '1-'; return String(n); }
 let listSort='order'; // 'order'|'star'|'alpha'|'cat'
 let selectedCards=new Set();
@@ -2405,7 +2429,7 @@ function detectCardType(c){
   const cv=String(c.C||'').trim();
   if(cv){
     const lv=cv.toLowerCase();
-    if(lv==='y'||lv==='계산'||lv==='calc'||lv==='calculation') return '계산';
+    if(lv==='y'||lv==='계산'||lv==='계산형'||lv==='calc'||lv==='calculation') return '계산';
     if(!/^(n|no|x|-|0|없음|해당없음)$/i.test(cv)){
       if(lv.includes('빈칸')||lv.includes('fill')||lv.includes('cloze')) return '빈칸';
       if(lv.includes('서술')||lv.includes('essay')) return '서술형';
@@ -2426,7 +2450,7 @@ function detectCardType(c){
 }
 
 function openListScreen(){
-  listDropFilters={star:new Set(), type:'', category:''};
+  listDropFilters={star:new Set(), type:new Set(), category:''};
   listSort='order';
   selectedCards.clear();
   document.getElementById('list-deck-name').textContent=deckFileName;
@@ -2470,14 +2494,12 @@ function openListScreen(){
   catSel.innerHTML=catHtml;
   catSel.value='';
 
-  // 문제유형 셀렉트 동적 생성
-  const typeSel=document.getElementById('lf-type');
-  const types=[...new Set(allCards.filter(c=>!isHeart(c.star)).map(c=>detectCardType(c)))].sort();
+  // 문제유형 칩 동적 생성 (다중 선택)
+  const types=sortTypes([...new Set(allCards.filter(c=>!isHeart(c.star)).map(c=>detectCardType(c)))]);
   const typeCount={};
   allCards.filter(c=>!isHeart(c.star)).forEach(c=>{const t=detectCardType(c);typeCount[t]=(typeCount[t]||0)+1;});
-  typeSel.innerHTML='<option value="">문제유형 전체</option>'+
-    types.map(t=>{const e=esc(t);return `<option value="${e}">${e} (${typeCount[t]||0}장)</option>`;}).join('');
-  typeSel.value='';
+  _typeList=types; _typeCount=typeCount;
+  renderTypeChips();
 
   // 출제빈도 버튼 그룹 — 구간별 카드 수 갱신 + 선택 상태 초기화
   updateStarBucketButtons();
@@ -2501,6 +2523,27 @@ function toggleStarBucket(bucket){
   selectedCards.clear();
   updateStarBucketButtons();
   renderList();
+}
+let _typeList=[], _typeCount={};
+const TYPE_ORDER=['단답형','다답형','선택형','계산형','계산','서술형','완성형'];
+function sortTypes(arr){ const r=t=>{const i=TYPE_ORDER.indexOf(t);return i<0?999:i;}; return arr.sort((x,y)=>r(x)-r(y)||x.localeCompare(y,'ko')); }
+function renderTypeChips(){
+  const box=document.getElementById('lf-type-chips'); if(!box) return;
+  const sel=listDropFilters.type;
+  const mk=(label,on,fn,extra)=>`<button type="button" class="list-filter-btn${on?' active':''}" onclick="${fn}" style="${extra||''}">${label}</button>`;
+  const esc=v=>String(v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/'/g,'&#39;');
+  let h=mk('유형 전체 ('+_typeList.reduce((n,t)=>n+(_typeCount[t]||0),0)+')',sel.size===0,"clearTypeFilter()");
+  _typeList.forEach(t=>{ h+=mk(esc(t)+' ('+(_typeCount[t]||0)+')',sel.has(t),"toggleTypeFilter('"+esc(t).replace(/\\/g,'\\\\')+"')"); });
+  box.innerHTML=h;
+}
+function toggleTypeFilter(t){
+  const s=listDropFilters.type;
+  if(s.has(t)) s.delete(t); else s.add(t);
+  selectedCards.clear(); renderTypeChips(); renderList();
+}
+function clearTypeFilter(){
+  listDropFilters.type=new Set();
+  selectedCards.clear(); renderTypeChips(); renderList();
 }
 function setListDropFilter(key, val){
   listDropFilters[key]=val;
@@ -2574,7 +2617,7 @@ function startAllCards(){
   let source=allCards.filter(c=>!isHeart(c.star));
   const {star:sf,type:tf,category:cf}=listDropFilters;
   if(sf&&sf.size>0) source=source.filter(c=>sf.has(starBucket(countStars(c.star))));
-  if(tf) source=source.filter(c=>detectCardType(c)===tf);
+  if(tf&&tf.size>0) source=source.filter(c=>tf.has(detectCardType(c)));
   if(cf) source=source.filter(c=>catMatch(c.분류,cf));
   if(kw) source=source.filter(c=>{
     const f=stripHtml(c.front).toLowerCase(),h=stripHtml(c.hint).toLowerCase(),b=stripHtml(c.back).toLowerCase(),x=stripHtml(c.explain||'').toLowerCase();
@@ -2617,6 +2660,8 @@ async function loadCard(){
   levelEl.textContent=isNewCard(c.id)?'신규':`${prog.level}단계`;
   levelEl.style.color=isNewCard(c.id)?'#1D9E75':'#aaa';
   const starOnly=(c.star.match(/★+/g)||[]).join('');
+  const ftEl=document.getElementById('footer-type');if(ftEl){const tv=detectCardType(c);ftEl.textContent=tv;ftEl.style.display=tv?'inline-block':'none';}
+  const fcEl2=document.getElementById('footer-cat');if(fcEl2){const cv=stripHtml(c.분류||'');fcEl2.textContent=cv;fcEl2.style.display=cv?'inline-block':'none';}
   const fsEl=document.getElementById('footer-star');fsEl.textContent=starOnly;fsEl.style.display=starOnly?'inline':'none';
   const btn=document.getElementById('main-btn');btn.classList.remove('hidden');
   if(studyOrder==='nohint'){
@@ -2807,7 +2852,7 @@ function retryFailed(){
   showScreen('screen-study');loadCard();
 }
 function restartStudy(){sessionLog=[];failedCards=[];applyFilter();cur=0;passCount=0;failCount=0;studyStartTime=new Date();showScreen('screen-study');loadCard();}
-function goImport(){stopTimer();ttsStop();sessionLog=[];failedCards=[];cardEdited=false;try{lcEditedIds.clear();}catch(e){}allCards=[];filteredCards=[];zipRef=null;mediaMap={};_maxNew=0;_maxReview=0;updateQuotaLabels();setStatus('','');showScreen('screen-import');}
+function goImport(){stopTimer();ttsStop();sessionLog=[];failedCards=[];cardEdited=false;try{lcEditedIds.clear();}catch(e){}allCards=[];filteredCards=[];zipRef=null;mediaMap={};_maxNew=0;_maxReview=0;updateQuotaLabels();setStatus('','');showScreen('screen-import');try{apkgStoreRefreshUI();}catch(e){}}
 
 function startTimer(sec,onEnd){
   stopTimer();timerSec=sec;timerPaused=false;updateTimerUI(timerSec,sec);
@@ -3185,6 +3230,7 @@ function openEditModal(){
   document.getElementById('edit-explain').value=c.explain||'';
   document.getElementById('edit-back').value=c.back||'';
   document.getElementById('edit-note').value=c.note||'';
+  document.getElementById('edit-type').innerHTML=typeSelectOptions(c.C);
   const modal=document.getElementById('edit-modal');
   modal.style.display='flex';
   setTimeout(()=>document.getElementById('edit-front').focus(),100);
@@ -3202,8 +3248,9 @@ function saveEditModal(){
   const nx=document.getElementById('edit-explain').value.trim();
   const nb=document.getElementById('edit-back').value.trim();
   const nn=document.getElementById('edit-note').value.trim();
-  if(target){target.front=nf;target.hint=nh;target.back=nb;target.explain=nx;target.note=nn;}
-  c.front=nf;c.hint=nh;c.back=nb;c.explain=nx;c.note=nn;
+  const nt=document.getElementById('edit-type').value.trim();
+  if(target){target.front=nf;target.hint=nh;target.back=nb;target.explain=nx;target.note=nn;target.C=nt;}
+  c.front=nf;c.hint=nh;c.back=nb;c.explain=nx;c.note=nn;c.C=nt;
   cardEdited=true;
   lcEditedIds.add(c.id);
   closeEditModal();

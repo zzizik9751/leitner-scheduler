@@ -654,7 +654,7 @@ window.MathJax = {
             <button onclick="goToPrev()" id="btn-prev" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;opacity:0.35;" title="이전 카드 보기">◀</button>
             <button onclick="openEditModal()" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="카드 텍스트 편집">✏️</button>
             <button onclick="openCalc()" id="btn-calc" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="계산기"><svg width="13" height="15" viewBox="0 0 14 16" fill="none" stroke="#555" stroke-width="1.3" stroke-linejoin="round" style="display:block"><rect x="1" y="0.8" width="12" height="14.4" rx="2"/><rect x="3" y="2.8" width="8" height="3" rx="0.6" fill="#555" fill-opacity=".15"/><g fill="#555" stroke="none"><circle cx="4" cy="8.6" r=".9"/><circle cx="7" cy="8.6" r=".9"/><circle cx="10" cy="8.6" r=".9"/><circle cx="4" cy="12" r=".9"/><circle cx="7" cy="12" r=".9"/><circle cx="10" cy="12" r=".9"/></g></svg></button>
-            <button onclick="saveProgress()" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="진도 저장 (카드 수정 시 ZIP)">💾</button>
+            <button onclick="saveProgress()" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="진도 저장">💾</button>
             <button id="btn-fullscreen" onclick="toggleFullscreen()" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="전체화면 (F11)">⛶</button>
             <button id="btn-tts" onclick="toggleTTS()" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="TTS 음성 읽기 켜기/끄기">🔇</button>
             <div class="timer-ring" id="timer-ring" onclick="togglePause()" title="클릭 = 일시정지/재개">
@@ -782,10 +782,10 @@ window.MathJax = {
           <div id="list-deck-name" style="font-size:14px;font-weight:700;color:#0f1117;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
           <div id="list-stats" style="font-size:11px;color:#aaa;margin-top:1px;"></div>
         </div>
-        <button onclick="saveProgress()" id="btn-list-save" title="수정 내용 포함 ZIP 저장"
-          style="padding:8px 12px;border-radius:9px;border:1px solid #e0a040;background:#fff;font-size:13px;font-weight:700;color:#b26a00;cursor:pointer;display:none;flex-shrink:0;">
-          💾 저장
-        </button>
+        <span id="btn-list-save" style="display:none;flex-shrink:0;gap:6px;">
+          <button onclick="saveDeck('zip')" title="카드 수정 내용을 ZIP으로 저장 (이 프로그램에서 다시 열 때)" style="padding:8px 10px;border-radius:9px;border:1px solid #e0a040;background:#fff;font-size:13px;font-weight:700;color:#b26a00;cursor:pointer;">💾 덱 ZIP</button>
+          <button onclick="saveDeck('apkg')" title="카드 수정 내용을 노트에 반영한 APKG로 저장 (안키에서 가져올 때)" style="padding:8px 10px;border-radius:9px;border:1px solid #e0a040;background:#fff;font-size:13px;font-weight:700;color:#b26a00;cursor:pointer;">💾 덱 APKG</button>
+        </span>
         <button onclick="startSelectedCards()" id="btn-start-selected"
           style="padding:8px 16px;border-radius:9px;border:none;background:#1D9E75;font-size:13px;font-weight:700;color:#fff;cursor:pointer;display:none;flex-shrink:0;">
           ▶ 선택 학습
@@ -1316,6 +1316,7 @@ async function apkgStoreClearAndRefresh(){
   apkgStoreRefreshUI();
 }
 
+let importIdx=null;
 let SQL=null,allCards=[],filteredCards=[],mediaMap={},zipRef=null;
 let pendingImport=null; // apkg 파싱 후 필드매핑 확인을 기다리는 원자료
 let sessionLog=[], cardEdited=false, ttsRate=1.1, ttsVoiceIdx=-1;
@@ -1462,7 +1463,7 @@ async function kvDel(key){
     db.close();
   }catch(e){}
 }
-function nameToBase(name){return String(name||'').replace(/\.apkg$/i,'').replace(/_saved_\d{4}-\d{2}-\d{2}\.zip$/i,'').replace(/\.zip$/i,'');}
+function nameToBase(name){return String(name||'').replace(/_saved_\d{4}-\d{2}-\d{2}\.(zip|apkg)$/i,'').replace(/\.(apkg|zip)$/i,'').replace(/_saved_\d{4}-\d{2}-\d{2}$/i,'');}
 function progressBase(){return nameToBase(deckFileName);}
 function buildProgressObj(){
   return {deckName:progressBase(),savedAt:progressSavedAt||new Date().toISOString(),version:'11.0',cards:progressData,daily:dailyLog};
@@ -1717,7 +1718,7 @@ function handleDrop(e){
 }
 async function handleApkg(file, hasProgress=false){
   if(!file)return;
-  deckFileName=file.name.replace(/\.apkg$/i,'');
+  deckFileName=file.name.replace(/\.apkg$/i,'').replace(/_saved_\d{4}-\d{2}-\d{2}$/,'');
   // 진도 없이 다른 덱을 불러오면 이전 덱의 진도가 섞이지 않도록 초기화
   if(!hasProgress&&progressDeckBase&&progressDeckBase!==progressBase()){progressData={};dailyLog={};progressSavedAt='';}
   setStatus('파일 읽는 중...','loading');
@@ -1852,6 +1853,7 @@ function parseCardManual(id, p, tags, idx){
 }
 
 async function finishImport(idx, fieldNamesForLabels){
+  importIdx=idx;
   const { rows, hasProgress } = pendingImport;
   allCards = rows.map(([id,mid,flds,tags])=>{
     const p=flds.split('\x1f');
@@ -1885,57 +1887,101 @@ async function finishImport(idx, fieldNamesForLabels){
 }
 
 async function saveProgress(){
-  // v11: 평소엔 진도 JSON만 저장 / 카드 문구를 수정했을 때만 덱 포함 ZIP 저장
+  // v12: 학습화면 저장 = 진도 JSON만 (덱 ZIP/APKG는 만들지 않음. 카드 수정 저장은 saveDeck 사용)
   persistProgress(); // 이 기기(브라우저)에도 즉시 저장
-  if(!(zipRef&&cardEdited)){
-    const obj=buildProgressObj();
-    let where='';
-    if(studyDir&&await dirPerm(true)){ if(await writeDirProgress(obj)) where='folder'; }
-    if(!where){
-      const blob=new Blob([JSON.stringify(obj,null,2)],{type:'application/json'});
-      const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=progressFileName();a.click();
-      where='download';
-    }
-    const ds=dayStats();
-    showToast((where==='folder'?'진도 저장 완료 (연결된 폴더)':'진도 파일을 내려받았습니다: '+progressFileName())+`\n오늘 ${ds.n}문제 (○${ds.p} / ✕${ds.f})`,3500);
-    return;
+  const obj=buildProgressObj();
+  let where='';
+  if(studyDir&&await dirPerm(true)){ if(await writeDirProgress(obj)) where='folder'; }
+  if(!where){
+    const blob=new Blob([JSON.stringify(obj,null,2)],{type:'application/json'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=progressFileName();a.click();
+    where='download';
   }
+  const ds=dayStats();
+  showToast((where==='folder'?'진도 저장 완료 (연결된 폴더)':'진도 파일을 내려받았습니다: '+progressFileName())+`\n오늘 ${ds.n}문제 (○${ds.p} / ✕${ds.f})`+(cardEdited?'\n※ 카드 수정분은 학습목록 화면의 [덱 저장]으로 저장하세요':''),cardEdited?5000:3500);
+}
+
+// v12: 카드 수정 저장 = 덱만 (진도 없음). ZIP(이 프로그램용: 원본 apkg + cards_edited.json) 또는 APKG(안키용: 수정 내용을 노트에 반영)
+async function saveDeck(fmt){
+  if(!zipRef){alert('저장할 덱이 없습니다.');return;}
   try{
-    // 기존 ZIP 복제
-    const newZip = new JSZip();
-    const files = zipRef.files;
-    for(const fname in files){
-      const f=zipRef.file(fname);
-      if(!f)continue;
-      if(fname==='cards_edited.json') continue; // 교체 예정
-      const buf=await f.async('arraybuffer');
-      newZip.file(fname,buf);
-    }
-    // 수정된 카드 데이터 삽입
-    if(cardEdited){
-      const cardsJson=JSON.stringify(allCards.map(c=>({
+    let blob,fname;
+    if(fmt==='apkg'){
+      blob=await buildApkgBlob();
+      fname=`${deckFileName}_saved_${today()}.apkg`;
+    }else{
+      const newZip=new JSZip();
+      for(const fname0 in zipRef.files){
+        const f=zipRef.file(fname0);
+        if(!f||fname0==='cards_edited.json'||fname0==='progress.json')continue;
+        newZip.file(fname0,await f.async('arraybuffer'));
+      }
+      newZip.file('cards_edited.json',JSON.stringify(allCards.map(c=>({
         id:c.id,front:c.front,hint:c.hint,back:c.back,explain:c.explain||'',note:c.note||'',
         star:c.star,year:c.year,분류:c.분류,C:c.C,tags:c.tags
-      })),null,2);
-      newZip.file('cards_edited.json',cardsJson);
+      })),null,2));
+      blob=await newZip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}});
+      fname=`${deckFileName}_saved_${today()}.zip`;
     }
-    // 진도 데이터 삽입
-    const progressJson=JSON.stringify(buildProgressObj(),null,2);
-    newZip.file('progress.json',progressJson);
-    if(studyDir&&await dirPerm(true)) await writeDirProgress(buildProgressObj()); // 연결된 폴더에도 진도 JSON 저장
-    // ZIP 생성 및 다운로드
-    const blob=await newZip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}});
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(blob);
-    a.download=`${deckFileName}_saved_${today()}.zip`;
-    a.click();
-    showToast('카드 수정 내용을 포함해 ZIP으로 저장했습니다.\n다음부터는 이 ZIP을 덱으로 불러오세요.',4000);
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fname;a.click();
+    try{ apkgStoreSave(new File([blob],fname)).then(apkgStoreRefreshUI); }catch(e){} // 다음 실행 때 수정본이 자동으로 열리도록
+    showToast('덱을 저장했습니다: '+fname+'\n(진도는 학습화면의 💾로 따로 저장)',4500);
     cardEdited=false;
     lcEditedIds.clear();
     try{ updateListSaveBtn(); renderList(); }catch(e){}
   }catch(err){
     alert('저장 오류: '+err.message);
   }
+}
+async function sha1Csum(txt){
+  const d=await crypto.subtle.digest('SHA-1',new TextEncoder().encode(txt));
+  return parseInt(Array.from(new Uint8Array(d)).slice(0,4).map(x=>x.toString(16).padStart(2,'0')).join(''),16);
+}
+async function buildApkgBlob(){
+  if(!SQL){SQL=await initSqlJs({wasmBinary:window.__sqlWasmBinary});}
+  const dbName=zipRef.file('collection.anki21')?'collection.anki21':'collection.anki2';
+  const db=new SQL.Database(new Uint8Array(await zipRef.file(dbName).async('arraybuffer')));
+  let models=null;
+  try{ const r=db.exec('SELECT models FROM col'); if(r.length) models=JSON.parse(r[0].values[0][0]); }catch(e){}
+  const fmaps=buildFieldMaps(models);
+  const byId={}; allCards.forEach(c=>byId[String(c.id)]=c);
+  const rows=db.exec('SELECT id,mid,flds,tags FROM notes')[0].values;
+  const now=Math.floor(Date.now()/1000);
+  const upd=db.prepare('UPDATE notes SET flds=?,tags=?,sfld=?,csum=?,mod=?,usn=-1 WHERE id=?');
+  const DEF={front:0,hint:1,back:2,star:3,year:4,분류:5,C:6,explain:-1};
+  // 앱이 읽는 값(parseCard)과 같은 방식으로 원본을 정규화해서 비교 → 실제로 바뀐 칸만 덮어씀(공백 정리·메모(note) 등으로 원본이 지워지지 않게)
+  const NORM={front:v=>v||'',hint:v=>(v||'').trim(),back:v=>v||'',explain:v=>(v||'').trim(),star:v=>(v||'').trim(),year:v=>(v||'').trim(),분류:v=>stripHtml(v||'').trim(),C:v=>stripHtml(v||'').trim()};
+  let n=0;
+  for(const [id,mid,flds,tags] of rows){
+    const c=byId[String(id)]; if(!c)continue;
+    const fm=fmaps[mid]||fmaps[String(mid)];
+    const p=flds.split('\x1f'); let ch=false, sortChanged=false;
+    const sortf=(models&&models[mid]&&models[mid].sortf)||0;
+    for(const k of Object.keys(NORM)){
+      const i=(typeof importIdx!=='undefined'&&importIdx)?importIdx[k]:fidx(fm,k,DEF[k]);
+      if(i==null||i<0||i>=p.length)continue;
+      if(NORM[k](p[i])!==(c[k]||'')){ p[i]=c[k]||''; ch=true; if(i===sortf)sortChanged=true; }
+    }
+    let t=tags;
+    if((c.tags||'').trim()!==(tags||'').trim()){ t=' '+(c.tags||'').trim()+' '; ch=true; }
+    if(!ch)continue;
+    const sf=stripHtml(p[sortf]||'');
+    const sfld=sortChanged?sf:null;
+    const csum=sortChanged?await sha1Csum(sf):null;
+    const old=db.exec('SELECT sfld,csum FROM notes WHERE id='+Number(id))[0].values[0];
+    upd.run([p.join('\x1f'),t,sortChanged?sfld:old[0],sortChanged?csum:old[1],now,id]);
+    n++;
+  }
+  upd.free();
+  const out=db.export(); db.close();
+  const nz=new JSZip();
+  for(const fname in zipRef.files){
+    const f=zipRef.file(fname);
+    if(!f||fname==='cards_edited.json'||fname==='progress.json')continue;
+    if(fname===dbName) nz.file(fname,out,{compression:'DEFLATE'});
+    else nz.file(fname,await f.async('arraybuffer'),{compression:/^\d+$/.test(fname)||fname==='collection.anki2'?'STORE':'DEFLATE'});
+  }
+  return await nz.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}});
 }
 async function handleCombinedFiles(files) {
   if(!files||files.length===0) return;
@@ -2146,11 +2192,11 @@ function renderList(){
 }
 
 /* ── 목록 카드 상세/수정 팝업 ── */
-var lcIds=[], lcIdx=-1, lcMode='view', lcEditedIds=new Set();
+var lcIds=[], lcIdx=-1, lcMode='view', lcEditedIds=new Set(), lcFromStudy=false;
 function lcEsc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function updateListSaveBtn(){
   const b=document.getElementById('btn-list-save'); if(!b) return;
-  b.style.display=cardEdited?'inline-block':'none';
+  b.style.display=cardEdited?'inline-flex':'none';
 }
 function openListCardModal(id){
   // 현재 목록(필터·검색·정렬 반영) 순서로 이전/다음 이동
@@ -2163,7 +2209,7 @@ function openListCardModal(id){
 function closeListCardModal(force){
   if(!force && lcMode==='edit' && lcDirty() && !confirm('수정한 내용을 저장하지 않고 닫을까요?')) return;
   document.getElementById('lc-modal').style.display='none';
-  lcMode='view';
+  lcMode='view'; lcFromStudy=false;
 }
 function lcCard(){ return allCards.find(c=>c.id===lcIds[lcIdx]); }
 function lcNav(d){
@@ -2221,7 +2267,7 @@ function typeSelectOptions(cur){
   return '<option value=""'+(v===''?' selected':'')+'>(자동 판정)</option>'+
     list.map(t=>{const e=lcEsc(t);return '<option value="'+e+'"'+(t===v?' selected':'')+'>'+e+'</option>';}).join('');
 }
-const LC_META=[['분류','분류','예: A-Ⅰ·21'],['star','출제빈도','예: ★★★'],['year','출제연도','예: 2023-1']];
+const LC_META=[['분류','분류','예: A-Ⅰ·21'],['star','출제빈도','예: ★★★']]; // 출제연도(year)는 편집창에서 제외(값은 그대로 보존)
 async function lcResolve(html){
   if(!html||!zipRef) return html||'';
   const tags=html.match(/src="([^"]+)"/g)||[];
@@ -2257,16 +2303,15 @@ async function lcRenderEdit(c){
       tb('removeFormat','서식 지우기','선택 영역 서식 지우기'))+
     `<button type="button" class="lc-tb lc-tb-raw ${lcRaw?'on':''}" onmousedown="event.preventDefault()" onclick="lcToggleRaw()" title="HTML 원본으로 편집">&lt;/&gt; HTML</button>`+
     `</div>`;
-  for(const [k,lbl,rows] of LC_RICH){
+  const richHtml=([k,lbl,rows])=>{
     const label=lcEsc(lbl());
-    if(lcRaw){
-      html+=`<label class="lc-f">${label}<textarea data-k="${k}" class="lc-raw" rows="${rows+1}">${lcEsc(lcDraft[k])}</textarea></label>`;
-    } else {
-      html+=`<div class="lc-f"><div>${label}</div><div class="lc-rte" data-k="${k}" contenteditable="true" style="min-height:${rows*1.7+1}em"></div></div>`;
-    }
-  }
-  html+=`<div class="lc-row3">`+LC_META.map(([k,l,ph])=>`<label class="lc-f">${l}<input data-m="${k}" type="text" value="${lcEsc(lcDraft[k])}" placeholder="${ph}"></label>`).join('')+`</div>`;
-  html+=`<label class="lc-f">문제유형 <span style="font-size:11px;color:#aaa;font-weight:400;">(서술형인데 단답형으로 나올 때 여기서 지정)</span><select data-m="C" style="display:block;margin-top:4px;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;background:#fff;">${typeSelectOptions(lcDraft.C)}</select></label>`;
+    if(lcRaw) return `<label class="lc-f">${label}<textarea data-k="${k}" class="lc-raw" rows="${rows+1}">${lcEsc(lcDraft[k])}</textarea></label>`;
+    return `<div class="lc-f"><div>${label}</div><div class="lc-rte" data-k="${k}" contenteditable="true" style="min-height:${rows*1.7+1}em"></div></div>`;
+  };
+  // 메모(note)는 문제유형·분류·출제빈도 줄 아래에 배치
+  for(const f of LC_RICH){ if(f[0]!=='note') html+=richHtml(f); }
+  html+=`<div class="lc-row3"><label class="lc-f">문제유형<select data-m="C" style="display:block;width:100%;margin-top:4px;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;background:#fff;">${typeSelectOptions(lcDraft.C)}</select></label>`+LC_META.map(([k,l,ph])=>`<label class="lc-f">${l}<input data-m="${k}" type="text" value="${lcEsc(lcDraft[k])}" placeholder="${ph}"></label>`).join('')+`</div>`;
+  for(const f of LC_RICH){ if(f[0]==='note') html+=richHtml(f); }
   html+=`<div style="font-size:11px;color:#bbb;">${lcRaw?'HTML 원본 편집 중 · 이미지 태그(&lt;img&gt;)는 건드리지 마세요':'붙여넣기는 글자만 들어갑니다 · 수식은 \\( \\) 형식 그대로 입력하세요'}</div>`;
   body.innerHTML=html;
   if(!lcRaw){
@@ -2315,11 +2360,12 @@ function lcStartEdit(){
 }
 function lcCancelEdit(){
   if(lcDirty() && !confirm('수정한 내용을 취소할까요?')) return;
+  if(lcFromStudy){ closeListCardModal(true); return; }
   lcMode='view'; renderListCardModal();
 }
 function lcSaveEdit(){
   const c=lcCard(); if(!c) return;
-  if(!lcDirty()){ lcMode='view'; renderListCardModal(); return; }
+  if(!lcDirty()){ if(lcFromStudy){ closeListCardModal(true); return; } lcMode='view'; renderListCardModal(); return; }
   const vals={...lcDraft};
   Object.assign(c,vals);
   (filteredCards||[]).forEach(fc=>{ if(fc!==c && fc.id===c.id) Object.assign(fc,vals); });
@@ -2328,8 +2374,9 @@ function lcSaveEdit(){
   const scroll=document.getElementById('card-list').scrollTop;
   renderList(); updateListSaveBtn();
   document.getElementById('card-list').scrollTop=scroll;
+  if(lcFromStudy){ closeListCardModal(true); loadCard(); showToast('수정 완료 · 파일에 남기려면 학습목록 화면의 [덱 저장]을 누르세요'); return; }
   renderListCardModal();
-  showToast('수정 완료 · 파일에 남기려면 💾 저장을 누르세요');
+  showToast('수정 완료 · 파일에 남기려면 학습목록 화면의 [덱 저장]을 누르세요');
 }
 function lcToggleSelect(){
   const c=lcCard(); if(!c) return;
@@ -2877,6 +2924,8 @@ document.addEventListener('keydown',(e)=>{
   if(!document.getElementById('screen-study').classList.contains('active'))return;
   const tag=document.activeElement?.tagName?.toLowerCase();
   if(tag==='input'||tag==='textarea'||tag==='select')return;
+  if(document.activeElement&&document.activeElement.isContentEditable)return;
+  const _lcm=document.getElementById('lc-modal'); if(_lcm&&_lcm.style.display==='flex')return;
   if(e.key==='ArrowLeft'){e.preventDefault();if(cardPhase==='answer'||cardPhase==='hint2')handleResult(false);}
   else if(e.key==='ArrowRight'){e.preventDefault();if(cardPhase==='answer'||cardPhase==='hint2')handleResult(true);}
   else if(e.key===' '){e.preventDefault();const btn=document.getElementById('main-btn');if(!btn.classList.contains('hidden'))btn.click();}
@@ -3134,6 +3183,7 @@ async function handleZip(file, keepProgress=false){
   try{
     setStatus('저장 파일 불러오는 중...','loading');
     if(!SQL){setStatus('초기화 중...','loading');SQL=await initSqlJs({wasmBinary:window.__sqlWasmBinary});}
+    importIdx=null;
     const zip=await JSZip.loadAsync(file);zipRef=zip;mediaMap={};
     apkgStoreSave(file).then(apkgStoreRefreshUI); // 다음 실행 시 자동 불러오기용 (수정 내용이 담긴 ZIP도 기억)
     // 진도 복원 — 외부에서 이미 진도를 지정(진도 JSON/자동 복원)했으면 ZIP 안의 진도는 쓰지 않음
@@ -3221,19 +3271,13 @@ function updatePrevBtn(){
 
 /* 카드 편집 모달 */
 function openEditModal(){
+  // 학습 화면 ✏️ : 목록 화면과 같은 서식 편집기(WYSIWYG)로 현재 카드를 편집 (HTML 원본은 편집기 안의 </> HTML 버튼)
   if(!filteredCards||filteredCards.length===0)return;
   const idx=Math.min(cur,filteredCards.length-1);
   const c=filteredCards[idx];if(!c)return;
-  // 원본 HTML 그대로 표시 (이미지 태그 등 보존)
-  document.getElementById('edit-front').value=c.front||'';
-  document.getElementById('edit-hint').value=c.hint||'';
-  document.getElementById('edit-explain').value=c.explain||'';
-  document.getElementById('edit-back').value=c.back||'';
-  document.getElementById('edit-note').value=c.note||'';
-  document.getElementById('edit-type').innerHTML=typeSelectOptions(c.C);
-  const modal=document.getElementById('edit-modal');
-  modal.style.display='flex';
-  setTimeout(()=>document.getElementById('edit-front').focus(),100);
+  lcFromStudy=true; lcIds=[c.id]; lcIdx=0;
+  document.getElementById('lc-modal').style.display='flex';
+  lcStartEdit();
 }
 function closeEditModal(){
   document.getElementById('edit-modal').style.display='none';

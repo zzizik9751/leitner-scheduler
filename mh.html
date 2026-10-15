@@ -154,7 +154,7 @@ body {
 .block-label { font-size: 10px; font-weight: 700; color: #bbb; letter-spacing: 0.1em; text-transform: uppercase; }
 .block-body { font-size: 15px; color: #1a1a1a; line-height: 1.75; }
 .block-body img { max-width: 100%; border-radius: 8px; margin-top: 8px; }
-/* 전역 reset(padding:0)으로 사라진 리스트 들여쓰기 복원 ? 불릿이 박스 밖으로 나가는 문제 방지 */
+/* 전역 reset(padding:0)으로 사라진 리스트 들여쓰기 복원 — 불릿이 박스 밖으로 나가는 문제 방지 */
 .block-body ul, .block-body ol { padding-left: 1.5em; margin: 6px 0; list-style-position: outside; }
 .block-body li { margin: 3px 0; }
 .c-divider { height: 1px; background: #f0f0ee; flex-shrink: 0; }
@@ -424,7 +424,7 @@ window.MathJax = {
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
 </head>
 <body>
-<!-- ??? 접근 암호 게이트 (초성암기도우미(전기철도)와 동일 방식: 가벼운 접근 저지용) ??? -->
+<!-- ═══ 접근 암호 게이트 (초성암기도우미(전기철도)와 동일 방식: 가벼운 접근 저지용) ═══ -->
 <div id="gate" style="position:fixed;inset:0;z-index:9000;background:#f5f5f3;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem 1rem;">
   <div style="position:absolute;top:0;left:0;right:0;background:#c62828;color:#fff;text-align:center;font-size:13px;font-weight:700;padding:10px 12px;">본 자료는 상업적 이용을 불허합니다.</div>
   <div style="width:100%;max-width:320px;text-align:center;">
@@ -436,7 +436,7 @@ window.MathJax = {
     <button id="gate-btn" style="width:100%;padding:12px;border-radius:10px;border:none;background:#0f1117;color:#fff;font-size:15px;font-weight:700;cursor:pointer;">입장하기</button>
   </div>
   <div style="position:absolute;bottom:14px;left:0;right:0;text-align:center;font-size:11px;color:#aaa;">
-    Created by <a href="https://blog.naver.com/zzizik" target="_blank" rel="noopener" style="color:#aaa;text-decoration:none;">zzizik</a>, with Claude AI · rev. 261012
+    Created by <a href="https://blog.naver.com/zzizik" target="_blank" rel="noopener" style="color:#aaa;text-decoration:none;">zzizik</a>, with Claude AI · rev. 261016
   </div>
 </div>
 <script>
@@ -482,11 +482,11 @@ window.MathJax = {
     <div class="import-wrap">
       <div class="brand">
         <div class="brand-name">Memorization Helper</div>
-        <div class="brand-sub">암기도우미 · ANKI 호환 · 261016</div>
+        <div class="brand-sub">암기도우미 · ANKI 호환 · 260831</div>
       </div>
       <!-- ② 학습 순서 -->
       <div style="background:#fff;border-radius:12px;padding:12px 16px;border:1px solid #eee;margin-bottom:16px;">
-        <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:10px;">?? 학습 순서</div>
+        <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:10px;">📋 학습 순서</div>
         <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
           <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:#555;cursor:pointer;">
             <input type="radio" name="study-order" value="hint" checked onchange="setStudyOrder(this.value)"
@@ -509,7 +509,7 @@ window.MathJax = {
       <!-- ③ TTS 설정 -->
       <div style="background:#fff;border-radius:12px;padding:12px 16px;border:1px solid #eee;margin-bottom:8px;">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-          <span style="font-size:12px;font-weight:600;color:#555;">?? TTS 설정</span>
+          <span style="font-size:12px;font-weight:600;color:#555;">🔊 TTS 설정</span>
           <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#777;cursor:pointer;">
             <input type="checkbox" id="tts-enable-import" onchange="onTTSImportToggle(this.checked)" style="accent-color:#1D9E75;width:14px;height:14px;">
             음성 읽기 켜기
@@ -540,7 +540,7 @@ window.MathJax = {
       <!-- ④-0 진도 폴더 연결 -->
       <div id="dir-box" style="margin-bottom:8px;font-size:12px;color:#555;">
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <button id="btn-link-dir" onclick="linkStudyFolder()" style="padding:8px 12px;border-radius:9px;border:1.5px solid #3949ab;background:#fff;font-size:13px;font-weight:600;color:#3949ab;cursor:pointer;">?? 진도 폴더 연결</button>
+          <button id="btn-link-dir" onclick="linkStudyFolder()" style="padding:8px 12px;border-radius:9px;border:1.5px solid #3949ab;background:#fff;font-size:13px;font-weight:600;color:#3949ab;cursor:pointer;">📁 진도 폴더 연결</button>
           <span id="dir-name" style="color:#1D9E75;font-weight:600;"></span>
           <span id="dir-unlink" onclick="unlinkStudyFolder()" style="display:none;color:#c62828;text-decoration:underline;cursor:pointer;">해제</span>
         </div>
@@ -550,7 +550,7 @@ window.MathJax = {
       <!-- ④ 진도 + APKG -->
       <div style="display:flex;gap:8px;margin-bottom:8px;">
         <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;border-radius:10px;border:1.5px solid #1D9E75;background:#f0faf6;font-size:13px;font-weight:600;color:#0F6E56;cursor:pointer;">
-          ?? 진도 + APKG 같이 불러오기
+          📊 진도 + APKG 같이 불러오기
           <input type="file" accept=".json,.apkg,.zip" multiple style="display:none" onchange="handleCombinedFiles(this.files)">
         </label>
       </div>
@@ -560,7 +560,7 @@ window.MathJax = {
         ondragover="event.preventDefault();this.classList.add('over')"
         ondragleave="this.classList.remove('over')"
         ondrop="handleDrop(event)">
-        <div class="drop-icon">??</div>
+        <div class="drop-icon">📂</div>
         <div class="drop-text">ANKI .apkg 파일만 불러오기</div>
         <div class="drop-sub">Front · Hint · Back · 해설 · Year · ★ 필드 자동 인식</div>
         <label class="drop-btn">파일 선택
@@ -572,29 +572,29 @@ window.MathJax = {
       </div>
       <div id="apkg-store-info" style="display:none;margin-top:6px;font-size:12px;color:#888;">
         <button onclick="continueRecent()" style="width:100%;margin-bottom:6px;padding:12px;border-radius:10px;border:none;background:#1D9E75;color:#fff;font-size:14px;font-weight:700;cursor:pointer;">▶ 최근 파일로 바로 시작 (다시 선택 불필요)</button>
-        ?? 최근 파일: <span id="apkg-store-name" style="color:#555;font-weight:600;"></span>
+        📌 최근 파일: <span id="apkg-store-name" style="color:#555;font-weight:600;"></span>
         <span id="apkg-store-clear" style="margin-left:8px;color:#c62828;text-decoration:underline;cursor:pointer;">저장된 파일 지우기</span>
       </div>
       <div class="status-bar" id="status-bar"></div>
       <div class="notice">
-        <strong>?? 내보내기 설정</strong><br>
+        <strong>💡 내보내기 설정</strong><br>
         ANKI → 내보내기 → <strong>Support older Anki versions</strong> 체크 후 저장<br><br>
-        <strong>?? 단축키</strong><br>
+        <strong>⌨️ 단축키</strong><br>
         Space = 다음 단계 &nbsp;·&nbsp; ← = X (틀림) &nbsp;·&nbsp; → = O (맞음) &nbsp;·&nbsp; F11 = 전체화면<br><br>
-        <strong>?? 자동 타이머</strong><br>
+        <strong>⏱️ 자동 타이머</strong><br>
         문제 → 설정 시간 후 자동 정답 보기<br>
         정답 보기 후 → 설정 시간 후 자동 X (다음 문제)<br>
         힌트/정답 보기 클릭 시 타이머 리셋 · 타이머 원 클릭 = 일시정지<br><br>
-        <strong>? 전체화면</strong><br>
-        학습 화면 상단 ? 버튼 또는 F11 키로 전체화면 전환<br>
+        <strong>⛶ 전체화면</strong><br>
+        학습 화면 상단 ⛶ 버튼 또는 F11 키로 전체화면 전환<br>
         태블릿·폰에서도 버튼 한 번으로 주소창 없이 몰입 학습 가능<br><br>
-        <strong>?? 진도 저장</strong><br>
+        <strong>💾 진도 저장</strong><br>
         답변할 때마다 이 브라우저에 자동 저장 → 다시 실행하면 덱·진도를 불러와 바로 문제 시작<br>
-        학습 화면 상단 ?? 버튼 = 진도 JSON만 저장 (카드 문구를 수정했을 때만 덱 포함 ZIP 저장)<br>
-        <strong>?? 진도 폴더 연결</strong> 시 진도가 그 폴더에 자동 저장 · 다른 PC에서는 같은 폴더(또는 진도 파일을 복사한 폴더)를 연결하면 이어서 학습<br>
+        학습 화면 상단 💾 버튼 = 진도 JSON만 저장 (카드 문구를 수정했을 때만 덱 포함 ZIP 저장)<br>
+        <strong>📁 진도 폴더 연결</strong> 시 진도가 그 폴더에 자동 저장 · 다른 PC에서는 같은 폴더(또는 진도 파일을 복사한 폴더)를 연결하면 이어서 학습<br>
         오늘 푼 문제 수는 학습 화면 상단 "오늘 N문제"에 표시 (카드당 1회, 같은 날 여러 번 풀면 최종 결과)<br><br>
-        <strong>?? TTS 음성 읽기</strong><br>
-        학습 화면 상단 ?? 버튼으로 켜기/끄기<br>
+        <strong>🔊 TTS 음성 읽기</strong><br>
+        학습 화면 상단 🔇 버튼으로 켜기/끄기<br>
         문제 → 힌트 → 정답 순서로 자동 읽기 · TTS 읽는 동안 타이머 자동 대기<br>
         TTS 켜면 타이머 자동 5초로 조정 · 끄면 원래 설정값 복원
       </div>
@@ -605,17 +605,17 @@ window.MathJax = {
   <div class="screen" id="screen-fieldmap">
     <div class="fmap-wrap">
       <div class="brand">
-        <div class="brand-name">?? 필드 매핑 확인</div>
+        <div class="brand-name">🔧 필드 매핑 확인</div>
         <div class="brand-sub">불러온 Anki 덱의 필드를 자동 인식했습니다. 필요하면 직접 조정하세요.</div>
       </div>
 
       <div class="fmap-box">
-        <div class="fmap-box-title">?? 이 덱의 실제 필드 목록</div>
+        <div class="fmap-box-title">📄 이 덱의 실제 필드 목록</div>
         <div class="fmap-chips" id="fmap-preview-list"></div>
       </div>
 
       <div class="fmap-box">
-        <div class="fmap-box-title">?? 필드 매핑</div>
+        <div class="fmap-box-title">🔗 필드 매핑</div>
         <div class="fmap-grid">
           <div class="fmap-row"><label>문제<span class="req">*</span></label><select id="fmap-front"></select></div>
           <div class="fmap-row"><label>정답<span class="req">*</span></label><select id="fmap-back"></select></div>
@@ -650,13 +650,13 @@ window.MathJax = {
         <div class="study-header">
           <div class="header-right">
             <button onclick="openList()" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="학습목록으로 돌아가기"><svg width="15" height="13" viewBox="0 0 15 13" fill="none" stroke="#555" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M4 2.5L1.5 5 4 7.5"/><path d="M1.5 5h4"/><path d="M8 2h6M8 6.5h6M3.5 11h10.5"/></svg></button>
-            <button onclick="askAI()" id="btn-ask-ai" style="padding:5px 8px;border-radius:6px;border:1px solid #c8eed8;background:#f0faf6;font-size:13px;cursor:pointer;line-height:1;color:#0F6E56;font-weight:600;" title="현재 문제를 Claude.ai에 질문하기">? AI</button>
+            <button onclick="askAI()" id="btn-ask-ai" style="padding:5px 8px;border-radius:6px;border:1px solid #c8eed8;background:#f0faf6;font-size:13px;cursor:pointer;line-height:1;color:#0F6E56;font-weight:600;" title="현재 문제를 Claude.ai에 질문하기">✦ AI</button>
             <button onclick="goToPrev()" id="btn-prev" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;opacity:0.35;" title="이전 카드 보기">◀</button>
-            <button onclick="openEditModal()" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="카드 텍스트 편집">??</button>
+            <button onclick="openEditModal()" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="카드 텍스트 편집">✏️</button>
             <button onclick="openCalc()" id="btn-calc" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="계산기"><svg width="13" height="15" viewBox="0 0 14 16" fill="none" stroke="#555" stroke-width="1.3" stroke-linejoin="round" style="display:block"><rect x="1" y="0.8" width="12" height="14.4" rx="2"/><rect x="3" y="2.8" width="8" height="3" rx="0.6" fill="#555" fill-opacity=".15"/><g fill="#555" stroke="none"><circle cx="4" cy="8.6" r=".9"/><circle cx="7" cy="8.6" r=".9"/><circle cx="10" cy="8.6" r=".9"/><circle cx="4" cy="12" r=".9"/><circle cx="7" cy="12" r=".9"/><circle cx="10" cy="12" r=".9"/></g></svg></button>
-            <button onclick="saveProgress()" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="진도 저장">??</button>
-            <button id="btn-fullscreen" onclick="toggleFullscreen()" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="전체화면 (F11)">?</button>
-            <button id="btn-tts" onclick="toggleTTS()" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="TTS 음성 읽기 켜기/끄기">??</button>
+            <button onclick="saveProgress()" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="진도 저장">💾</button>
+            <button id="btn-fullscreen" onclick="toggleFullscreen()" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="전체화면 (F11)">⛶</button>
+            <button id="btn-tts" onclick="toggleTTS()" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="TTS 음성 읽기 켜기/끄기">🔇</button>
             <div class="timer-ring" id="timer-ring" onclick="togglePause()" title="클릭 = 일시정지/재개">
               <svg width="34" height="34" viewBox="0 0 34 34">
                 <circle class="timer-bg" cx="17" cy="17" r="14"/>
@@ -694,7 +694,7 @@ window.MathJax = {
             <div class="block hidden" id="block-back">
               <div class="block-label">정답</div>
               <div class="block-body" id="content-back"></div>
-              <button type="button" class="explain-toggle hidden" id="explain-btn" onclick="toggleExplain()">?? 해설 보기</button>
+              <button type="button" class="explain-toggle hidden" id="explain-btn" onclick="toggleExplain()">📖 해설 보기</button>
               <div class="block hidden" id="block-explain">
                 <div class="block-label" id="explain-label">해설</div>
                 <div class="block-body" id="content-explain"></div>
@@ -719,7 +719,7 @@ window.MathJax = {
           <button class="main-btn hidden" id="main-btn">정답 보기</button>
           <div class="action-row hidden" id="action-row">
             <button class="btn-x" onclick="handleResult(false)">
-              <span class="key-badge">←</span><span>?</span>
+              <span class="key-badge">←</span><span>✕</span>
             </button>
             <button class="btn-o" onclick="handleResult(true)">
               <span>○</span><span class="key-badge">→</span>
@@ -734,7 +734,7 @@ window.MathJax = {
       <!-- 연습장 -->
       <div class="notepad-col" id="notepad-col">
         <div class="notepad-header" onclick="toggleNotepad()">
-          <span class="notepad-title">?? 연습장</span>
+          <span class="notepad-title">✏️ 연습장</span>
           <span class="notepad-toggle" id="notepad-toggle">◀</span>
         </div>
         <div class="notepad-tools">
@@ -783,8 +783,8 @@ window.MathJax = {
           <div id="list-stats" style="font-size:11px;color:#aaa;margin-top:1px;"></div>
         </div>
         <span id="btn-list-save" style="display:none;flex-shrink:0;gap:6px;">
-          <button onclick="saveDeck('zip')" title="카드 수정 내용을 ZIP으로 저장 (이 프로그램에서 다시 열 때)" style="padding:8px 10px;border-radius:9px;border:1px solid #e0a040;background:#fff;font-size:13px;font-weight:700;color:#b26a00;cursor:pointer;">?? 덱 ZIP</button>
-          <button onclick="saveDeck('apkg')" title="카드 수정 내용을 노트에 반영한 APKG로 저장 (안키에서 가져올 때)" style="padding:8px 10px;border-radius:9px;border:1px solid #e0a040;background:#fff;font-size:13px;font-weight:700;color:#b26a00;cursor:pointer;">?? 덱 APKG</button>
+          <button onclick="saveDeck('zip')" title="카드 수정 내용을 ZIP으로 저장 (이 프로그램에서 다시 열 때)" style="padding:8px 10px;border-radius:9px;border:1px solid #e0a040;background:#fff;font-size:13px;font-weight:700;color:#b26a00;cursor:pointer;">💾 덱 ZIP</button>
+          <button onclick="saveDeck('apkg')" title="카드 수정 내용을 노트에 반영한 APKG로 저장 (안키에서 가져올 때)" style="padding:8px 10px;border-radius:9px;border:1px solid #e0a040;background:#fff;font-size:13px;font-weight:700;color:#b26a00;cursor:pointer;">💾 덱 APKG</button>
         </span>
         <button onclick="startSelectedCards()" id="btn-start-selected"
           style="padding:8px 16px;border-radius:9px;border:none;background:#1D9E75;font-size:13px;font-weight:700;color:#fff;cursor:pointer;display:none;flex-shrink:0;">
@@ -798,7 +798,7 @@ window.MathJax = {
 
       <!-- ① 한 턴 -->
       <div style="background:#fff;border-radius:12px;padding:14px 16px;border:1px solid #eee;margin-bottom:8px;flex-shrink:0;">
-        <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:10px;">?? 한 턴 <span style="font-weight:400;color:#aaa;">? 한 번에 풀 장수 · 끝나면 점수 표시와 자동 저장 · 모르는 카드는 다음 턴에 다시</span></div>
+        <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:10px;">🔁 한 턴 <span style="font-weight:400;color:#aaa;">— 한 번에 풀 장수 · 끝나면 점수 표시와 자동 저장 · 모르는 카드는 다음 턴에 다시</span></div>
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           <div style="display:flex;align-items:center;gap:5px;">
             <span style="font-size:12px;color:#777;">한 턴</span>
@@ -807,12 +807,12 @@ window.MathJax = {
               oninput="clampQuotaInput('daily-new','_maxNew');settingsChanged()">
             <span style="font-size:12px;color:#777;">장</span>
             <span style="font-size:12px;color:#aaa;" id="lbl-max-new"></span>
-            <button onclick="setMaxQuota('new')" title="비우면 ∞ ? 신규를 끝까지 훑기 (20장마다 자동 저장)"
+            <button onclick="setMaxQuota('new')" title="비우면 ∞ — 신규를 끝까지 훑기 (20장마다 자동 저장)"
               style="padding:2px 8px;border-radius:5px;border:1px solid #9fe1cb;background:#f0faf6;font-size:11px;font-weight:600;color:#0F6E56;cursor:pointer;white-space:nowrap;">최대(∞)</button>
           </div>
           <div style="display:none;"><input type="number" id="daily-review" value="9999"><span id="lbl-max-review"></span></div>
           <div style="width:1px;height:20px;background:#eee;"></div>
-          <label style="font-size:12px;color:#777;display:flex;align-items:center;gap:5px;">? 타이머
+          <label style="font-size:12px;color:#777;display:flex;align-items:center;gap:5px;">⏱ 타이머
             <select id="timer-select-import" onchange="_userTimerSec=+this.value;changeTimerSec(+this.value);settingsChanged()"
               style="padding:3px 6px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:#fff;cursor:pointer;">
               <option value="10">10초</option>
@@ -830,8 +830,8 @@ window.MathJax = {
               <option value="review">복습우선(모름→신규)</option>
             </select>
           </label>
-          <button id="btn-due-review" onclick="startDueReview()" title="학습 간격(레이트너) 기한이 된 카드만 따로 풀기 ? 턴 방식과 별개"
-            style="padding:4px 10px;border-radius:6px;border:1px solid #c5cae9;background:#f3f4fb;font-size:12px;font-weight:600;color:#3949ab;cursor:pointer;white-space:nowrap;">?? 기한 복습</button>
+          <button id="btn-due-review" onclick="startDueReview()" title="학습 간격(레이트너) 기한이 된 카드만 따로 풀기 — 턴 방식과 별개"
+            style="padding:4px 10px;border-radius:6px;border:1px solid #c5cae9;background:#f3f4fb;font-size:12px;font-weight:600;color:#3949ab;cursor:pointer;white-space:nowrap;">📅 기한 복습</button>
         </div>
       </div>
 
@@ -842,7 +842,7 @@ window.MathJax = {
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
           <span style="font-size:11px;color:#aaa;font-weight:500;flex-shrink:0;">필터</span>
 
-          <!-- 출제빈도 (별 개수 구간 ? 여러 구간 동시 선택 가능) -->
+          <!-- 출제빈도 (별 개수 구간 — 여러 구간 동시 선택 가능) -->
           <div id="lf-star-group" style="display:flex;gap:4px;flex-wrap:wrap;">
             <button type="button" class="list-filter-btn star-bucket-btn" data-bucket="5+" onclick="toggleStarBucket('5+')">★5+</button>
             <button type="button" class="list-filter-btn star-bucket-btn" data-bucket="4"  onclick="toggleStarBucket('4')">★4</button>
@@ -865,7 +865,7 @@ window.MathJax = {
         <!-- 2행: 검색 (전체 폭) -->
         <div style="display:flex;align-items:center;gap:6px;">
           <span style="font-size:11px;color:#aaa;font-weight:500;flex-shrink:0;">검색</span>
-          <input id="search-input" type="text" placeholder="?? 문제·힌트·정답·해설에서 검색..."
+          <input id="search-input" type="text" placeholder="🔍 문제·힌트·정답·해설에서 검색..."
             oninput="renderList()"
             style="flex:1;min-width:0;width:100%;padding:7px 14px;border:1px solid #ddd;border-radius:20px;font-size:13px;outline:none;font-family:inherit;box-sizing:border-box;color:#333;">
         </div>
@@ -881,7 +881,7 @@ window.MathJax = {
           <!-- 랜덤 체크박스 -->
           <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#888;cursor:pointer;flex-shrink:0;">
             <input type="checkbox" id="chk-random" onchange="settingsChanged()" style="accent-color:#1D9E75;width:14px;height:14px;">
-            ?? 랜덤
+            🔀 랜덤
           </label>
           <div style="width:1px;height:16px;background:#e0e0e0;margin:0 2px;flex-shrink:0;"></div>
           <!-- 전체선택 -->
@@ -903,8 +903,8 @@ window.MathJax = {
   <div id="edit-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
     <div style="background:#fff;border-radius:18px;padding:1.5rem;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
-        <div style="font-size:16px;font-weight:700;color:#0f1117;">?? 카드 편집</div>
-        <button onclick="closeEditModal()" style="padding:4px 10px;border-radius:6px;border:1px solid #ddd;background:#f5f5f3;font-size:13px;color:#888;cursor:pointer;">? 닫기</button>
+        <div style="font-size:16px;font-weight:700;color:#0f1117;">✏️ 카드 편집</div>
+        <button onclick="closeEditModal()" style="padding:4px 10px;border-radius:6px;border:1px solid #ddd;background:#f5f5f3;font-size:13px;color:#888;cursor:pointer;">✕ 닫기</button>
       </div>
       <div style="display:flex;flex-direction:column;gap:12px;">
         <label style="font-size:12px;font-weight:600;color:#888;">문제
@@ -942,7 +942,7 @@ window.MathJax = {
         <button class="lc-nav" id="lc-prev" onclick="lcNav(-1)" title="이전 (←)">◀</button>
         <span class="lc-pos" id="lc-pos"></span>
         <button class="lc-nav" id="lc-next" onclick="lcNav(1)" title="다음 (→)">▶</button>
-        <button class="lc-nav" onclick="closeListCardModal()" title="닫기 (Esc)">?</button>
+        <button class="lc-nav" onclick="closeListCardModal()" title="닫기 (Esc)">✕</button>
       </div>
       <div class="lc-body" id="lc-body"></div>
       <div class="lc-foot" id="lc-foot"></div>
@@ -954,7 +954,7 @@ window.MathJax = {
     <div style="background:#fff;border-radius:18px;padding:1.3rem 1.4rem;width:100%;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;">
         <div style="font-size:16px;font-weight:700;color:#0f1117;"><svg width="15" height="17" viewBox="0 0 14 16" fill="none" stroke="#555" stroke-width="1.3" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px"><rect x="1" y="0.8" width="12" height="14.4" rx="2"/><rect x="3" y="2.8" width="8" height="3" rx="0.6" fill="#555" fill-opacity=".15"/><g fill="#555" stroke="none"><circle cx="4" cy="8.6" r=".9"/><circle cx="7" cy="8.6" r=".9"/><circle cx="10" cy="8.6" r=".9"/><circle cx="4" cy="12" r=".9"/><circle cx="7" cy="12" r=".9"/><circle cx="10" cy="12" r=".9"/></g></svg> 계산기</div>
-        <button onclick="closeCalc()" style="padding:4px 10px;border-radius:6px;border:1px solid #ddd;background:#f5f5f3;font-size:13px;color:#888;cursor:pointer;">? 닫기</button>
+        <button onclick="closeCalc()" style="padding:4px 10px;border-radius:6px;border:1px solid #ddd;background:#f5f5f3;font-size:13px;color:#888;cursor:pointer;">✕ 닫기</button>
       </div>
 
       <input id="calc-display" type="text" inputmode="text" autocomplete="off"
@@ -966,7 +966,7 @@ window.MathJax = {
         <button class="calc-btn" onclick="calcInput('(')">(</button>
         <button class="calc-btn" onclick="calcInput(')')">)</button>
         <button class="calc-btn" id="calc-angle-btn" onclick="toggleCalcAngle()" title="삼각함수 각도 단위 전환">DEG</button>
-        <button class="calc-btn clear" onclick="calcBackspace()">?</button>
+        <button class="calc-btn clear" onclick="calcBackspace()">⌫</button>
         <button class="calc-btn clear" onclick="calcClear()">C</button>
 
         <button class="calc-btn fn" onclick="calcInput('sin(')">sin</button>
@@ -990,7 +990,7 @@ window.MathJax = {
         <button class="calc-btn" onclick="calcInput('1')">1</button>
         <button class="calc-btn" onclick="calcInput('2')">2</button>
         <button class="calc-btn" onclick="calcInput('3')">3</button>
-        <button class="calc-btn op" onclick="calcInput('?')">?</button>
+        <button class="calc-btn op" onclick="calcInput('−')">−</button>
         <button class="calc-btn fn" onclick="calcInput('π')">π</button>
 
         <button class="calc-btn" onclick="calcInput('0')">0</button>
@@ -1008,18 +1008,18 @@ window.MathJax = {
   <div class="screen" id="screen-done">
     <div class="done-wrap">
       <div class="done-screen">
-        <div class="done-icon">??</div>
+        <div class="done-icon">🎉</div>
         <div class="done-title" id="done-title">학습 완료!</div>
         <div class="done-sub" id="done-sub"></div>
         <div id="done-time" style="font-size:12px;color:#888;margin:6px 0 2px;line-height:1.8;"></div>
         <div class="done-stats">
           <div class="done-stat"><div class="done-stat-num pass" id="pass-count">0</div><div class="done-stat-label">○ 맞음</div></div>
-          <div class="done-stat"><div class="done-stat-num fail" id="fail-count">0</div><div class="done-stat-label">? 틀림</div></div>
+          <div class="done-stat"><div class="done-stat-num fail" id="fail-count">0</div><div class="done-stat-label">✕ 틀림</div></div>
         </div>
-        <button class="restart-btn" onclick="saveProgress()" style="background:#1565c0;margin-bottom:10px;">?? 진도 저장</button>
-        <button class="restart-btn" id="btn-retry-fail" onclick="retryFailed()" style="background:#e53935;margin-bottom:10px;display:none;">? 틀린 문제만 다시 풀기</button>
+        <button class="restart-btn" onclick="saveProgress()" style="background:#1565c0;margin-bottom:10px;">💾 진도 저장</button>
+        <button class="restart-btn" id="btn-retry-fail" onclick="retryFailed()" style="background:#e53935;margin-bottom:10px;display:none;">✕ 틀린 문제만 다시 풀기</button>
         <button class="restart-btn" id="btn-next-turn" onclick="startNextTurn()" style="display:none;background:#1D9E75;margin-bottom:10px;">▶ 다음 턴</button>
-        <button class="restart-btn" id="btn-restart" onclick="restartStudy()">? 다시 학습하기</button>
+        <button class="restart-btn" id="btn-restart" onclick="restartStudy()">↺ 다시 학습하기</button>
         <button class="back-btn" onclick="goImport()">다른 파일 불러오기</button>
         <!-- 학습 결과 리스트 -->
         <div id="done-card-list" style="margin-top:1.2rem;text-align:left;"></div>
@@ -1383,7 +1383,7 @@ let explainLabel = '해설';
 function setExplainLabel(name){
   explainLabel = name || '해설';
   const el=document.getElementById('explain-label'); if(el) el.textContent=explainLabel;
-  const b=document.getElementById('explain-btn'); if(b) b.textContent=(b.classList.contains('on')?'?? '+explainLabel+' 닫기':'?? '+explainLabel+' 보기');
+  const b=document.getElementById('explain-btn'); if(b) b.textContent=(b.classList.contains('on')?'📖 '+explainLabel+' 닫기':'📖 '+explainLabel+' 보기');
 }
 
 function updateFieldLabels(f1, f2, f3){
@@ -1405,7 +1405,7 @@ function updateFieldLabels(f1, f2, f3){
   });
 }
 let progressData={};
-let dailyLog={};            // 일별 풀이 기록: {'YYYY-MM-DD':{r:{카드ID:1|0}, nw:{카드ID:1}}} ? 카드당 하루 1회(최종 결과)
+let dailyLog={};            // 일별 풀이 기록: {'YYYY-MM-DD':{r:{카드ID:1|0}, nw:{카드ID:1}}} — 카드당 하루 1회(최종 결과)
 let progressDeckBase='';    // progressData가 속한 덱 이름
 let progressSavedAt='';     // 마지막 진도 변경 시각(ISO)
 let autoTimerCard=false;
@@ -1432,7 +1432,7 @@ function updateFsBtn(){
   const btn = document.getElementById('btn-fullscreen');
   if(!btn) return;
   const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement);
-  btn.textContent = isFs ? '??' : '?';
+  btn.textContent = isFs ? '✕⛶' : '⛶';
   btn.title = isFs ? '전체화면 해제 (F11)' : '전체화면 (F11)';
 }
 document.addEventListener('fullscreenchange', updateFsBtn);
@@ -1444,10 +1444,10 @@ function peekProgress(id){return progressData[id]||null;} // 진도 없으면 nu
 function isDueToday(id){const p=peekProgress(id);return p?p.nextReview<=today():false;}
 function isNewCard(id){return !progressData[id];}
 
-/* ??? v11: 진도 저장 구조 ? 진도 JSON 중심 + 일별 기록 + 자동 이어하기 + 학습 폴더 연동 ??? */
+/* ═══ v11: 진도 저장 구조 — 진도 JSON 중심 + 일별 기록 + 자동 이어하기 + 학습 폴더 연동 ═══ */
 const KV_PROGRESS='progress', KV_FMAP='fmap', KV_DIR='dirHandle';
 // v13: 학습 설정(오늘 목표·타이머·순서·필터·랜덤·정렬·필드매핑)을 진도 JSON에 함께 저장
-// v14: 한 턴 방식 ? 턴 종료 시 커밋(자동 저장), 중간에 나가면 직전 턴 종료 상태로 복원
+// v14: 한 턴 방식 — 턴 종료 시 커밋(자동 저장), 중간에 나가면 직전 턴 종료 상태로 복원
 let turnState={no:1,carry:[],hist:[]};            // 저장된(커밋된) 턴 상태: 다음 턴 번호 · 모르는 카드 id · 점수 기록
 let turn={active:false,snap:null,ids:[],res:{},all:false};
 let _turnAll=false, _turnSummary=null;
@@ -1535,7 +1535,7 @@ function collectSettings(){
     fmap:lastFmap||undefined
   };
 }
-// 복원된 설정을 화면(오늘 목표·타이머·순서·랜덤)과 목록 필터 상태에 반영 ? 덱(allCards)이 만들어진 뒤에 호출
+// 복원된 설정을 화면(오늘 목표·타이머·순서·랜덤)과 목록 필터 상태에 반영 — 덱(allCards)이 만들어진 뒤에 호출
 function applySettings(s){
   if(!s) return;
   const g=id=>document.getElementById(id);
@@ -1553,7 +1553,7 @@ function settingsChanged(){
   clearTimeout(_setTimer);
   _setTimer=setTimeout(()=>{ if(settingsReady&&deckFileName&&allCards.length) persistProgress(); },400);
 }
-// 두 진도(예: 사무실·집)를 카드별로 병합 ? 카드마다 마지막으로 푼 날짜(last)가 더 최근인 쪽을 채택
+// 두 진도(예: 사무실·집)를 카드별로 병합 — 카드마다 마지막으로 푼 날짜(last)가 더 최근인 쪽을 채택
 function mergeProgress(a,b){
   if(!a) return b; if(!b) return a;
   const ta=Date.parse(a.savedAt)||0, tb=Date.parse(b.savedAt)||0;
@@ -1572,7 +1572,7 @@ function mergeProgress(a,b){
   const turnM=t0?Object.assign({},t0,{carry:(t0.carry||[]).filter(id=>!(cards[id]&&cards[id].level>1))}):undefined; // 다른 PC에서 이미 맞춘 카드는 모르는 목록에서 제외
   return Object.assign({},base,{cards,daily,turn:turnM,settings:base.settings||other.settings});
 }
-// 오늘(또는 지정일) 푼 문제 ? 카드당 1회, 그날의 최종 결과 기준
+// 오늘(또는 지정일) 푼 문제 — 카드당 1회, 그날의 최종 결과 기준
 function dayStats(dt){
   const d=dailyLog[dt||today()];
   if(!d||!d.r) return {n:0,p:0,f:0,nw:0};
@@ -1581,7 +1581,7 @@ function dayStats(dt){
   return {n:ids.length,p:p,f:ids.length-p,nw:Object.keys(d.nw||{}).length};
 }
 
-/* ── 학습 폴더 연동 (File System Access API ? Chrome/Edge) ── */
+/* ── 학습 폴더 연동 (File System Access API — Chrome/Edge) ── */
 let studyDir=null;
 const FS_OK=(typeof window.showDirectoryPicker==='function');
 async function dirPerm(request){
@@ -1638,8 +1638,8 @@ function refreshDirUI(){
   const nm=document.getElementById('dir-name'),un=document.getElementById('dir-unlink'),bt=document.getElementById('btn-link-dir');
   if(!bt) return;
   if(!FS_OK){bt.style.display='none';const hint=document.getElementById('dir-hint');if(hint)hint.textContent='폴더 연결은 Chrome/Edge에서만 지원됩니다. (진도 파일은 아래 "진도 + APKG 같이 불러오기"로 사용)';return;}
-  if(studyDir){nm.textContent='연결됨: '+studyDir.name;un.style.display='inline';bt.textContent='?? 폴더 변경';}
-  else{nm.textContent='';un.style.display='none';bt.textContent='?? 진도 폴더 연결';}
+  if(studyDir){nm.textContent='연결됨: '+studyDir.name;un.style.display='inline';bt.textContent='📁 폴더 변경';}
+  else{nm.textContent='';un.style.display='none';bt.textContent='📁 진도 폴더 연결';}
 }
 async function linkStudyFolder(){
   if(!FS_OK){alert('이 브라우저는 폴더 연결을 지원하지 않습니다. Chrome 또는 Edge를 사용해 주세요.');return;}
@@ -1684,7 +1684,7 @@ async function resumeWith(file){
     await handleFile(file,false);
   }
 }
-// v13: 연결된 폴더에서 이어갈 덱(apkg/zip) 찾기 ? 폴더의 가장 최근 progress_*.json의 덱 이름과 같은 이름의 가장 최근 파일
+// v13: 연결된 폴더에서 이어갈 덱(apkg/zip) 찾기 — 폴더의 가장 최근 progress_*.json의 덱 이름과 같은 이름의 가장 최근 파일
 async function findFolderDeck(hintBase){
   if(!studyDir||!(await dirPerm(false))) return null;
   const decks=[]; let best=null;
@@ -1747,7 +1747,7 @@ async function autoResume(){
       // 폴더 접근은 사용자 클릭이 있어야 허용 가능 → 버튼 한 번으로 이어서 학습
       _resumeFile=true;
       const box=document.getElementById('resume-box'),nm=document.getElementById('resume-name');
-      if(box&&nm){nm.textContent='? '+(has?nameToBase(rec.name):'폴더: '+studyDir.name);box.style.display='block';}
+      if(box&&nm){nm.textContent='— '+(has?nameToBase(rec.name):'폴더: '+studyDir.name);box.style.display='block';}
       return;
     }
     const file=await pickResumeFile(rec,false);
@@ -1793,7 +1793,7 @@ function setMaxQuota(type){
   }
 }
 function clampQuotaInput(inputId, maxVar){
-  // 입력 시 최대치 초과 방지 (선택적 ? max 속성이 있으면 브라우저가 처리)
+  // 입력 시 최대치 초과 방지 (선택적 — max 속성이 있으면 브라우저가 처리)
   // 현재는 경고 표시만
   const el=document.getElementById(inputId);
   if(!el) return;
@@ -1819,7 +1819,7 @@ function filtersActive(){const f=listDropFilters;return starFilter>0||(f.star&&f
 function refreshDueBtn(){
   const b=document.getElementById('btn-due-review');if(!b) return;
   const n=allCards.filter(c=>matchTodayFilters(c)&&!isNewCard(c.id)&&isDueToday(c.id)).length;
-  b.textContent='?? 기한 복습 ('+n+'장)';
+  b.textContent='📅 기한 복습 ('+n+'장)';
 }
 // v14: 한 턴 = (이전 턴에서 모르는 카드) + (신규로 채움) 합쳐서 N장. 모르는 카드가 N장 이상이면 신규 없이 같은 카드가 반복된다.
 function buildTodayDeck(cards){
@@ -1845,7 +1845,7 @@ function updateQuotaBar(){
   const bar=document.getElementById('quota-bar');if(!bar)return;
   const total=(filtersActive()&&_filteredTotal!=null)?_filteredTotal:allCards.filter(c=>!isHeart(c.star)).length;
   const ds=dayStats();
-  bar.innerHTML=`<span class="quota-chip" style="background:#e8eaf6;color:#3949ab;">${filtersActive()?'선택':'전체'} ${total}장</span><span class="quota-chip" style="background:#f3e5f5;color:#6a1b9a;">${turnState.no}턴째 · ${_reviewFirst?'모름→신규':'신규→모름'}</span><span class="quota-chip quota-review">모름 ${todayReviewCount}장</span><span class="quota-chip quota-new">신규 ${todayNewCount}장</span><span class="quota-chip quota-done">진행 ${cur}/${todayDeck.length}</span><span class="quota-chip" style="background:#fff3e0;color:#e65100;" title="오늘 푼 문제(카드당 1회, 최종 결과 기준)">오늘 ${ds.n}문제 ○${ds.p} ?${ds.f}</span>`;
+  bar.innerHTML=`<span class="quota-chip" style="background:#e8eaf6;color:#3949ab;">${filtersActive()?'선택':'전체'} ${total}장</span><span class="quota-chip" style="background:#f3e5f5;color:#6a1b9a;">${turnState.no}턴째 · ${_reviewFirst?'모름→신규':'신규→모름'}</span><span class="quota-chip quota-review">모름 ${todayReviewCount}장</span><span class="quota-chip quota-new">신규 ${todayNewCount}장</span><span class="quota-chip quota-done">진행 ${cur}/${todayDeck.length}</span><span class="quota-chip" style="background:#fff3e0;color:#e65100;" title="오늘 푼 문제(카드당 1회, 최종 결과 기준)">오늘 ${ds.n}문제 ○${ds.p} ✕${ds.f}</span>`;
 }
 function applyFilter(){
   abortTurnIfActive();
@@ -1860,7 +1860,7 @@ function applyFilter(){
 }
 function setFilter(stars){
   starFilter=stars;
-  // 필터 버튼 제거됨 ? starFilter만 유지 (하위호환)
+  // 필터 버튼 제거됨 — starFilter만 유지 (하위호환)
 }function changeTimerSec(val){TIMER_SEC=val;stopTimer();updateTimerUI(val,val||1);}
 
 function handleDrop(e){
@@ -1922,7 +1922,7 @@ function openFieldMapScreen(){
     return;
   }
 
-  // v11: 자동 이어하기 ? 같은 덱·같은 필드 구성이면 이전에 확인한 매핑을 그대로 쓰고 확인 화면을 건너뜀
+  // v11: 자동 이어하기 — 같은 덱·같은 필드 구성이면 이전에 확인한 매핑을 그대로 쓰고 확인 화면을 건너뜀
   const af=pendingImport.autoFmap;
   if(af&&af.idx&&JSON.stringify(af.names)===JSON.stringify(fieldNamesList)){
     finishImport(af.idx, fieldNamesList);
@@ -2037,7 +2037,7 @@ async function finishImport(idx, fieldNamesForLabels){
     applyFilter();
     cur=0;passCount=0;failCount=0;
     if(filteredCards.length===0){
-      // 오늘 학습할 카드가 없으면(설정/필터 확인 필요) 목록 화면으로 ? 설정값이 체크된 채로 보임
+      // 오늘 학습할 카드가 없으면(설정/필터 확인 필요) 목록 화면으로 — 설정값이 체크된 채로 보임
       showToast('오늘 학습할 카드가 없습니다. 설정(목표·유형·순서)을 확인하세요',4000);
       showScreen('screen-list');openListScreen();
       return;
@@ -2060,7 +2060,7 @@ async function saveProgress(){
     where='download';
   }
   const ds=dayStats();
-  showToast((where==='folder'?'진도 저장 완료 (연결된 폴더)':'진도 파일을 내려받았습니다: '+progressFileName())+`\n오늘 ${ds.n}문제 (○${ds.p} / ?${ds.f})`+(turn.active?'\n※ 진행 중인 턴은 턴이 끝나면 저장됩니다':'')+(cardEdited?'\n※ 카드 수정분은 학습목록 화면의 [덱 저장]으로 저장하세요':''),cardEdited?5000:3500);
+  showToast((where==='folder'?'진도 저장 완료 (연결된 폴더)':'진도 파일을 내려받았습니다: '+progressFileName())+`\n오늘 ${ds.n}문제 (○${ds.p} / ✕${ds.f})`+(turn.active?'\n※ 진행 중인 턴은 턴이 끝나면 저장됩니다':'')+(cardEdited?'\n※ 카드 수정분은 학습목록 화면의 [덱 저장]으로 저장하세요':''),cardEdited?5000:3500);
 }
 
 // v12: 카드 수정 저장 = 덱만 (진도 없음). ZIP(이 프로그램용: 원본 apkg + cards_edited.json) 또는 APKG(안키용: 수정 내용을 노트에 반영)
@@ -2087,7 +2087,7 @@ async function saveDeck(fmt){
     }
     const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fname;a.click();
     try{ apkgStoreSave(new File([blob],fname)).then(apkgStoreRefreshUI); }catch(e){} // 다음 실행 때 수정본이 자동으로 열리도록
-    showToast('덱을 저장했습니다: '+fname+'\n(진도는 학습화면의 ??로 따로 저장)',4500);
+    showToast('덱을 저장했습니다: '+fname+'\n(진도는 학습화면의 💾로 따로 저장)',4500);
     cardEdited=false;
     lcEditedIds.clear();
     try{ updateListSaveBtn(); renderList(); }catch(e){}
@@ -2156,7 +2156,7 @@ async function handleCombinedFiles(files) {
   if(jsonFile) {
     await new Promise(resolve=>{
       const r=new FileReader();
-      r.onload=e=>{try{const d=JSON.parse(e.target.result);if(applyProgressObj(d)){document.getElementById('progress-file-name').textContent='? '+jsonFile.name;}}catch(err){}resolve();};
+      r.onload=e=>{try{const d=JSON.parse(e.target.result);if(applyProgressObj(d)){document.getElementById('progress-file-name').textContent='✓ '+jsonFile.name;}}catch(err){}resolve();};
       r.readAsText(jsonFile);
     });
   }
@@ -2235,7 +2235,7 @@ function askAI(){
   navigator.clipboard.writeText(prompt).then(() => {
     const btn = document.getElementById('btn-ask-ai');
     const orig = btn.innerHTML;
-    btn.innerHTML = hasAnyImage ? '?? 복사됨' : '? 복사됨';
+    btn.innerHTML = hasAnyImage ? '📎 복사됨' : '✓ 복사됨';
     btn.style.background = '#1D9E75';
     btn.style.color = '#fff';
     btn.style.borderColor = '#1D9E75';
@@ -2260,8 +2260,8 @@ function showAIFallback(prompt, hasAnyImage){
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;';
   overlay.innerHTML =
     `<div style="background:#fff;border-radius:14px;padding:20px;width:100%;max-width:500px;max-height:80vh;display:flex;flex-direction:column;gap:10px;">` +
-      `<div style="font-size:14px;font-weight:700;color:#1D9E75;">?? 아래 텍스트를 복사 후 Claude.ai에 붙여넣으세요</div>` +
-      (hasAnyImage ? `<div style="font-size:12px;color:#e65100;background:#fff8e1;padding:8px 10px;border-radius:6px;">?? 이미지가 포함된 문제입니다 ? Claude.ai에서 이미지를 별도로 첨부해 주세요.</div>` : '') +
+      `<div style="font-size:14px;font-weight:700;color:#1D9E75;">📋 아래 텍스트를 복사 후 Claude.ai에 붙여넣으세요</div>` +
+      (hasAnyImage ? `<div style="font-size:12px;color:#e65100;background:#fff8e1;padding:8px 10px;border-radius:6px;">📎 이미지가 포함된 문제입니다 — Claude.ai에서 이미지를 별도로 첨부해 주세요.</div>` : '') +
       `<textarea readonly style="flex:1;min-height:180px;font-size:12px;border:1px solid #ddd;border-radius:8px;padding:10px;resize:none;font-family:monospace;line-height:1.6;">${prompt.replace(/</g,'&lt;')}</textarea>` +
       `<div style="display:flex;gap:8px;">` +
         `<button onclick="this.closest('div').closest('div').remove()" style="flex:1;padding:10px;border-radius:8px;border:1px solid #ddd;background:#f5f5f3;font-size:13px;cursor:pointer;">닫기</button>` +
@@ -2410,8 +2410,8 @@ async function renderListCardModal(){
     typesetMath(body);
     const sel=selectedCards.has(c.id);
     foot.innerHTML=
-      `<button class="lc-btn primary" onclick="lcStartEdit()">?? 수정</button>`+
-      `<button class="lc-btn ${sel?'sel-on':''}" onclick="lcToggleSelect()">${sel?'? 선택됨':'? 선택'}</button>`+
+      `<button class="lc-btn primary" onclick="lcStartEdit()">✏️ 수정</button>`+
+      `<button class="lc-btn ${sel?'sel-on':''}" onclick="lcToggleSelect()">${sel?'☑ 선택됨':'☐ 선택'}</button>`+
       `<button class="lc-btn" onclick="lcStudyOne()" title="이 문제만 바로 풀기">▶ 풀기</button>`+
       `<button class="lc-btn" onclick="closeListCardModal()">닫기</button>`;
   } else {
@@ -2588,14 +2588,14 @@ const ROMAN_ORDER={
   'I':1,'II':2,'III':3,'IV':4,'V':5,'VI':6,'VII':7,'VIII':8,'IX':9,'X':10,
 };
 // ── 분류 체계 파싱 ──
-// 지원 예: "A-Ⅰ·21", "Ⅲ·13", "III?06", "Ⅰ?5"
-//  · 대분류(묶음) = 가운뎃점(·/?) 앞부분 전체 → "A-Ⅰ", "Ⅲ", "III"
+// 지원 예: "A-Ⅰ·21", "Ⅲ·13", "III•06", "Ⅰ•5"
+//  · 대분류(묶음) = 가운뎃점(·/•) 앞부분 전체 → "A-Ⅰ", "Ⅲ", "III"
 //  · 세부번호     = 가운뎃점 뒤 → "21"
 function catNorm(cat){ return stripHtml(cat||'').replace(/\s+/g,''); }
-function catParts(cat){ return catNorm(cat).split(/[·?]/).map(x=>x.trim()).filter(Boolean); }
+function catParts(cat){ return catNorm(cat).split(/[·•]/).map(x=>x.trim()).filter(Boolean); }
 function catMajor(cat){ return catParts(cat)[0]||''; }
 // 로마숫자(유니코드/ASCII)·숫자·문자를 섞어 자연스러운 오름차순 비교
-function catTokens(str){ return (str||'').split(/[-·?_.\s]+/).filter(Boolean); }
+function catTokens(str){ return (str||'').split(/[-·•_.\s]+/).filter(Boolean); }
 function catTokVal(t){
   if(Object.prototype.hasOwnProperty.call(ROMAN_ORDER,t)) return {n:ROMAN_ORDER[t]};
   if(/^\d+$/.test(t)) return {n:parseInt(t,10)};
@@ -2632,9 +2632,9 @@ const CATEGORY_NAME={
   'VI':'Ⅵ. 건설현장 안전관리',
 };
 
-// 문제 유형 감지 ? tags 또는 C 필드 기반 + 텍스트 휴리스틱
+// 문제 유형 감지 — tags 또는 C 필드 기반 + 텍스트 휴리스틱
 function detectCardType(c){
-  // 1순위: 필드 매핑의 "문제유형"(c.C) 값 ? Y는 계산 표시, 그 외 유형명은 그대로 반영
+  // 1순위: 필드 매핑의 "문제유형"(c.C) 값 — Y는 계산 표시, 그 외 유형명은 그대로 반영
   const cv=String(c.C||'').trim();
   if(cv){
     const lv=cv.toLowerCase();
@@ -2671,7 +2671,7 @@ function openListScreen(){
     if(el) el.classList.toggle('active', id==='ls-'+listSort);
   });
 
-  // 분류 셀렉트 동적 생성 ? 대분류(가운뎃점 앞, 예: A-Ⅰ)를 한 묶음으로,
+  // 분류 셀렉트 동적 생성 — 대분류(가운뎃점 앞, 예: A-Ⅰ)를 한 묶음으로,
   // 대분류에 "-"가 있으면 앞 글자(A, B…)로 optgroup, 세부번호 앞자리(2x) 묶음은 들여쓰기 옵션
   const catSel=document.getElementById('lf-category');
   const esc=v=>String(v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
@@ -2711,7 +2711,7 @@ function openListScreen(){
   _typeList=types; _typeCount=typeCount;
   renderTypeChips();
 
-  // 출제빈도 버튼 그룹 ? 구간별 카드 수 갱신 + 선택 상태 초기화
+  // 출제빈도 버튼 그룹 — 구간별 카드 수 갱신 + 선택 상태 초기화
   updateStarBucketButtons();
 
   renderList();
@@ -2761,7 +2761,7 @@ function setListDropFilter(key, val){
   renderList();settingsChanged();
 }
 
-function setListFilter(f){ /* 하위호환 ? 사용 안 함 */ }
+function setListFilter(f){ /* 하위호환 — 사용 안 함 */ }
 
 function setListSort(s){
   listSort=s;
@@ -2857,7 +2857,7 @@ function startAllCards(){
 function loadProgressFile(file){
   if(!file)return;
   const r=new FileReader();
-  r.onload=e=>{try{const d=JSON.parse(e.target.result);if(applyProgressObj(d)){document.getElementById('progress-file-name').textContent='? '+file.name;}else alert('올바른 진도 파일이 아닙니다.');}catch(err){alert('파일 읽기 오류: '+err.message);}};
+  r.onload=e=>{try{const d=JSON.parse(e.target.result);if(applyProgressObj(d)){document.getElementById('progress-file-name').textContent='✓ '+file.name;}else alert('올바른 진도 파일이 아닙니다.');}catch(err){alert('파일 읽기 오류: '+err.message);}};
   r.readAsText(file);
 }
 
@@ -2977,7 +2977,7 @@ function showAnswer(autoByTimer){
       if(autoByTimer&&TIMER_SEC>0) startTimer(TIMER_SEC,()=>showHintAfterAnswer(true));
     }
   } else {
-    // nohint 또는 hint(힌트 없는 카드): 정답 공개 후 바로 ○/?
+    // nohint 또는 hint(힌트 없는 카드): 정답 공개 후 바로 ○/✕
     document.getElementById('main-btn').classList.add('hidden');
     document.getElementById('action-row').classList.remove('hidden');
     document.getElementById('shortcut-guide').style.display='block';
@@ -2995,7 +2995,7 @@ function showAnswer(autoByTimer){
 // ── 해설: 정답 공개 후 [해설] 버튼으로 필요할 때만 펼침 ──
 function resetExplain(){
   const b=document.getElementById('explain-btn');
-  b.classList.add('hidden'); b.classList.remove('on'); b.textContent='?? '+explainLabel+' 보기';
+  b.classList.add('hidden'); b.classList.remove('on'); b.textContent='📖 '+explainLabel+' 보기';
   hide('block-explain');
 }
 function toggleExplain(){
@@ -3006,13 +3006,13 @@ function toggleExplain(){
   if(blk.classList.contains('hidden')){
     // 해설 읽는 동안 자동넘김 타이머 정지
     stopTimer(); ttsStop();
-    show('block-explain'); b.classList.add('on'); b.textContent='?? '+explainLabel+' 닫기';
+    show('block-explain'); b.classList.add('on'); b.textContent='📖 '+explainLabel+' 닫기';
     typesetMath();
     const s=document.getElementById('card-scroll');
     setTimeout(()=>blk.scrollIntoView({behavior:'smooth',block:'nearest'}),60);
     if(ttsEnabled) ttsRead(c.explain, null, 'back');
   } else {
-    hide('block-explain'); b.classList.remove('on'); b.textContent='?? '+explainLabel+' 보기'; ttsStop();
+    hide('block-explain'); b.classList.remove('on'); b.textContent='📖 '+explainLabel+' 보기'; ttsStop();
   }
 }
 function scrollBottom(){const s=document.getElementById('card-scroll');setTimeout(()=>s.scrollTo({top:s.scrollHeight,behavior:'smooth'}),60);}
@@ -3034,7 +3034,7 @@ function handleResult(pass){
     else{prog.level=1;prog.nextReview=addDays(today(),LEITNER_DAYS[1]);failCount++;failedCards.push(c);}
     prog.last=today();
     progressData[c.id]=prog;
-    // v11: 일별 기록 ? 카드당 하루 1회, 같은 날 여러 번 풀면 마지막(최종) 결과로 덮어씀
+    // v11: 일별 기록 — 카드당 하루 1회, 같은 날 여러 번 풀면 마지막(최종) 결과로 덮어씀
     const dt=today();const day=dailyLog[dt]||(dailyLog[dt]={r:{},nw:{}});
     day.r[c.id]=pass?1:0;if(wasNew)day.nw[c.id]=1;
     // v9: 세션 로그 기록
@@ -3066,13 +3066,13 @@ function showDone(){
     const newAvail=allCards.filter(c=>matchTodayFilters(c)&&isNewCard(c.id)).length;
     const takeC=size?Math.min(nc,size):nc, takeN=Math.min(newAvail,size?Math.max(0,size-takeC):newAvail);
     if(titleEl) titleEl.textContent=no+'턴 완료!';
-    if(subEl) subEl.innerHTML=`<strong style="font-size:20px;">${pct}점</strong> (${passCount}/${total}장 · ?${failCount})<br>진도가 자동 저장되었습니다<br><span style="color:#6a1b9a;">다음 턴: 모르는 카드 ${takeC}장 + 신규 ${takeN}장</span>`;
+    if(subEl) subEl.innerHTML=`<strong style="font-size:20px;">${pct}점</strong> (${passCount}/${total}장 · ✕${failCount})<br>진도가 자동 저장되었습니다<br><span style="color:#6a1b9a;">다음 턴: 모르는 카드 ${takeC}장 + 신규 ${takeN}장</span>`;
     if(nextBtn){ nextBtn.style.display=(takeC+takeN>0)?'block':'none'; nextBtn.textContent='▶ '+turnState.no+'턴 시작 ('+(takeC+takeN)+'장)'; }
     if(restartBtn) restartBtn.style.display='none';
     _turnSummary={no:no,total:total,ok:passCount,score:pct,next:takeC+takeN};
   }else{
     if(titleEl) titleEl.textContent='학습 완료!';
-    if(subEl) subEl.textContent=`${total}장 완료 · 정답률 ${pct}% · 오늘 누적 ${dsDone.n}문제 (○${dsDone.p} / ?${dsDone.f}, 신규 ${dsDone.nw})`;
+    if(subEl) subEl.textContent=`${total}장 완료 · 정답률 ${pct}% · 오늘 누적 ${dsDone.n}문제 (○${dsDone.p} / ✕${dsDone.f}, 신규 ${dsDone.nw})`;
     if(nextBtn) nextBtn.style.display='none';
     if(restartBtn) restartBtn.style.display='block';
     persistProgress();
@@ -3104,9 +3104,9 @@ function retryFailed(){
   cur=0;passCount=0;failCount=0;
   showScreen('screen-study');loadCard();
 }
-/* ??? v15: 턴 종료 팝업 ? 점수대별 격려 + 다음 턴 확인 + 종료 인사 ??? */
+/* ═══ v15: 턴 종료 팝업 — 점수대별 격려 + 다음 턴 확인 + 종료 인사 ═══ */
 const TURN_MSGS={
-  100:['만점이에요! 정말 대단해요 ??','한 문제도 놓치지 않았어요. 오늘 집중력 최고예요!','완벽한 한 턴이었어요. 꾸준함이 합격을 만듭니다.'],
+  100:['만점이에요! 정말 대단해요 👏','한 문제도 놓치지 않았어요. 오늘 집중력 최고예요!','완벽한 한 턴이었어요. 꾸준함이 합격을 만듭니다.'],
   90:['거의 다 맞혔어요! 아주 훌륭해요.','탄탄하게 쌓이고 있어요. 이 페이스 그대로 가요!','틀린 한두 개만 잡으면 완벽해요. 잘하고 계세요.'],
   80:['좋은 성적이에요. 차근차근 잘 쌓이고 있어요.','충분히 잘하고 있어요. 모르는 카드는 다음 턴에 다시 만나요.','꾸준히 하면 점수는 반드시 올라요. 수고하셨어요.'],
   70:['괜찮아요, 70점도 잘하고 있는 거예요.','모르는 카드는 반복할수록 내 것이 돼요. 조금만 더 힘내요!','절반을 훌쩍 넘겼어요. 한 턴만 더 하면 훨씬 단단해질 거예요.'],
@@ -3116,7 +3116,7 @@ function turnBand(score){return score>=100?100:score>=90?90:score>=80?80:score>=
 function pickRand(a){return a[Math.floor(Math.random()*a.length)];}
 function farewellMsg(){
   const h=new Date().getHours();
-  if(h>=21||h<5) return pickRand(['늦은 시간까지 정말 고생하셨어요. 푹 쉬시고 내일 봅시다! ??','오늘 하루 수고 많으셨어요. 내일 다시 만나요, 좋은 꿈 꾸세요!']);
+  if(h>=21||h<5) return pickRand(['늦은 시간까지 정말 고생하셨어요. 푹 쉬시고 내일 봅시다! 🌙','오늘 하루 수고 많으셨어요. 내일 다시 만나요, 좋은 꿈 꾸세요!']);
   if(h>=17) return pickRand(['오늘도 고생 많으셨어요. 저녁 챙겨 드시고, 빠른 시간 안에 다시 봐요!','수고하셨어요. 잠시 쉬었다가 시간 나실 때 다시 봐요!']);
   if(h>=11) return pickRand(['수고하셨어요. 잠시 숨 돌리고 빠른 시간 안에 다시 봐요!','잘하셨어요. 조금 쉬었다가 금방 다시 만나요!']);
   return pickRand(['좋은 아침 공부였어요. 잠깐 쉬었다가 빠른 시간 안에 다시 봐요!','일찍부터 수고하셨어요. 시간 나실 때 곧 다시 만나요!']);
@@ -3142,8 +3142,8 @@ function showTurnPopup(sm){
       <div style="font-size:44px;font-weight:800;color:${band>=80?'#1D9E75':band>=70?'#f9a825':'#e65100'};line-height:1.1;margin:4px 0 10px;">${sm.score}점</div>
       <div style="font-size:14px;color:#555;line-height:1.6;margin-bottom:16px;">${msg}</div>
       <div style="font-size:12px;color:#888;margin-bottom:14px;">진도가 자동 저장되었습니다${canNext?'<br>다음 턴: '+sm.next+'장':''}</div>
-      ${cardEdited?`<div style="font-size:12px;color:#b26a00;background:#fff6e5;border-radius:8px;padding:7px 9px;margin-bottom:12px;">?? 수정한 카드 ${lcEditedIds.size}장은 아직 덱에 저장되지 않았습니다<br>(그만둘 때 저장 여부를 물어봅니다)</div>`:''}
-      <div style="font-size:15px;font-weight:700;color:#222;margin-bottom:12px;">${canNext?'다음 턴으로 진행하겠습니까?':'오늘 풀 카드를 모두 마쳤어요 ??'}</div>
+      ${cardEdited?`<div style="font-size:12px;color:#b26a00;background:#fff6e5;border-radius:8px;padding:7px 9px;margin-bottom:12px;">✏️ 수정한 카드 ${lcEditedIds.size}장은 아직 덱에 저장되지 않았습니다<br>(그만둘 때 저장 여부를 물어봅니다)</div>`:''}
+      <div style="font-size:15px;font-weight:700;color:#222;margin-bottom:12px;">${canNext?'다음 턴으로 진행하겠습니까?':'오늘 풀 카드를 모두 마쳤어요 🎉'}</div>
       <div style="display:flex;gap:8px;">${canNext?btn('tp-yes','네, 계속합니다','#1D9E75','#fff')+btn('tp-no','아니요','#fff','#555'):btn('tp-ok','확인','#1D9E75','#fff')}</div>`;
     const y=box.querySelector('#tp-yes'), n=box.querySelector('#tp-no'), k=box.querySelector('#tp-ok');
     if(y) y.onclick=async()=>{ await flushProgress(); closeTurnPopup(); startNextTurn(); };
@@ -3151,7 +3151,7 @@ function showTurnPopup(sm){
     if(k) k.onclick=async()=>{ await flushProgress(); if(cardEdited) stageSave(()=>closeTurnPopup()); else closeTurnPopup(); };
   };
   const stage2=()=>{
-    box.innerHTML=`<div style="font-size:34px;margin-bottom:6px;">??</div>
+    box.innerHTML=`<div style="font-size:34px;margin-bottom:6px;">🤔</div>
       <div style="font-size:16px;font-weight:700;color:#222;margin-bottom:6px;">정말 그만두시겠습니까?</div>
       <div style="font-size:13px;color:#777;line-height:1.6;margin-bottom:16px;">지금까지의 진도는 저장되어 있어요.<br>조금만 더 하면 모르는 카드가 내 것이 됩니다.</div>
       <div style="display:flex;gap:8px;">${btn('tp-back','계속할게요','#1D9E75','#fff')+btn('tp-quit','그래도 그만둘게요','#fff','#555')}</div>`;
@@ -3161,11 +3161,11 @@ function showTurnPopup(sm){
   // 수정한 카드가 덱에 저장되지 않았을 때: 저장 여부 확인 (ZIP/APKG 수동 저장 또는 저장 안 함)
   const stageSave=(after)=>{
     const n=lcEditedIds.size;
-    box.innerHTML=`<div style="font-size:34px;margin-bottom:6px;">??</div>
+    box.innerHTML=`<div style="font-size:34px;margin-bottom:6px;">✏️</div>
       <div style="font-size:16px;font-weight:700;color:#222;margin-bottom:6px;">수정한 카드 ${n}장이 저장되지 않았어요</div>
       <div style="font-size:13px;color:#777;line-height:1.6;margin-bottom:14px;">덱을 저장하지 않으면 수정 내용이 사라집니다.<br>ZIP은 이 프로그램용, APKG는 안키용입니다.</div>
       <div id="tp-save-msg" style="font-size:12px;color:#1D9E75;min-height:16px;margin-bottom:8px;"></div>
-      <div style="display:flex;gap:8px;margin-bottom:8px;">${btn('tp-zip','?? 덱 ZIP 저장','#1D9E75','#fff')+btn('tp-apkg','?? 덱 APKG 저장','#1D9E75','#fff')}</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px;">${btn('tp-zip','💾 덱 ZIP 저장','#1D9E75','#fff')+btn('tp-apkg','💾 덱 APKG 저장','#1D9E75','#fff')}</div>
       <div style="display:flex;gap:8px;">${btn('tp-nosave','저장 안 함','#fff','#555')}</div>`;
     const go=async(fmt)=>{
       const m=box.querySelector('#tp-save-msg'); if(m) m.textContent='저장 중…';
@@ -3179,7 +3179,7 @@ function showTurnPopup(sm){
     };
   };
   const stage3=()=>{
-    box.innerHTML=`<div style="font-size:34px;margin-bottom:8px;">??</div>
+    box.innerHTML=`<div style="font-size:34px;margin-bottom:8px;">👋</div>
       <div style="font-size:15px;color:#333;line-height:1.7;margin-bottom:18px;">${farewellMsg()}</div>
       <div style="display:flex;gap:8px;">${btn('tp-close','확인','#1D9E75','#fff')}</div>`;
     box.querySelector('#tp-close').onclick=()=>closeTurnPopup();
@@ -3204,10 +3204,10 @@ function stopTimer(){if(timerInterval){clearInterval(timerInterval);timerInterva
 function togglePause(){if(!timerInterval)return;timerPaused=!timerPaused;updateTimerUI(timerSec,TIMER_SEC);}
 function updateTimerUI(remaining,total){
   const arc=document.getElementById('timer-arc'),label=document.getElementById('timer-label');
-  if(TIMER_SEC===0){arc.style.stroke='#ddd';arc.style.strokeDashoffset=0;label.textContent='?';label.style.color='#ccc';return;}
+  if(TIMER_SEC===0){arc.style.stroke='#ddd';arc.style.strokeDashoffset=0;label.textContent='—';label.style.color='#ccc';return;}
   const ratio=Math.max(0,remaining/total);
   arc.style.strokeDashoffset=CIRCUMFERENCE*(1-ratio);
-  if(timerPaused){arc.style.stroke='#aaa';label.style.color='#aaa';label.textContent='?';}
+  if(timerPaused){arc.style.stroke='#aaa';label.style.color='#aaa';label.textContent='⏸';}
   else if(remaining<=3){arc.style.stroke='#e53935';label.style.color='#e53935';label.textContent=Math.max(0,remaining);}
   else if(remaining<=Math.floor(total*0.4)){arc.style.stroke='#EF9F27';label.style.color='#EF9F27';label.textContent=Math.max(0,remaining);}
   else{arc.style.stroke='#1D9E75';label.style.color='#555';label.textContent=Math.max(0,remaining);}
@@ -3239,7 +3239,7 @@ function toggleTTS(){
   ttsEnabled = !ttsEnabled;
   const btn = document.getElementById('btn-tts');
   if(ttsEnabled){
-    btn.textContent = '??';
+    btn.textContent = '🔊';
     btn.classList.add('btn-tts-active');
     btn.title = 'TTS 켜짐 (클릭하면 끄기)';
     // 타이머가 5초 초과면 자동으로 5초로 줄이기
@@ -3251,7 +3251,7 @@ function toggleTTS(){
       if(sel) sel.value = TTS_TIMER_SEC;
     }
   } else {
-    btn.textContent = '??';
+    btn.textContent = '🔇';
     btn.classList.remove('btn-tts-active');
     btn.title = 'TTS 음성 읽기 켜기/끄기';
     ttsStop();
@@ -3330,19 +3330,19 @@ function readBracketUnit(whole, inner){
 function ttsClean(text, mode){
   // 1) HTML 태그 제거
   let s = text.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ');
-  // 2) ㉠~㉭ 원문자 ? front는 "땡땡", back/hint는 "가나다" (아래 유니코드 정규화보다 반드시 먼저 처리.
+  // 2) ㉠~㉭ 원문자 — front는 "땡땡", back/hint는 "가나다" (아래 유니코드 정규화보다 반드시 먼저 처리.
   //    NFKC가 이 문자들을 다른 형태로 풀어버려서 순서를 바꾸면 이 치환이 깨진다)
   if(mode==='front') s=applyCircleReplace(s, TTS_CIRCLE_FRONT);
   else               s=applyCircleReplace(s, TTS_CIRCLE_BACK);
-  // 3) 유니코드 정규화(NFKC) ? ㎜㎝㎞㎏㎸㎃㎄㎾㎐ 같은 "사각 호환 문자"를 mm/cm/km/kg/kV/mA/kA/kW/Hz 등
+  // 3) 유니코드 정규화(NFKC) — ㎜㎝㎞㎏㎸㎃㎄㎾㎐ 같은 "사각 호환 문자"를 mm/cm/km/kg/kV/mA/kA/kW/Hz 등
   //    보통 문자로 풀어주고, Ω(옴 기호, U+2126)를 그리스 문자 Ω(U+03A9)로 통일
   s = s.normalize('NFKC');
-  // 4) 대괄호 [단위] 전체 처리 ? [m/s]→"미터퍼세크", [Hz]→"헤르츠" 등
+  // 4) 대괄호 [단위] 전체 처리 — [m/s]→"미터퍼세크", [Hz]→"헤르츠" 등
   s = s.replace(/\[([^\]]+)\]/g, readBracketUnit);
   // 5) 단위 기호 → 읽을 수 있는 한국어
   //    ※ 복합단위를 단순단위보다 반드시 먼저 처리. 기존 코드는 순서가 반대인 데다 경계에 쓰려던
   //      \b가 백스페이스 문자로 깨져 있어(원본 파일 손상) kV의 V가 먼저 볼트로 바뀌어 kV 규칙이
-  //      매치되지 않는 문제, 죽은 코드나 다름없던 단독 V/A/W/Hz 규칙이 있었다 ? 아래는 정상 \b로 재작성.
+  //      매치되지 않는 문제, 죽은 코드나 다름없던 단독 V/A/W/Hz 규칙이 있었다 — 아래는 정상 \b로 재작성.
   s = s
     // ── 복합전기단위 (먼저) ──
     .replace(/(\d)\s*kV/g,'$1킬로볼트').replace(/\bkV\b/g,'킬로볼트')
@@ -3379,7 +3379,7 @@ function ttsClean(text, mode){
     .replace(/\bm\/s²/g,'미터퍼세크제곱').replace(/\bm\/s/g,'미터퍼세크')
     .replace(/(\d)\s*km\/h/g,'$1킬로미터퍼아워').replace(/\bkm\/h/g,'킬로미터퍼아워')
     .replace(/(\d)\s*m²/g,'$1제곱미터').replace(/(\d)\s*m³/g,'$1세제곱미터')
-    // 넓이·부피 단위 ? NFKC로 풀린 ㎟㎠㎡㎢㎣㎤㎥ (mm2/cm2/km2/m2/mm3/cm3/m3 형태)
+    // 넓이·부피 단위 — NFKC로 풀린 ㎟㎠㎡㎢㎣㎤㎥ (mm2/cm2/km2/m2/mm3/cm3/m3 형태)
     .replace(/(\d)\s*mm2\b/g,'$1제곱밀리미터').replace(/\bmm2\b/g,'제곱밀리미터')
     .replace(/(\d)\s*cm2\b/g,'$1제곱센티미터').replace(/\bcm2\b/g,'제곱센티미터')
     .replace(/(\d)\s*km2\b/g,'$1제곱킬로미터').replace(/\bkm2\b/g,'제곱킬로미터')
@@ -3392,7 +3392,7 @@ function ttsClean(text, mode){
     .replace(/(\d)\s*kg/g,'$1킬로그램').replace(/\bkg\b/g,'킬로그램').replace(/(\d)\s*g\b/g,'$1그램')
     // 사칙연산 기호
     .replace(/×/g,'곱하기').replace(/÷/g,'나누기')
-    .replace(/\+/g,'더하기').replace(/?/g,'빼기')
+    .replace(/\+/g,'더하기').replace(/−/g,'빼기')
     // 특수기호
     .replace(/※/g,'').replace(/°/g,'도').replace(/%/g,'퍼센트')
     // 원문자 숫자 ①~⑩
@@ -3481,9 +3481,9 @@ async function handleZip(file, keepProgress=false){
     importIdx=null;
     const zip=await JSZip.loadAsync(file);zipRef=zip;mediaMap={};
     apkgStoreSave(file).then(apkgStoreRefreshUI); // 다음 실행 시 자동 불러오기용 (수정 내용이 담긴 ZIP도 기억)
-    // 진도 복원 ? 외부에서 이미 진도를 지정(진도 JSON/자동 복원)했으면 ZIP 안의 진도는 쓰지 않음
+    // 진도 복원 — 외부에서 이미 진도를 지정(진도 JSON/자동 복원)했으면 ZIP 안의 진도는 쓰지 않음
     const pf=zip.file('progress.json');
-    if(pf&&!keepProgress){const pd=JSON.parse(await pf.async('string'));if(applyProgressObj(pd)){document.getElementById('progress-file-name').textContent='? 진도 복원됨';}}
+    if(pf&&!keepProgress){const pd=JSON.parse(await pf.async('string'));if(applyProgressObj(pd)){document.getElementById('progress-file-name').textContent='✓ 진도 복원됨';}}
     // 수정 카드 로드
     let editedMap={};
     const ef=zip.file('cards_edited.json');
@@ -3531,7 +3531,7 @@ async function handleZip(file, keepProgress=false){
   }catch(err){setStatus('오류: '+err.message,'error');}
 }
 
-/* ── v9: handleFile ? apkg/zip 분기 (재귀 없음) ── */
+/* ── v9: handleFile — apkg/zip 분기 (재귀 없음) ── */
 async function handleFile(file, hasProgress=false){
   if(!file)return;
   if(file.name.endsWith('.zip')){
@@ -3566,7 +3566,7 @@ function updatePrevBtn(){
 
 /* 카드 편집 모달 */
 function openEditModal(){
-  // 학습 화면 ?? : 목록 화면과 같은 서식 편집기(WYSIWYG)로 현재 카드를 편집 (HTML 원본은 편집기 안의 </> HTML 버튼)
+  // 학습 화면 ✏️ : 목록 화면과 같은 서식 편집기(WYSIWYG)로 현재 카드를 편집 (HTML 원본은 편집기 안의 </> HTML 버튼)
   if(!filteredCards||filteredCards.length===0)return;
   const idx=Math.min(cur,filteredCards.length-1);
   const c=filteredCards[idx];if(!c)return;
@@ -3613,12 +3613,12 @@ function onTTSImportToggle(checked){
       if(sel)sel.value=TTS_TIMER_SEC;
     }
     const btn=document.getElementById('btn-tts');
-    if(btn){btn.textContent='??';btn.classList.add('btn-tts-active');}
+    if(btn){btn.textContent='🔊';btn.classList.add('btn-tts-active');}
   } else {
     ttsStop();
     if(ttsTimerBackup!==TIMER_SEC){changeTimerSec(ttsTimerBackup);const sel=document.getElementById('timer-select-import');if(sel)sel.value=ttsTimerBackup;}
     const btn=document.getElementById('btn-tts');
-    if(btn){btn.textContent='??';btn.classList.remove('btn-tts-active');}
+    if(btn){btn.textContent='🔇';btn.classList.remove('btn-tts-active');}
   }
 }
 function populateTTSVoices(){
@@ -3646,7 +3646,7 @@ function renderDoneList(){
     const ft=stripHtml(entry.card.front);
     const preview=ft.length>55?ft.slice(0,55)+'…':ft;
     const col=entry.pass?'#1D9E75':'#e53935';
-    const mark=entry.pass?'○':'?';
+    const mark=entry.pass?'○':'✕';
     const bg=entry.pass?'#f0faf6':'#fff5f5';
     const border=entry.pass?'#c8eed8':'#ffd0d0';
     html+='<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;background:'+bg+';margin-bottom:5px;border:1px solid '+border+';">'
@@ -3747,7 +3747,7 @@ function calcEquals(){
     dispEl.focus();
     dispEl.setSelectionRange(dispEl.value.length,dispEl.value.length);
   }catch(e){
-    if(prev){ prev.textContent='? '+e.message; prev.style.color='#e53935'; }
+    if(prev){ prev.textContent='⚠ '+e.message; prev.style.color='#e53935'; }
   }
 }
 function renderCalcHistory(){
@@ -3763,11 +3763,11 @@ function calcUseHistory(el){
   dispEl.focus();
 }
 
-/* 수식 토크나이저/파서 (eval 미사용 ? 안전한 자체 계산 엔진) */
+/* 수식 토크나이저/파서 (eval 미사용 — 안전한 자체 계산 엔진) */
 function calcTokenize(expr){
   const tokens=[];
   let i=0;
-  const s=expr.replace(/×/g,'*').replace(/÷/g,'/').replace(/?/g,'-').replace(/π/g,'@PI@').replace(/\s+/g,'');
+  const s=expr.replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-').replace(/π/g,'@PI@').replace(/\s+/g,'');
   while(i<s.length){
     const c=s[i];
     if(/[0-9.]/.test(c)){

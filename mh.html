@@ -164,10 +164,6 @@ body {
 }
 .footer-level { font-size: 12px; color: #aaa; }
 .footer-right { display: flex; align-items: center; gap: 8px; }
-.footer-type { font-size: 11px; font-weight: 600; color: #0F6E56; background: #e1f5ee; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
-.footer-cat { font-size: 11px; color: #3949ab; background: #e8eaf6; padding: 2px 8px; border-radius: 4px; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.card-footer { gap: 8px; }
-.footer-right { flex-wrap: wrap; justify-content: flex-end; }
 .footer-star { font-size: 12px; color: #f4a623; letter-spacing: -1px; }
 .footer-year {
   font-size: 11px; color: #888; background: #f0f0ee;
@@ -424,57 +420,6 @@ window.MathJax = {
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
 </head>
 <body>
-<!-- ═══ 접근 암호 게이트 (초성암기도우미(전기철도)와 동일 방식: 가벼운 접근 저지용) ═══ -->
-<div id="gate" style="position:fixed;inset:0;z-index:9000;background:#f5f5f3;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem 1rem;">
-  <div style="position:absolute;top:0;left:0;right:0;background:#c62828;color:#fff;text-align:center;font-size:13px;font-weight:700;padding:10px 12px;">본 자료는 상업적 이용을 불허합니다.</div>
-  <div style="width:100%;max-width:320px;text-align:center;">
-    <div style="font-size:22px;font-weight:700;color:#0f1117;letter-spacing:-0.03em;">암기도우미</div>
-    <div style="font-size:13px;color:#888;margin:4px 0 1.2rem;">비밀번호를 입력하세요</div>
-    <input id="gate-input" type="password" inputmode="numeric" autocomplete="off" placeholder="비밀번호"
-      style="width:100%;padding:12px;border:1.5px solid #ccc;border-radius:10px;font-size:15px;text-align:center;outline:none;">
-    <div id="gate-error" style="min-height:18px;margin:8px 0;font-size:12px;color:#c62828;"></div>
-    <button id="gate-btn" style="width:100%;padding:12px;border-radius:10px;border:none;background:#0f1117;color:#fff;font-size:15px;font-weight:700;cursor:pointer;">입장하기</button>
-  </div>
-  <div style="position:absolute;bottom:14px;left:0;right:0;text-align:center;font-size:11px;color:#aaa;">
-    Created by <a href="https://blog.naver.com/zzizik" target="_blank" rel="noopener" style="color:#aaa;text-decoration:none;">zzizik</a>, with Claude AI · rev. 261012
-  </div>
-</div>
-<script>
-(function(){
-  var GATE_GRACE_DAYS=3, FIRST_KEY='mh_first_open_v1';
-  window.__gateUnlocked=false; window.__onGateUnlock=[];
-  // 비밀번호는 하드코딩하지 않고 실행 시점의 "연도 뒤 2자리 + 월 2자리"로 계산 (예: 2026년 10월 → 2610)
-  function computeGatePassword(){var d=new Date();return String(d.getFullYear()).slice(-2)+String(d.getMonth()+1).padStart(2,'0');}
-  // 이 브라우저에서 처음 연 시각부터 3일 동안은 게이트 생략. localStorage를 쓸 수 없으면 유예를 인정하지 않음(항상 암호 요구)
-  function inGrace(){
-    try{
-      var now=Date.now(), t=localStorage.getItem(FIRST_KEY);
-      if(!t){localStorage.setItem(FIRST_KEY,String(now));t=localStorage.getItem(FIRST_KEY);}
-      var first=parseInt(t,10);
-      if(!isFinite(first)) return false;
-      return now>=first && (now-first)<GATE_GRACE_DAYS*86400000;
-    }catch(e){return false;}
-  }
-  var gate=document.getElementById('gate'), input=document.getElementById('gate-input'), err=document.getElementById('gate-error');
-  function unlock(){
-    gate.style.display='none'; window.__gateUnlocked=true;
-    var q=window.__onGateUnlock||[]; window.__onGateUnlock=[];
-    q.forEach(function(f){try{f();}catch(e){}});
-  }
-  function tryEnter(){
-    if(input.value.trim()===computeGatePassword()){unlock();}
-    else{err.textContent='비밀번호가 올바르지 않습니다.';input.value='';input.focus();}
-  }
-  window.__gateComputePassword=computeGatePassword; // 점검용
-  // 입력창에서 누른 키가 학습 단축키(Space, ←, → 등)로 전달되지 않도록 차단
-  input.addEventListener('keydown',function(e){e.stopPropagation();if(e.key==='Enter')tryEnter();});
-  input.addEventListener('keyup',function(e){e.stopPropagation();});
-  input.addEventListener('keypress',function(e){e.stopPropagation();});
-  document.getElementById('gate-btn').addEventListener('click',tryEnter);
-  if(inGrace()){unlock();}
-  else{setTimeout(function(){try{input.focus();}catch(e){}},50);}
-})();
-</script>
 <div class="app">
 
   <!-- Import -->
@@ -484,6 +429,42 @@ window.MathJax = {
         <div class="brand-name">Memorization Helper</div>
         <div class="brand-sub">암기도우미 · ANKI 호환 · 260831</div>
       </div>
+      <!-- ① 오늘 목표 -->
+      <div style="background:#fff;border-radius:12px;padding:14px 16px;border:1px solid #eee;margin-bottom:16px;">
+        <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:10px;">🎯 오늘 목표</div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span style="font-size:12px;color:#777;">신규</span>
+            <input type="number" id="daily-new" value="20" min="0" max="9999"
+              style="width:56px;padding:3px 6px;border:1px solid #ddd;border-radius:6px;font-size:13px;text-align:center;"
+              oninput="clampQuotaInput('daily-new','_maxNew')">
+            <span style="font-size:12px;color:#aaa;" id="lbl-max-new"></span>
+            <button onclick="setMaxQuota('new')"
+              style="padding:2px 8px;border-radius:5px;border:1px solid #9fe1cb;background:#f0faf6;font-size:11px;font-weight:600;color:#0F6E56;cursor:pointer;white-space:nowrap;">최대</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span style="font-size:12px;color:#777;">복습</span>
+            <input type="number" id="daily-review" value="50" min="0" max="9999"
+              style="width:56px;padding:3px 6px;border:1px solid #ddd;border-radius:6px;font-size:13px;text-align:center;"
+              oninput="clampQuotaInput('daily-review','_maxReview')">
+            <span style="font-size:12px;color:#aaa;" id="lbl-max-review"></span>
+            <button onclick="setMaxQuota('review')"
+              style="padding:2px 8px;border-radius:5px;border:1px solid #9fe1cb;background:#f0faf6;font-size:11px;font-weight:600;color:#0F6E56;cursor:pointer;white-space:nowrap;">최대</button>
+          </div>
+          <div style="width:1px;height:20px;background:#eee;"></div>
+          <label style="font-size:12px;color:#777;display:flex;align-items:center;gap:5px;">⏱ 타이머
+            <select id="timer-select-import" onchange="changeTimerSec(+this.value)"
+              style="padding:3px 6px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:#fff;cursor:pointer;">
+              <option value="10">10초</option>
+              <option value="20" selected>20초</option>
+              <option value="30">30초</option>
+              <option value="60">60초</option>
+              <option value="0">끄기</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
       <!-- ② 학습 순서 -->
       <div style="background:#fff;border-radius:12px;padding:12px 16px;border:1px solid #eee;margin-bottom:16px;">
         <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:10px;">📋 학습 순서</div>
@@ -531,27 +512,11 @@ window.MathJax = {
         </div>
       </div>
 
-      <!-- ③-2 이어서 학습 (폴더 연결 시 접근 허용용 버튼) -->
-      <div id="resume-box" style="display:none;margin-bottom:8px;">
-        <button onclick="resumeClick()" style="width:100%;padding:13px;border-radius:10px;border:none;background:#1D9E75;color:#fff;font-size:15px;font-weight:700;cursor:pointer;">▶ 이어서 학습 <span id="resume-name" style="font-weight:500;font-size:12px;"></span></button>
-        <div style="font-size:11px;color:#aaa;margin-top:4px;text-align:center;">브라우저 보안상 폴더 접근 허용을 한 번 눌러야 합니다</div>
-      </div>
-
-      <!-- ④-0 진도 폴더 연결 -->
-      <div id="dir-box" style="margin-bottom:8px;font-size:12px;color:#555;">
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <button id="btn-link-dir" onclick="linkStudyFolder()" style="padding:8px 12px;border-radius:9px;border:1.5px solid #3949ab;background:#fff;font-size:13px;font-weight:600;color:#3949ab;cursor:pointer;">📁 진도 폴더 연결</button>
-          <span id="dir-name" style="color:#1D9E75;font-weight:600;"></span>
-          <span id="dir-unlink" onclick="unlinkStudyFolder()" style="display:none;color:#c62828;text-decoration:underline;cursor:pointer;">해제</span>
-        </div>
-        <div id="dir-hint" style="color:#aaa;margin-top:3px;line-height:1.5;">덱이 있는 폴더를 연결하면 진도(progress_덱이름.json)가 그 폴더에 자동 저장되고, 다음 실행 때 덱과 진도를 이어서 불러옵니다. (Chrome/Edge)</div>
-      </div>
-
       <!-- ④ 진도 + APKG -->
       <div style="display:flex;gap:8px;margin-bottom:8px;">
         <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;border-radius:10px;border:1.5px solid #1D9E75;background:#f0faf6;font-size:13px;font-weight:600;color:#0F6E56;cursor:pointer;">
           📊 진도 + APKG 같이 불러오기
-          <input type="file" accept=".json,.apkg,.zip" multiple style="display:none" onchange="handleCombinedFiles(this.files)">
+          <input type="file" accept=".json,.apkg" multiple style="display:none" onchange="handleCombinedFiles(this.files)">
         </label>
       </div>
 
@@ -571,7 +536,6 @@ window.MathJax = {
         <span id="progress-file-name" style="font-size:12px;color:#1D9E75;font-weight:600;"></span>
       </div>
       <div id="apkg-store-info" style="display:none;margin-top:6px;font-size:12px;color:#888;">
-        <button onclick="continueRecent()" style="width:100%;margin-bottom:6px;padding:12px;border-radius:10px;border:none;background:#1D9E75;color:#fff;font-size:14px;font-weight:700;cursor:pointer;">▶ 최근 파일로 바로 시작 (다시 선택 불필요)</button>
         📌 최근 파일: <span id="apkg-store-name" style="color:#555;font-weight:600;"></span>
         <span id="apkg-store-clear" style="margin-left:8px;color:#c62828;text-decoration:underline;cursor:pointer;">저장된 파일 지우기</span>
       </div>
@@ -589,10 +553,8 @@ window.MathJax = {
         학습 화면 상단 ⛶ 버튼 또는 F11 키로 전체화면 전환<br>
         태블릿·폰에서도 버튼 한 번으로 주소창 없이 몰입 학습 가능<br><br>
         <strong>💾 진도 저장</strong><br>
-        답변할 때마다 이 브라우저에 자동 저장 → 다시 실행하면 덱·진도를 불러와 바로 문제 시작<br>
-        학습 화면 상단 💾 버튼 = 진도 JSON만 저장 (카드 문구를 수정했을 때만 덱 포함 ZIP 저장)<br>
-        <strong>📁 진도 폴더 연결</strong> 시 진도가 그 폴더에 자동 저장 · 다른 PC에서는 같은 폴더(또는 진도 파일을 복사한 폴더)를 연결하면 이어서 학습<br>
-        오늘 푼 문제 수는 학습 화면 상단 "오늘 N문제"에 표시 (카드당 1회, 같은 날 여러 번 풀면 최종 결과)<br><br>
+        학습 화면 상단 💾 버튼으로 진도 JSON 파일 저장<br>
+        다음번엔 <strong>진도 + APKG 같이 불러오기</strong>로 이어서 학습 · 카드 선택 없이 바로 시작<br><br>
         <strong>🔊 TTS 음성 읽기</strong><br>
         학습 화면 상단 🔇 버튼으로 켜기/끄기<br>
         문제 → 힌트 → 정답 순서로 자동 읽기 · TTS 읽는 동안 타이머 자동 대기<br>
@@ -654,7 +616,7 @@ window.MathJax = {
             <button onclick="goToPrev()" id="btn-prev" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;opacity:0.35;" title="이전 카드 보기">◀</button>
             <button onclick="openEditModal()" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="카드 텍스트 편집">✏️</button>
             <button onclick="openCalc()" id="btn-calc" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="계산기"><svg width="13" height="15" viewBox="0 0 14 16" fill="none" stroke="#555" stroke-width="1.3" stroke-linejoin="round" style="display:block"><rect x="1" y="0.8" width="12" height="14.4" rx="2"/><rect x="3" y="2.8" width="8" height="3" rx="0.6" fill="#555" fill-opacity=".15"/><g fill="#555" stroke="none"><circle cx="4" cy="8.6" r=".9"/><circle cx="7" cy="8.6" r=".9"/><circle cx="10" cy="8.6" r=".9"/><circle cx="4" cy="12" r=".9"/><circle cx="7" cy="12" r=".9"/><circle cx="10" cy="12" r=".9"/></g></svg></button>
-            <button onclick="saveProgress()" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="진도 저장">💾</button>
+            <button onclick="saveProgress()" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="진도 저장 (ZIP)">💾</button>
             <button id="btn-fullscreen" onclick="toggleFullscreen()" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="전체화면 (F11)">⛶</button>
             <button id="btn-tts" onclick="toggleTTS()" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="TTS 음성 읽기 켜기/끄기">🔇</button>
             <div class="timer-ring" id="timer-ring" onclick="togglePause()" title="클릭 = 일시정지/재개">
@@ -676,12 +638,6 @@ window.MathJax = {
         <div class="card-shell">
           <div class="card-scroll" id="card-scroll">
             <div class="block" id="block-front">
-              <div class="footer-right card-meta" style="margin-bottom:8px;justify-content:flex-start;">
-                <span class="footer-type" id="footer-type"></span>
-                <span class="footer-cat" id="footer-cat"></span>
-                <span class="footer-star" id="footer-star"></span>
-                <span class="footer-year" id="footer-year"></span>
-              </div>
               <div class="block-label">문제</div>
               <div class="block-body" id="content-front"></div>
             </div>
@@ -712,6 +668,10 @@ window.MathJax = {
           </div>
           <div class="card-footer">
             <span class="footer-level" id="footer-level">1단계</span>
+            <div class="footer-right">
+              <span class="footer-star" id="footer-star"></span>
+              <span class="footer-year" id="footer-year"></span>
+            </div>
           </div>
         </div>
 
@@ -782,10 +742,10 @@ window.MathJax = {
           <div id="list-deck-name" style="font-size:14px;font-weight:700;color:#0f1117;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
           <div id="list-stats" style="font-size:11px;color:#aaa;margin-top:1px;"></div>
         </div>
-        <span id="btn-list-save" style="display:none;flex-shrink:0;gap:6px;">
-          <button onclick="saveDeck('zip')" title="카드 수정 내용을 ZIP으로 저장 (이 프로그램에서 다시 열 때)" style="padding:8px 10px;border-radius:9px;border:1px solid #e0a040;background:#fff;font-size:13px;font-weight:700;color:#b26a00;cursor:pointer;">💾 덱 ZIP</button>
-          <button onclick="saveDeck('apkg')" title="카드 수정 내용을 노트에 반영한 APKG로 저장 (안키에서 가져올 때)" style="padding:8px 10px;border-radius:9px;border:1px solid #e0a040;background:#fff;font-size:13px;font-weight:700;color:#b26a00;cursor:pointer;">💾 덱 APKG</button>
-        </span>
+        <button onclick="saveProgress()" id="btn-list-save" title="수정 내용 + 진도 저장 (ZIP)"
+          style="padding:8px 12px;border-radius:9px;border:1px solid #e0a040;background:#fff;font-size:13px;font-weight:700;color:#b26a00;cursor:pointer;display:none;flex-shrink:0;">
+          💾 저장
+        </button>
         <button onclick="startSelectedCards()" id="btn-start-selected"
           style="padding:8px 16px;border-radius:9px;border:none;background:#1D9E75;font-size:13px;font-weight:700;color:#fff;cursor:pointer;display:none;flex-shrink:0;">
           ▶ 선택 학습
@@ -794,45 +754,6 @@ window.MathJax = {
           style="padding:8px 16px;border-radius:9px;border:none;background:#1565c0;font-size:13px;font-weight:700;color:#fff;cursor:pointer;flex-shrink:0;">
           전체 학습
         </button>
-      </div>
-
-      <!-- ① 한 턴 -->
-      <div style="background:#fff;border-radius:12px;padding:14px 16px;border:1px solid #eee;margin-bottom:8px;flex-shrink:0;">
-        <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:10px;">🔁 한 턴 <span style="font-weight:400;color:#aaa;">— 한 번에 풀 장수 · 끝나면 점수 표시와 자동 저장 · 모르는 카드는 다음 턴에 다시</span></div>
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-          <div style="display:flex;align-items:center;gap:5px;">
-            <span style="font-size:12px;color:#777;">한 턴</span>
-            <input type="number" id="daily-new" value="20" min="0" max="9999" placeholder="∞"
-              style="width:56px;padding:3px 6px;border:1px solid #ddd;border-radius:6px;font-size:13px;text-align:center;"
-              oninput="clampQuotaInput('daily-new','_maxNew');settingsChanged()">
-            <span style="font-size:12px;color:#777;">장</span>
-            <span style="font-size:12px;color:#aaa;" id="lbl-max-new"></span>
-            <button onclick="setMaxQuota('new')" title="비우면 ∞ — 신규를 끝까지 훑기 (20장마다 자동 저장)"
-              style="padding:2px 8px;border-radius:5px;border:1px solid #9fe1cb;background:#f0faf6;font-size:11px;font-weight:600;color:#0F6E56;cursor:pointer;white-space:nowrap;">최대(∞)</button>
-          </div>
-          <div style="display:none;"><input type="number" id="daily-review" value="9999"><span id="lbl-max-review"></span></div>
-          <div style="width:1px;height:20px;background:#eee;"></div>
-          <label style="font-size:12px;color:#777;display:flex;align-items:center;gap:5px;">⏱ 타이머
-            <select id="timer-select-import" onchange="_userTimerSec=+this.value;changeTimerSec(+this.value);settingsChanged()"
-              style="padding:3px 6px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:#fff;cursor:pointer;">
-              <option value="10">10초</option>
-              <option value="20" selected>20초</option>
-              <option value="30">30초</option>
-              <option value="60">60초</option>
-              <option value="0">끄기</option>
-            </select>
-          </label>
-          <div style="width:1px;height:20px;background:#eee;"></div>
-          <label style="font-size:12px;color:#777;display:flex;align-items:center;gap:5px;" title="진도우선: 신규를 먼저 풀고 모르는 카드를 뒤에 / 복습우선: 모르는 카드를 먼저 풀고 신규를 뒤에 (시간초과도 모르는 카드)">↕ 순서
-            <select id="start-order" onchange="settingsChanged()"
-              style="padding:3px 6px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:#fff;cursor:pointer;">
-              <option value="new" selected>진도우선(신규→모름)</option>
-              <option value="review">복습우선(모름→신규)</option>
-            </select>
-          </label>
-          <button id="btn-due-review" onclick="startDueReview()" title="학습 간격(레이트너) 기한이 된 카드만 따로 풀기 — 턴 방식과 별개"
-            style="padding:4px 10px;border-radius:6px;border:1px solid #c5cae9;background:#f3f4fb;font-size:12px;font-weight:600;color:#3949ab;cursor:pointer;white-space:nowrap;">📅 기한 복습</button>
-        </div>
       </div>
 
       <!-- 필터/정렬 바 -->
@@ -851,8 +772,11 @@ window.MathJax = {
             <button type="button" class="list-filter-btn star-bucket-btn" data-bucket="1-" onclick="toggleStarBucket('1-')">★1 이하</button>
           </div>
 
-          <!-- 문제유형 (다중 선택) -->
-          <div id="lf-type-chips" style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;"></div>
+          <!-- 문제유형 -->
+          <select id="lf-type" onchange="setListDropFilter('type',this.value)"
+            style="font-size:12px;border:1px solid #ddd;border-radius:20px;padding:4px 10px;background:#fff;color:#555;cursor:pointer;outline:none;">
+            <option value="">문제유형 전체</option>
+          </select>
 
           <!-- 분류 -->
           <select id="lf-category" onchange="setListDropFilter('category',this.value)"
@@ -880,7 +804,7 @@ window.MathJax = {
           <div style="width:1px;height:16px;background:#e0e0e0;margin:0 2px;flex-shrink:0;"></div>
           <!-- 랜덤 체크박스 -->
           <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#888;cursor:pointer;flex-shrink:0;">
-            <input type="checkbox" id="chk-random" onchange="settingsChanged()" style="accent-color:#1D9E75;width:14px;height:14px;">
+            <input type="checkbox" id="chk-random" style="accent-color:#1D9E75;width:14px;height:14px;">
             🔀 랜덤
           </label>
           <div style="width:1px;height:16px;background:#e0e0e0;margin:0 2px;flex-shrink:0;"></div>
@@ -918,9 +842,6 @@ window.MathJax = {
         </label>
         <label style="font-size:12px;font-weight:600;color:#888;">해설
           <textarea id="edit-explain" rows="3" style="display:block;width:100%;margin-top:4px;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;font-family:inherit;line-height:1.6;resize:vertical;outline:none;box-sizing:border-box;"></textarea>
-        </label>
-        <label style="font-size:12px;font-weight:600;color:#888;">문제유형
-          <select id="edit-type" style="display:block;margin-top:4px;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;background:#fff;"></select>
         </label>
         <label style="font-size:12px;font-weight:600;color:#888;">메모 (법규·노트)
           <textarea id="edit-note" rows="2" style="display:block;width:100%;margin-top:4px;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;font-family:inherit;line-height:1.6;resize:vertical;outline:none;box-sizing:border-box;"></textarea>
@@ -1009,17 +930,16 @@ window.MathJax = {
     <div class="done-wrap">
       <div class="done-screen">
         <div class="done-icon">🎉</div>
-        <div class="done-title" id="done-title">학습 완료!</div>
+        <div class="done-title">학습 완료!</div>
         <div class="done-sub" id="done-sub"></div>
         <div id="done-time" style="font-size:12px;color:#888;margin:6px 0 2px;line-height:1.8;"></div>
         <div class="done-stats">
           <div class="done-stat"><div class="done-stat-num pass" id="pass-count">0</div><div class="done-stat-label">○ 맞음</div></div>
           <div class="done-stat"><div class="done-stat-num fail" id="fail-count">0</div><div class="done-stat-label">✕ 틀림</div></div>
         </div>
-        <button class="restart-btn" onclick="saveProgress()" style="background:#1565c0;margin-bottom:10px;">💾 진도 저장</button>
+        <button class="restart-btn" onclick="saveProgress()" style="background:#1565c0;margin-bottom:10px;">💾 진도 저장 (ZIP)</button>
         <button class="restart-btn" id="btn-retry-fail" onclick="retryFailed()" style="background:#e53935;margin-bottom:10px;display:none;">✕ 틀린 문제만 다시 풀기</button>
-        <button class="restart-btn" id="btn-next-turn" onclick="startNextTurn()" style="display:none;background:#1D9E75;margin-bottom:10px;">▶ 다음 턴</button>
-        <button class="restart-btn" id="btn-restart" onclick="restartStudy()">↺ 다시 학습하기</button>
+        <button class="restart-btn" onclick="restartStudy()">↺ 다시 학습하기</button>
         <button class="back-btn" onclick="goImport()">다른 파일 불러오기</button>
         <!-- 학습 결과 리스트 -->
         <div id="done-card-list" style="margin-top:1.2rem;text-align:left;"></div>
@@ -1320,7 +1240,6 @@ async function apkgStoreClearAndRefresh(){
   apkgStoreRefreshUI();
 }
 
-let importIdx=null;
 let SQL=null,allCards=[],filteredCards=[],mediaMap={},zipRef=null;
 let pendingImport=null; // apkg 파싱 후 필드매핑 확인을 기다리는 원자료
 let sessionLog=[], cardEdited=false, ttsRate=1.1, ttsVoiceIdx=-1;
@@ -1405,16 +1324,13 @@ function updateFieldLabels(f1, f2, f3){
   });
 }
 let progressData={};
-let dailyLog={};            // 일별 풀이 기록: {'YYYY-MM-DD':{r:{카드ID:1|0}, nw:{카드ID:1}}} — 카드당 하루 1회(최종 결과)
-let progressDeckBase='';    // progressData가 속한 덱 이름
-let progressSavedAt='';     // 마지막 진도 변경 시각(ISO)
 let autoTimerCard=false;
 let todayDeck=[],todayReviewCount=0,todayNewCount=0;
 let notepadMode='text',penColor='#1a1a1a',penSize=3;
 let isDrawing=false,lastX=0,lastY=0,notepadOpen=true;
 const CIRCUMFERENCE=2*Math.PI*14;
 
-function today(){const d=new Date(),p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());} // 로컬(한국) 날짜 기준
+function today(){return new Date().toISOString().slice(0,10);}
 
 /* ── 전체화면 ── */
 function toggleFullscreen(){
@@ -1438,320 +1354,11 @@ function updateFsBtn(){
 document.addEventListener('fullscreenchange', updateFsBtn);
 document.addEventListener('webkitfullscreenchange', updateFsBtn);
 document.addEventListener('mozfullscreenchange', updateFsBtn);
-function addDays(d,n){const dt=new Date(String(d).slice(0,10)+'T00:00:00Z');dt.setUTCDate(dt.getUTCDate()+n);return dt.toISOString().slice(0,10);}
+function addDays(d,n){const dt=new Date(d);dt.setDate(dt.getDate()+n);return dt.toISOString().slice(0,10);}
 function getProgress(id){if(!progressData[id])progressData[id]={level:1,nextReview:today()};return progressData[id];}
 function peekProgress(id){return progressData[id]||null;} // 진도 없으면 null 반환 (자동생성 안 함)
 function isDueToday(id){const p=peekProgress(id);return p?p.nextReview<=today():false;}
 function isNewCard(id){return !progressData[id];}
-
-/* ═══ v11: 진도 저장 구조 — 진도 JSON 중심 + 일별 기록 + 자동 이어하기 + 학습 폴더 연동 ═══ */
-const KV_PROGRESS='progress', KV_FMAP='fmap', KV_DIR='dirHandle';
-// v13: 학습 설정(오늘 목표·타이머·순서·필터·랜덤·정렬·필드매핑)을 진도 JSON에 함께 저장
-// v14: 한 턴 방식 — 턴 종료 시 커밋(자동 저장), 중간에 나가면 직전 턴 종료 상태로 복원
-let turnState={no:1,carry:[],hist:[]};            // 저장된(커밋된) 턴 상태: 다음 턴 번호 · 모르는 카드 id · 점수 기록
-let turn={active:false,snap:null,ids:[],res:{},all:false};
-let _turnAll=false, _turnSummary=null;
-function cloneJSON(o){return JSON.parse(JSON.stringify(o));}
-function turnSizeVal(){const v=parseInt(document.getElementById('daily-new')?.value);return(isFinite(v)&&v>0)?v:0;} // 0 = ∞
-function abortTurnIfActive(){
-  if(!turn.active) return;
-  if(turn.snap){progressData=turn.snap.cards;dailyLog=turn.snap.daily;turnState=turn.snap.turn;}
-  turn.active=false;turn.snap=null;turn.ids=[];turn.res={};
-}
-function beginTurn(deck){
-  turn.active=true;turn.ids=deck.map(c=>c.id);turn.res={};turn.all=_turnAll;
-  turn.snap={cards:cloneJSON(progressData),daily:cloneJSON(dailyLog),turn:cloneJSON(turnState)};
-}
-// upto: 이번 턴 덱에서 처리 끝난 카드 수 / finished: 턴 종료 여부 (∞ 턴은 20장마다 중간 커밋)
-function commitTurn(upto,finished){
-  if(!turn.active) return;
-  const processed=new Set(turn.ids.slice(0,upto));
-  const keep=[];
-  (turn.snap.turn.carry||[]).forEach(id=>{ if(!processed.has(id)||turn.res[id]===0) keep.push(id); });
-  turn.ids.slice(0,upto).forEach(id=>{ if(turn.res[id]===0&&!keep.includes(id)) keep.push(id); });
-  turnState.carry=keep;
-  if(finished){
-    const n=upto, ok=turn.ids.slice(0,upto).filter(id=>turn.res[id]===1).length;
-    turnState.hist=(turnState.hist||[]).concat([{no:turnState.no,n:n,ok:ok,score:n?Math.round(ok*100/n):0,date:today()}]).slice(-50);
-    turnState.no=(turnState.no||1)+1;
-    turn.active=false;turn.snap=null;
-  }else{
-    turn.snap={cards:cloneJSON(progressData),daily:cloneJSON(dailyLog),turn:cloneJSON(turnState)};
-  }
-  persistProgress();
-}
-let restoredSettings=null, settingsReady=false, _userTimerSec=20, lastFmap=null, listFiltersDeck='', _reviewFirst=false, _todaySession=true, _autoRetryT=null, _setTimer=null, _filteredTotal=null;
-async function kvGet(key){
-  try{
-    const db=await apkgStoreOpen();
-    const v=await new Promise((res,rej)=>{const r=db.transaction(APKG_STORE_TABLE,'readonly').objectStore(APKG_STORE_TABLE).get(key);r.onsuccess=()=>res(r.result||null);r.onerror=()=>rej(r.error);});
-    db.close();return v;
-  }catch(e){return null;}
-}
-async function kvPut(key,val){
-  try{
-    const db=await apkgStoreOpen();
-    await new Promise((res,rej)=>{const tx=db.transaction(APKG_STORE_TABLE,'readwrite');tx.objectStore(APKG_STORE_TABLE).put(val,key);tx.oncomplete=res;tx.onerror=()=>rej(tx.error);});
-    db.close();return true;
-  }catch(e){return false;}
-}
-async function kvDel(key){
-  try{
-    const db=await apkgStoreOpen();
-    await new Promise((res,rej)=>{const tx=db.transaction(APKG_STORE_TABLE,'readwrite');tx.objectStore(APKG_STORE_TABLE).delete(key);tx.oncomplete=res;tx.onerror=()=>rej(tx.error);});
-    db.close();
-  }catch(e){}
-}
-function nameToBase(name){return String(name||'').replace(/_saved_\d{4}-\d{2}-\d{2}\.(zip|apkg)$/i,'').replace(/\.(apkg|zip)$/i,'').replace(/_saved_\d{4}-\d{2}-\d{2}$/i,'');}
-function progressBase(){return nameToBase(deckFileName);}
-function buildProgressObj(){
-  const src=(turn.active&&turn.snap)?turn.snap:{cards:progressData,daily:dailyLog,turn:turnState};
-  return {deckName:progressBase(),savedAt:progressSavedAt||new Date().toISOString(),version:'14.0',cards:src.cards,daily:src.daily,turn:src.turn,settings:(settingsReady?collectSettings():(restoredSettings||undefined))};
-}
-function applyProgressObj(d){
-  if(!d||typeof d.cards!=='object'||!d.cards) return false;
-  progressData=d.cards;
-  dailyLog=(d.daily&&typeof d.daily==='object')?d.daily:{};
-  progressSavedAt=d.savedAt?(Date.parse(d.savedAt)?new Date(d.savedAt).toISOString():''):'';
-  restoredSettings=(d.settings&&typeof d.settings==='object')?d.settings:null;
-  settingsReady=false;
-  turn.active=false;turn.snap=null;
-  turnState=(d.turn&&typeof d.turn==='object'&&Array.isArray(d.turn.carry))
-    ?{no:+d.turn.no||1,carry:d.turn.carry.map(String),hist:Array.isArray(d.turn.hist)?d.turn.hist.slice(-50):[]}
-    :{no:1,carry:Object.keys(d.cards).filter(id=>d.cards[id]&&d.cards[id].level===1),hist:[]}; // 옛 진도: 레벨1(틀린) 카드를 모르는 카드로
-  return true;
-}
-function collectSettings(){
-  const g=id=>document.getElementById(id);
-  return {
-    newGoal:parseInt(g('daily-new')?.value)||0,
-    timer:_userTimerSec,
-    order:g('start-order')?.value||'auto',
-    random:!!g('chk-random')?.checked,
-    sort:listSort,
-    types:[...listDropFilters.type],
-    stars:[...listDropFilters.star],
-    category:listDropFilters.category||'',
-    fmap:lastFmap||undefined
-  };
-}
-// 복원된 설정을 화면(오늘 목표·타이머·순서·랜덤)과 목록 필터 상태에 반영 — 덱(allCards)이 만들어진 뒤에 호출
-function applySettings(s){
-  if(!s) return;
-  const g=id=>document.getElementById(id);
-  if(g('daily-new')) g('daily-new').value=(+s.newGoal>0)?(+s.newGoal):'';
-  if([0,10,20,30,60].includes(+s.timer)){ _userTimerSec=+s.timer; const sel=g('timer-select-import'); if(sel) sel.value=String(_userTimerSec); changeTimerSec(_userTimerSec); }
-  if(g('start-order')) g('start-order').value=(s.order==='review')?'review':'new';
-  if(g('chk-random')) g('chk-random').checked=!!s.random;
-  const types=new Set(allCards.map(c=>detectCardType(c)));
-  const cat=(s.category&&allCards.some(c=>catMatch(c.분류,s.category)))?s.category:'';
-  listDropFilters={star:new Set((s.stars||[]).filter(b=>['5+','4','3','2','1-'].includes(b))),type:new Set((s.types||[]).filter(t=>types.has(t))),category:cat};
-  listSort=['order','star','alpha','cat'].includes(s.sort)?s.sort:'order';
-  listFiltersDeck=deckFileName;
-}
-function settingsChanged(){
-  clearTimeout(_setTimer);
-  _setTimer=setTimeout(()=>{ if(settingsReady&&deckFileName&&allCards.length) persistProgress(); },400);
-}
-// 두 진도(예: 사무실·집)를 카드별로 병합 — 카드마다 마지막으로 푼 날짜(last)가 더 최근인 쪽을 채택
-function mergeProgress(a,b){
-  if(!a) return b; if(!b) return a;
-  const ta=Date.parse(a.savedAt)||0, tb=Date.parse(b.savedAt)||0;
-  const base=ta>=tb?a:b, other=ta>=tb?b:a;
-  const cards=Object.assign({},other.cards||{});
-  Object.keys(base.cards||{}).forEach(id=>{
-    const x=base.cards[id], y=cards[id];
-    if(!y||(x.last||'')>=(y.last||'')) cards[id]=x;
-  });
-  const daily={};
-  new Set([...Object.keys(other.daily||{}),...Object.keys(base.daily||{})]).forEach(dt=>{
-    const o=(other.daily||{})[dt]||{}, s=(base.daily||{})[dt]||{};
-    daily[dt]={r:Object.assign({},o.r||{},s.r||{}),nw:Object.assign({},o.nw||{},s.nw||{})};
-  });
-  const t0=base.turn||other.turn;
-  const turnM=t0?Object.assign({},t0,{carry:(t0.carry||[]).filter(id=>!(cards[id]&&cards[id].level>1))}):undefined; // 다른 PC에서 이미 맞춘 카드는 모르는 목록에서 제외
-  return Object.assign({},base,{cards,daily,turn:turnM,settings:base.settings||other.settings});
-}
-// 오늘(또는 지정일) 푼 문제 — 카드당 1회, 그날의 최종 결과 기준
-function dayStats(dt){
-  const d=dailyLog[dt||today()];
-  if(!d||!d.r) return {n:0,p:0,f:0,nw:0};
-  const ids=Object.keys(d.r);let p=0;
-  ids.forEach(i=>{if(d.r[i]===1)p++;});
-  return {n:ids.length,p:p,f:ids.length-p,nw:Object.keys(d.nw||{}).length};
-}
-
-/* ── 학습 폴더 연동 (File System Access API — Chrome/Edge) ── */
-let studyDir=null;
-const FS_OK=(typeof window.showDirectoryPicker==='function');
-async function dirPerm(request){
-  if(!studyDir) return false;
-  try{
-    const o={mode:'readwrite'};
-    let p=await studyDir.queryPermission(o);
-    if(p==='granted') return true;
-    if(request){p=await studyDir.requestPermission(o);return p==='granted';}
-  }catch(e){}
-  return false;
-}
-function progressFileName(){return 'progress_'+progressBase()+'.json';}
-async function readDirProgress(){
-  if(!studyDir) return null;
-  try{
-    const fh=await studyDir.getFileHandle(progressFileName());
-    const d=JSON.parse(await (await fh.getFile()).text());
-    return (d&&d.cards)?d:null;
-  }catch(e){return null;}
-}
-async function writeDirProgress(obj){
-  try{
-    const fh=await studyDir.getFileHandle(progressFileName(),{create:true});
-    const w=await fh.createWritable();
-    await w.write(JSON.stringify(obj,null,2));await w.close();
-    return true;
-  }catch(e){return false;}
-}
-// 폴더의 진도를 현재 진도와 병합 (이미 접근 허용된 경우에만)
-async function pullDirProgress(){
-  if(!studyDir||!deckFileName||!(await dirPerm(false))) return false;
-  const fp=await readDirProgress();
-  if(!fp||(fp.deckName&&fp.deckName!==progressBase())) return false;
-  const local=(Object.keys(progressData).length||Object.keys(dailyLog).length)?buildProgressObj():null;
-  return applyProgressObj(mergeProgress(local,fp));
-}
-// 답변할 때마다 호출: 브라우저 저장은 즉시, 폴더 저장은 2초 간격으로 묶어서
-let _dirTimer=null;
-function persistProgress(){
-  if(!deckFileName) return;
-  progressSavedAt=new Date().toISOString();
-  progressDeckBase=progressBase();
-  kvPut(KV_PROGRESS,buildProgressObj());
-  if(studyDir&&!_dirTimer){
-    _dirTimer=setTimeout(async()=>{_dirTimer=null;try{if(await dirPerm(false)) await writeDirProgress(buildProgressObj());}catch(e){}},2000);
-  }
-}
-document.addEventListener('visibilitychange',()=>{if(document.hidden&&deckFileName&&Object.keys(progressData).length) persistProgress();});
-
-function refreshDirUI(){
-  const nm=document.getElementById('dir-name'),un=document.getElementById('dir-unlink'),bt=document.getElementById('btn-link-dir');
-  if(!bt) return;
-  if(!FS_OK){bt.style.display='none';const hint=document.getElementById('dir-hint');if(hint)hint.textContent='폴더 연결은 Chrome/Edge에서만 지원됩니다. (진도 파일은 아래 "진도 + APKG 같이 불러오기"로 사용)';return;}
-  if(studyDir){nm.textContent='연결됨: '+studyDir.name;un.style.display='inline';bt.textContent='📁 폴더 변경';}
-  else{nm.textContent='';un.style.display='none';bt.textContent='📁 진도 폴더 연결';}
-}
-async function linkStudyFolder(){
-  if(!FS_OK){alert('이 브라우저는 폴더 연결을 지원하지 않습니다. Chrome 또는 Edge를 사용해 주세요.');return;}
-  try{
-    const h=await window.showDirectoryPicker({id:'mh-study',mode:'readwrite'});
-    studyDir=h;
-    const ok=await kvPut(KV_DIR,h);
-    refreshDirUI();
-    showToast(ok?('폴더 연결됨: '+h.name):'폴더는 연결됐지만 다음 실행 때 기억하지 못할 수 있습니다');
-    if(deckFileName&&allCards.length){await pullDirProgress();persistProgress();}
-    else { // v13: 아직 덱을 안 불러왔으면 폴더의 덱+진도로 바로 시작
-      const ff=await pickResumeFile(await apkgStoreLoad(),true);
-      if(ff) await resumeWith(ff);
-    }
-  }catch(e){if(e&&e.name!=='AbortError')alert('폴더 연결 실패: '+e.message);}
-}
-async function unlinkStudyFolder(){
-  if(!confirm('폴더 연결을 해제할까요? (폴더 안의 파일은 삭제되지 않습니다)')) return;
-  studyDir=null;await kvDel(KV_DIR);refreshDirUI();
-}
-
-/* ── 자동 이어하기: 마지막 덱 + 진도 + 필드 매핑을 복원해 바로 학습 화면으로 ── */
-let _resumeFile=null, _autoFmap=null;
-async function resumeWith(file){
-  const base=nameToBase(file.name);
-  deckFileName=base;
-  const pr=await kvGet(KV_PROGRESS);
-  let obj=(pr&&pr.deckName===base)?pr:null;
-  if(studyDir&&await dirPerm(false)){
-    const fp=await readDirProgress();
-    if(fp&&(!fp.deckName||fp.deckName===base)) obj=mergeProgress(obj,fp);
-  }
-  const fm=await kvGet(KV_FMAP);
-  _autoFmap=(fm&&fm.deckName===base)?fm:null;
-  if(!_autoFmap&&obj&&obj.settings&&obj.settings.fmap&&obj.settings.fmap.idx) _autoFmap={deckName:base,names:obj.settings.fmap.names,idx:obj.settings.fmap.idx};
-  if(_autoFmap) lastFmap={names:_autoFmap.names,idx:_autoFmap.idx};
-  if(obj&&applyProgressObj(obj)){
-    setStatus('이전 학습을 이어서 불러오는 중: '+file.name,'loading');
-    await handleFile(file,true);
-  }else{
-    setStatus('이전에 불러온 파일 자동 불러오는 중: '+file.name,'loading');
-    await handleFile(file,false);
-  }
-}
-// v13: 연결된 폴더에서 이어갈 덱(apkg/zip) 찾기 — 폴더의 가장 최근 progress_*.json의 덱 이름과 같은 이름의 가장 최근 파일
-async function findFolderDeck(hintBase){
-  if(!studyDir||!(await dirPerm(false))) return null;
-  const decks=[]; let best=null;
-  try{
-    for await (const h of studyDir.values()){
-      if(h.kind!=='file') continue;
-      const low=h.name.toLowerCase();
-      if(low.endsWith('.apkg')||low.endsWith('.zip')) decks.push(h);
-      else if(/^progress_.*\.json$/i.test(h.name)){
-        try{
-          const f=await h.getFile(); const d=JSON.parse(await f.text());
-          if(d&&d.cards){ const t=Date.parse(d.savedAt)||f.lastModified; if(!best||t>best.t) best={t,deckName:d.deckName||h.name.replace(/^progress_/i,'').replace(/\.json$/i,'')}; }
-        }catch(e){}
-      }
-    }
-  }catch(e){ return null; }
-  const target=best?best.deckName:hintBase;
-  let pick=null;
-  for(const h of decks){
-    if(target&&nameToBase(h.name)!==target) continue;
-    const f=await h.getFile();
-    if(!pick||f.lastModified>pick.lastModified) pick=f;
-  }
-  return pick;
-}
-// 이어갈 파일 결정: 폴더에 맞는 덱이 있고(이름이 다르거나 더 최신) → 폴더 것, 아니면 브라우저 저장본
-async function pickResumeFile(rec, folderOnly){
-  const has=rec&&rec.buffer&&rec.buffer.byteLength;
-  let file=has?new File([rec.buffer],rec.name,{type:'application/octet-stream',lastModified:rec.savedAt||0}):null;
-  if(studyDir&&await dirPerm(false)){
-    const ff=await findFolderDeck(file?nameToBase(file.name):null);
-    if(ff&&(!file||nameToBase(ff.name)!==nameToBase(file.name)||ff.lastModified>(rec.savedAt||0))) return ff;
-  }
-  return folderOnly?null:file;
-}
-async function continueRecent(){
-  // 첫 화면에서 저장된 최근 파일(IndexedDB) 또는 연결 폴더의 덱으로 파일 재선택 없이 진행
-  const rec=await apkgStoreLoad();
-  try{ if(studyDir) await dirPerm(true); }catch(e){}
-  const file=await pickResumeFile(rec,false);
-  if(!file){ alert('저장된 최근 파일이 없습니다. 파일을 선택해주세요.'); return; }
-  await resumeWith(file);
-}
-async function resumeClick(){
-  if(!_resumeFile) return;
-  await dirPerm(true); // 클릭 직후라 허용 창을 띄울 수 있음 (거부해도 이 기기의 진도로 계속)
-  const box=document.getElementById('resume-box');if(box)box.style.display='none';
-  const file=await pickResumeFile(await apkgStoreLoad(),false);
-  if(!file){ alert('불러올 덱이 없습니다. 파일을 선택해주세요.'); return; }
-  await resumeWith(file);
-}
-async function autoResume(){
-  try{studyDir=FS_OK?(await kvGet(KV_DIR)||null):null;}catch(e){studyDir=null;}
-  refreshDirUI();
-  const rec=await apkgStoreLoad();
-  const has=rec&&rec.buffer&&rec.buffer.byteLength;
-  if(!has&&!studyDir) return;
-  try{
-    if(studyDir&&!(await dirPerm(false))){
-      // 폴더 접근은 사용자 클릭이 있어야 허용 가능 → 버튼 한 번으로 이어서 학습
-      _resumeFile=true;
-      const box=document.getElementById('resume-box'),nm=document.getElementById('resume-name');
-      if(box&&nm){nm.textContent='— '+(has?nameToBase(rec.name):'폴더: '+studyDir.name);box.style.display='block';}
-      return;
-    }
-    const file=await pickResumeFile(rec,false);
-    if(file) await resumeWith(file);
-  }catch(e){setStatus('','');}
-}
 
 function setStatus(msg,type){const el=document.getElementById('status-bar');if(!el)return;el.textContent=msg;el.className='status-bar '+(msg?type:'');}
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
@@ -1781,10 +1388,9 @@ function updateQuotaLabels(){
   if(lblR) lblR.textContent=_maxReview>0?'/ '+_maxReview+'장':'';
 }
 function setMaxQuota(type){
-  setTimeout(settingsChanged,0);
   if(type==='new'){
     const el=document.getElementById('daily-new');
-    if(el){ el.value=''; el.placeholder='∞'; }
+    if(el){ el.value=_maxNew>0?_maxNew:9999; }
   } else {
     const el=document.getElementById('daily-review');
     if(el){ el.value=_maxReview>0?_maxReview:9999; }
@@ -1803,57 +1409,31 @@ function clampQuotaInput(inputId, maxVar){
   }
 }
 
-// v13: 오늘 덱에도 목록의 필터(문제유형·출제빈도·분류)를 적용
-function matchTodayFilters(c){
-  if(isHeart(c.star)) return false;
-  if(starFilter>0&&countStars(c.star)<starFilter) return false;
-  const f=listDropFilters;
-  if(f.star&&f.star.size>0&&!f.star.has(starBucket(countStars(c.star)))) return false;
-  if(f.type&&f.type.size>0&&!f.type.has(detectCardType(c))) return false;
-  if(f.category&&!catMatch(c.분류,f.category)) return false;
-  return true;
-}
-function filtersActive(){const f=listDropFilters;return starFilter>0||(f.star&&f.star.size>0)||(f.type&&f.type.size>0)||!!f.category;}
-function refreshDueBtn(){
-  const b=document.getElementById('btn-due-review');if(!b) return;
-  const n=allCards.filter(c=>matchTodayFilters(c)&&!isNewCard(c.id)&&isDueToday(c.id)).length;
-  b.textContent='📅 기한 복습 ('+n+'장)';
-}
-// v14: 한 턴 = (이전 턴에서 모르는 카드) + (신규로 채움) 합쳐서 N장. 모르는 카드가 N장 이상이면 신규 없이 같은 카드가 반복된다.
 function buildTodayDeck(cards){
-  const size=turnSizeVal();
-  const byId=new Map(cards.map(c=>[c.id,c]));
-  const carryAll=(turnState.carry||[]).map(id=>byId.get(id)).filter(Boolean);
-  const nw=cards.filter(c=>isNewCard(c.id));
+  const maxNew=parseInt(document.getElementById('daily-new')?.value||20);
+  const maxReview=parseInt(document.getElementById('daily-review')?.value||50);
+  const rev=[],nw=[];
+  cards.forEach(c=>{if(isNewCard(c.id))nw.push(c);else if(isDueToday(c.id))rev.push(c);});
+  // 실제 최대치 업데이트
   _maxNew=nw.length;
-  _maxReview=cards.filter(c=>!isNewCard(c.id)&&isDueToday(c.id)).length;
+  _maxReview=rev.length;
   updateQuotaLabels();
-  const take=size?carryAll.slice(0,size):carryAll;
-  const newTake=size?nw.slice(0,Math.max(0,size-take.length)):nw;
-  _turnAll=(size===0)||(take.length+newTake.length>=carryAll.length+nw.length);
-  todayReviewCount=take.length; todayNewCount=newTake.length;
+  todayReviewCount=Math.min(rev.length,maxReview);
+  todayNewCount=Math.min(nw.length,maxNew);
   const rnd=isRandomMode();
-  const C=rnd?shuffle([...take]):take, N=rnd?shuffle([...newTake]):newTake;
-  _reviewFirst=(document.getElementById('start-order')?.value==='review');
-  todayDeck=_reviewFirst?[...C,...N]:[...N,...C];
-  refreshDueBtn();
+  todayDeck=[...(rnd?shuffle(rev.slice(0,maxReview)):rev.slice(0,maxReview)),...(rnd?shuffle(nw.slice(0,maxNew)):nw.slice(0,maxNew))];
   updateQuotaBar();
 }
 function updateQuotaBar(){
   const bar=document.getElementById('quota-bar');if(!bar)return;
-  const total=(filtersActive()&&_filteredTotal!=null)?_filteredTotal:allCards.filter(c=>!isHeart(c.star)).length;
-  const ds=dayStats();
-  bar.innerHTML=`<span class="quota-chip" style="background:#e8eaf6;color:#3949ab;">${filtersActive()?'선택':'전체'} ${total}장</span><span class="quota-chip" style="background:#f3e5f5;color:#6a1b9a;">${turnState.no}턴째 · ${_reviewFirst?'모름→신규':'신규→모름'}</span><span class="quota-chip quota-review">모름 ${todayReviewCount}장</span><span class="quota-chip quota-new">신규 ${todayNewCount}장</span><span class="quota-chip quota-done">진행 ${cur}/${todayDeck.length}</span><span class="quota-chip" style="background:#fff3e0;color:#e65100;" title="오늘 푼 문제(카드당 1회, 최종 결과 기준)">오늘 ${ds.n}문제 ○${ds.p} ✕${ds.f}</span>`;
+  const total=allCards.filter(c=>!isHeart(c.star)).length;
+  bar.innerHTML=`<span class="quota-chip" style="background:#e8eaf6;color:#3949ab;">전체 ${total}장</span><span class="quota-chip quota-review">복습 ${todayReviewCount}장</span><span class="quota-chip quota-new">신규 ${todayNewCount}장</span><span class="quota-chip quota-done">진행 ${cur}/${todayDeck.length}</span>`;
 }
 function applyFilter(){
-  abortTurnIfActive();
-  _todaySession=true;
-  const base=allCards.filter(matchTodayFilters);
-  _filteredTotal=base.length;
+  const base=allCards.filter(c=>{if(isHeart(c.star))return false;if(starFilter>0&&countStars(c.star)<starFilter)return false;return true;});
   buildTodayDeck(base);filteredCards=todayDeck;
-  beginTurn(todayDeck);
-  const filteredTotal=base.length;
-  const fcEl=document.getElementById('filter-count');if(fcEl)fcEl.textContent=filtersActive()?filteredTotal+'장':'';
+  const filteredTotal=allCards.filter(c=>{if(isHeart(c.star))return false;if(starFilter>0&&countStars(c.star)<starFilter)return false;return true;}).length;
+  const fcEl=document.getElementById('filter-count');if(fcEl)fcEl.textContent=starFilter>0?filteredTotal+'장':'';
   if(document.getElementById('screen-study').classList.contains('active')){cur=0;passCount=0;failCount=0;loadCard();}
 }
 function setFilter(stars){
@@ -1869,9 +1449,7 @@ function handleDrop(e){
 }
 async function handleApkg(file, hasProgress=false){
   if(!file)return;
-  deckFileName=file.name.replace(/\.apkg$/i,'').replace(/_saved_\d{4}-\d{2}-\d{2}$/,'');
-  // 진도 없이 다른 덱을 불러오면 이전 덱의 진도가 섞이지 않도록 초기화
-  if(!hasProgress&&progressDeckBase&&progressDeckBase!==progressBase()){progressData={};dailyLog={};progressSavedAt='';restoredSettings=null;settingsReady=false;}
+  deckFileName=file.name.replace(/\.apkg$/i,'');
   setStatus('파일 읽는 중...','loading');
   try{
     if(!SQL){setStatus('초기화 중...','loading');SQL=await initSqlJs({wasmBinary:window.__sqlWasmBinary});}
@@ -1895,8 +1473,7 @@ async function handleApkg(file, hasProgress=false){
     db.close();setStatus('','');
 
     // v10: 바로 카드로 만들지 않고 필드 매핑 확인 화면에 넘김 (이름 기준 자동 인식 + 수동 조정 가능)
-    pendingImport = { rows: res[0].values, fieldMaps, modelsJson, hasProgress, autoFmap:_autoFmap };
-    _autoFmap=null;
+    pendingImport = { rows: res[0].values, fieldMaps, modelsJson, hasProgress };
     openFieldMapScreen();
   }catch(err){setStatus('오류: '+err.message,'error');}
 }
@@ -1917,13 +1494,6 @@ function openFieldMapScreen(){
   if(fieldNamesList.length===0){
     // 필드 이름을 알 수 없으면(모델 정보 없음) 화면을 건너뛰고 기존 고정 순서로 즉시 진행
     finishImport(DEFAULT_IDX, []);
-    return;
-  }
-
-  // v11: 자동 이어하기 — 같은 덱·같은 필드 구성이면 이전에 확인한 매핑을 그대로 쓰고 확인 화면을 건너뜀
-  const af=pendingImport.autoFmap;
-  if(af&&af.idx&&JSON.stringify(af.names)===JSON.stringify(fieldNamesList)){
-    finishImport(af.idx, fieldNamesList);
     return;
   }
 
@@ -1978,8 +1548,6 @@ function confirmFieldMap(){
   if(idx.front===idx.back){ alert('문제 필드와 정답 필드는 서로 다르게 지정해야 합니다.'); return; }
   if(idx.explain>=0 && (idx.explain===idx.back || idx.explain===idx.front)){ alert('해설 필드는 문제·정답 필드와 다르게 지정해야 합니다.'); return; }
   if(idx.explain>=0 && idx.explain===idx.hint){ if(!confirm('힌트와 해설에 같은 필드가 지정되었습니다. 그대로 진행할까요?')) return; }
-  kvPut(KV_FMAP,{deckName:progressBase(),names:pendingImport.fieldNamesList,idx:idx}); // 다음 자동 이어하기용
-  lastFmap={names:pendingImport.fieldNamesList,idx:idx}; // v13: 진도 JSON에도 저장 → 다른 PC에서도 필드 확인 화면 생략
   finishImport(idx, pendingImport.fieldNamesList);
 }
 
@@ -2004,8 +1572,7 @@ function parseCardManual(id, p, tags, idx){
   };
 }
 
-async function finishImport(idx, fieldNamesForLabels){
-  importIdx=idx;
+function finishImport(idx, fieldNamesForLabels){
   const { rows, hasProgress } = pendingImport;
   allCards = rows.map(([id,mid,flds,tags])=>{
     const p=flds.split('\x1f');
@@ -2021,25 +1588,12 @@ async function finishImport(idx, fieldNamesForLabels){
   setExplainLabel(idx.explain>=0 ? (names[idx.explain]||'해설') : '해설');
 
   document.getElementById('deck-name').textContent=deckFileName;
-  let hp=hasProgress;
+  const hp=hasProgress;
   pendingImport=null;
-  // v11: 연결된 폴더(이미 접근 허용된 경우)에 이 덱의 진도 파일이 있으면 병합해서 바로 이어서 학습
-  if(studyDir){
-    try{ if(await pullDirProgress()){ hp=true; showToast('폴더의 진도를 불러왔습니다'); } }catch(e){}
-  }
-  progressDeckBase=progressBase();
-  if(restoredSettings) applySettings(restoredSettings);
-  settingsReady=true;
 
   if(hp){
     applyFilter();
     cur=0;passCount=0;failCount=0;
-    if(filteredCards.length===0){
-      // 오늘 학습할 카드가 없으면(설정/필터 확인 필요) 목록 화면으로 — 설정값이 체크된 채로 보임
-      showToast('오늘 학습할 카드가 없습니다. 설정(목표·유형·순서)을 확인하세요',4000);
-      showScreen('screen-list');openListScreen();
-      return;
-    }
     showScreen('screen-study');initCanvas();loadCard();
   } else {
     showScreen('screen-list');openListScreen(); // 진도 없음: 카드 선택
@@ -2047,45 +1601,41 @@ async function finishImport(idx, fieldNamesForLabels){
 }
 
 async function saveProgress(){
-  // v12: 학습화면 저장 = 진도 JSON만 (덱 ZIP/APKG는 만들지 않음. 카드 수정 저장은 saveDeck 사용)
-  persistProgress(); // 이 기기(브라우저)에도 즉시 저장
-  const obj=buildProgressObj();
-  let where='';
-  if(studyDir&&await dirPerm(true)){ if(await writeDirProgress(obj)) where='folder'; }
-  if(!where){
-    const blob=new Blob([JSON.stringify(obj,null,2)],{type:'application/json'});
-    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=progressFileName();a.click();
-    where='download';
+  // v9: 진도 + 카드 텍스트 수정 → ZIP 통합 저장
+  if(!zipRef){
+    // ZIP 없을 때(진도만 있을 때) 기존 JSON 저장으로 폴백
+    const blob=new Blob([JSON.stringify({deckName:deckFileName,savedAt:today(),version:'9.0',cards:progressData},null,2)],{type:'application/json'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`progress_${deckFileName}.json`;a.click();
+    return;
   }
-  const ds=dayStats();
-  showToast((where==='folder'?'진도 저장 완료 (연결된 폴더)':'진도 파일을 내려받았습니다: '+progressFileName())+`\n오늘 ${ds.n}문제 (○${ds.p} / ✕${ds.f})`+(turn.active?'\n※ 진행 중인 턴은 턴이 끝나면 저장됩니다':'')+(cardEdited?'\n※ 카드 수정분은 학습목록 화면의 [덱 저장]으로 저장하세요':''),cardEdited?5000:3500);
-}
-
-// v12: 카드 수정 저장 = 덱만 (진도 없음). ZIP(이 프로그램용: 원본 apkg + cards_edited.json) 또는 APKG(안키용: 수정 내용을 노트에 반영)
-async function saveDeck(fmt){
-  if(!zipRef){alert('저장할 덱이 없습니다.');return;}
   try{
-    let blob,fname;
-    if(fmt==='apkg'){
-      blob=await buildApkgBlob();
-      fname=`${deckFileName}.apkg`;
-    }else{
-      const newZip=new JSZip();
-      for(const fname0 in zipRef.files){
-        const f=zipRef.file(fname0);
-        if(!f||fname0==='cards_edited.json'||fname0==='progress.json')continue;
-        newZip.file(fname0,await f.async('arraybuffer'));
-      }
-      newZip.file('cards_edited.json',JSON.stringify(allCards.map(c=>({
+    // 기존 ZIP 복제
+    const newZip = new JSZip();
+    const files = zipRef.files;
+    for(const fname in files){
+      const f=zipRef.file(fname);
+      if(!f)continue;
+      if(fname==='cards_edited.json') continue; // 교체 예정
+      const buf=await f.async('arraybuffer');
+      newZip.file(fname,buf);
+    }
+    // 수정된 카드 데이터 삽입
+    if(cardEdited){
+      const cardsJson=JSON.stringify(allCards.map(c=>({
         id:c.id,front:c.front,hint:c.hint,back:c.back,explain:c.explain||'',note:c.note||'',
         star:c.star,year:c.year,분류:c.분류,C:c.C,tags:c.tags
-      })),null,2));
-      blob=await newZip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}});
-      fname=`${deckFileName}.zip`;
+      })),null,2);
+      newZip.file('cards_edited.json',cardsJson);
     }
-    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fname;a.click();
-    try{ apkgStoreSave(new File([blob],fname)).then(apkgStoreRefreshUI); }catch(e){} // 다음 실행 때 수정본이 자동으로 열리도록
-    showToast('덱을 저장했습니다: '+fname+'\n(진도는 학습화면의 💾로 따로 저장)',4500);
+    // 진도 데이터 삽입
+    const progressJson=JSON.stringify({deckName:deckFileName,savedAt:today(),version:'9.0',cards:progressData},null,2);
+    newZip.file('progress.json',progressJson);
+    // ZIP 생성 및 다운로드
+    const blob=await newZip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=`${deckFileName}_saved_${today()}.zip`;
+    a.click();
     cardEdited=false;
     lcEditedIds.clear();
     try{ updateListSaveBtn(); renderList(); }catch(e){}
@@ -2093,85 +1643,27 @@ async function saveDeck(fmt){
     alert('저장 오류: '+err.message);
   }
 }
-async function sha1Csum(txt){
-  const d=await crypto.subtle.digest('SHA-1',new TextEncoder().encode(txt));
-  return parseInt(Array.from(new Uint8Array(d)).slice(0,4).map(x=>x.toString(16).padStart(2,'0')).join(''),16);
-}
-async function buildApkgBlob(){
-  if(!SQL){SQL=await initSqlJs({wasmBinary:window.__sqlWasmBinary});}
-  const dbName=zipRef.file('collection.anki21')?'collection.anki21':'collection.anki2';
-  const db=new SQL.Database(new Uint8Array(await zipRef.file(dbName).async('arraybuffer')));
-  let models=null;
-  try{ const r=db.exec('SELECT models FROM col'); if(r.length) models=JSON.parse(r[0].values[0][0]); }catch(e){}
-  const fmaps=buildFieldMaps(models);
-  const byId={}; allCards.forEach(c=>byId[String(c.id)]=c);
-  const rows=db.exec('SELECT id,mid,flds,tags FROM notes')[0].values;
-  const now=Math.floor(Date.now()/1000);
-  const upd=db.prepare('UPDATE notes SET flds=?,tags=?,sfld=?,csum=?,mod=?,usn=-1 WHERE id=?');
-  const DEF={front:0,hint:1,back:2,star:3,year:4,분류:5,C:6,explain:-1};
-  // 앱이 읽는 값(parseCard)과 같은 방식으로 원본을 정규화해서 비교 → 실제로 바뀐 칸만 덮어씀(공백 정리·메모(note) 등으로 원본이 지워지지 않게)
-  const NORM={front:v=>v||'',hint:v=>(v||'').trim(),back:v=>v||'',explain:v=>(v||'').trim(),star:v=>(v||'').trim(),year:v=>(v||'').trim(),분류:v=>stripHtml(v||'').trim(),C:v=>stripHtml(v||'').trim()};
-  let n=0;
-  for(const [id,mid,flds,tags] of rows){
-    const c=byId[String(id)]; if(!c)continue;
-    const fm=fmaps[mid]||fmaps[String(mid)];
-    const p=flds.split('\x1f'); let ch=false, sortChanged=false;
-    const sortf=(models&&models[mid]&&models[mid].sortf)||0;
-    for(const k of Object.keys(NORM)){
-      const i=(typeof importIdx!=='undefined'&&importIdx)?importIdx[k]:fidx(fm,k,DEF[k]);
-      if(i==null||i<0||i>=p.length)continue;
-      if(NORM[k](p[i])!==(c[k]||'')){ p[i]=c[k]||''; ch=true; if(i===sortf)sortChanged=true; }
-    }
-    let t=tags;
-    if((c.tags||'').trim()!==(tags||'').trim()){ t=' '+(c.tags||'').trim()+' '; ch=true; }
-    if(!ch)continue;
-    const sf=stripHtml(p[sortf]||'');
-    const sfld=sortChanged?sf:null;
-    const csum=sortChanged?await sha1Csum(sf):null;
-    const old=db.exec('SELECT sfld,csum FROM notes WHERE id='+Number(id))[0].values[0];
-    upd.run([p.join('\x1f'),t,sortChanged?sfld:old[0],sortChanged?csum:old[1],now,id]);
-    n++;
-  }
-  upd.free();
-  const out=db.export(); db.close();
-  const nz=new JSZip();
-  for(const fname in zipRef.files){
-    const f=zipRef.file(fname);
-    if(!f||fname==='cards_edited.json'||fname==='progress.json')continue;
-    if(fname===dbName) nz.file(fname,out,{compression:'DEFLATE'});
-    else nz.file(fname,await f.async('arraybuffer'),{compression:/^\d+$/.test(fname)||fname==='collection.anki2'?'STORE':'DEFLATE'});
-  }
-  return await nz.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}});
-}
 async function handleCombinedFiles(files) {
   if(!files||files.length===0) return;
-  let deckFile=null, jsonFile=null;
+  let apkgFile=null, jsonFile=null;
   Array.from(files).forEach(f=>{
-    const n=f.name.toLowerCase();
-    if(n.endsWith('.apkg')||n.endsWith('.zip')) deckFile=f;
-    if(n.endsWith('.json')) jsonFile=f;
+    if(f.name.endsWith('.apkg')) apkgFile=f;
+    if(f.name.endsWith('.json')) jsonFile=f;
   });
   if(jsonFile) {
     await new Promise(resolve=>{
       const r=new FileReader();
-      r.onload=e=>{try{const d=JSON.parse(e.target.result);if(applyProgressObj(d)){document.getElementById('progress-file-name').textContent='✓ '+jsonFile.name;}}catch(err){}resolve();};
+      r.onload=e=>{try{const d=JSON.parse(e.target.result);if(d.cards){progressData=d.cards;document.getElementById('progress-file-name').textContent='✓ '+jsonFile.name;}}catch(err){}resolve();};
       r.readAsText(jsonFile);
     });
   }
-  if(deckFile) await handleFile(deckFile, !!jsonFile); // .apkg 또는 카드 수정이 담긴 .zip + 진도 JSON
-  if(jsonFile&&!deckFile) setStatus('덱(.apkg 또는 저장된 .zip) 파일도 선택해주세요.','error');
+  if(apkgFile) await handleApkg(apkgFile, !!jsonFile);
+  if(jsonFile&&!apkgFile) setStatus('APKG 파일도 선택해주세요.','error');
 }
 
 function openList(){
   // 학습 → 학습목록으로 돌아가기 (필터·검색·정렬 상태 유지)
   try{ stopTimer(); ttsStop(); }catch(e){}
-  // 이어서 학습으로 진입하면 openListScreen()이 호출되지 않아 분류/유형 셀렉트가 비어 있음 → 최초 1회 채움
-  const _cs=document.getElementById('lf-category'), _ts=document.getElementById('lf-type');
-  if((_cs&&_cs.options.length<=1)||(_ts&&_ts.options.length<=1)){
-    openListScreen(); // 셀렉트 생성 + renderList 포함
-    showScreen('screen-list');
-    return;
-  }
   showScreen('screen-list');
   renderList();
 }
@@ -2275,7 +1767,7 @@ function showAIFallback(prompt, hasAnyImage){
 // 토스트 메시지
 function showToast(msg, duration=2500){
   const t = document.createElement('div');
-  t.style.cssText = `position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.78);color:#fff;padding:10px 18px;border-radius:20px;font-size:13px;z-index:9999;pointer-events:none;text-align:center;max-width:320px;line-height:1.5;white-space:pre-line;`;
+  t.style.cssText = `position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.78);color:#fff;padding:10px 18px;border-radius:20px;font-size:13px;z-index:9999;pointer-events:none;text-align:center;max-width:320px;line-height:1.5;`;
   t.textContent = msg;
   document.body.appendChild(t);
   setTimeout(() => t.remove(), duration);
@@ -2290,7 +1782,7 @@ function renderList(){
   let source=allCards.filter(c=>!isHeart(c.star));
   const {star:sf, type:tf, category:cf}=listDropFilters;
   if(sf&&sf.size>0) source=source.filter(c=>sf.has(starBucket(countStars(c.star))));
-  if(tf&&tf.size>0) source=source.filter(c=>tf.has(detectCardType(c)));
+  if(tf)  source=source.filter(c=>detectCardType(c)===tf);
   if(cf)  source=source.filter(c=>catMatch(c.분류,cf));
 
   // 검색
@@ -2310,7 +1802,7 @@ function renderList(){
   }
   // 'order' = 원본 allCards 순서 유지 (기본값, 별도 정렬 불필요)
 
-  const calcCount=matched.filter(c=>detectCardType(c)==='계산').length;
+  const calcCount=matched.filter(c=>c.C==='Y').length;
   statsEl.textContent=kw
     ?`"${kw}" 검색: ${matched.length}장`
     :`${matched.length}장${calcCount?'  (계산 '+calcCount+'장)':''}`;
@@ -2338,7 +1830,7 @@ function renderList(){
         `<div class="list-card-meta">`+
           `<span class="list-badge ${isNew?'list-badge-new':'list-badge-level'}">${isNew?'신규':(prog?prog.level+'단계':'1단계')}</span>`+
           (c.분류?`<span class="list-badge list-badge-분류">${c.분류}</span>`:'')+
-          (detectCardType(c)==='계산'?`<span class="list-badge list-badge-calc">계산</span>`:'')+
+          (c.C==='Y'?`<span class="list-badge list-badge-calc">계산</span>`:'')+
           (star?`<span class="list-star">${star}</span>`:'')+
           (lcEditedIds.has(c.id)?`<span class="list-card-edited">수정됨</span>`:'')+
           (c.year?`<span class="list-year">${c.year}</span>`:'')+
@@ -2352,11 +1844,11 @@ function renderList(){
 }
 
 /* ── 목록 카드 상세/수정 팝업 ── */
-var lcIds=[], lcIdx=-1, lcMode='view', lcEditedIds=new Set(), lcFromStudy=false;
+var lcIds=[], lcIdx=-1, lcMode='view', lcEditedIds=new Set();
 function lcEsc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function updateListSaveBtn(){
   const b=document.getElementById('btn-list-save'); if(!b) return;
-  b.style.display=cardEdited?'inline-flex':'none';
+  b.style.display=cardEdited?'inline-block':'none';
 }
 function openListCardModal(id){
   // 현재 목록(필터·검색·정렬 반영) 순서로 이전/다음 이동
@@ -2369,7 +1861,7 @@ function openListCardModal(id){
 function closeListCardModal(force){
   if(!force && lcMode==='edit' && lcDirty() && !confirm('수정한 내용을 저장하지 않고 닫을까요?')) return;
   document.getElementById('lc-modal').style.display='none';
-  lcMode='view'; lcFromStudy=false;
+  lcMode='view';
 }
 function lcCard(){ return allCards.find(c=>c.id===lcIds[lcIdx]); }
 function lcNav(d){
@@ -2386,7 +1878,7 @@ async function renderListCardModal(){
   document.getElementById('lc-meta').innerHTML=
     `<span class="list-badge ${isNew?'list-badge-new':'list-badge-level'}">${isNew?'신규':(prog?prog.level+'단계':'1단계')}</span>`+
     (c.분류?`<span class="list-badge list-badge-분류">${lcEsc(stripHtml(c.분류))}</span>`:'')+
-    (detectCardType(c)==='계산'?`<span class="list-badge list-badge-calc">계산</span>`:'')+
+    (c.C==='Y'?`<span class="list-badge list-badge-calc">계산</span>`:'')+
     (star?`<span class="list-star">${star}</span>`:'')+
     (c.year?`<span style="font-size:11px;color:#aaa;">${lcEsc(stripHtml(c.year))}</span>`:'')+
     (lcEditedIds.has(c.id)?`<span class="list-card-edited">수정됨</span>`:'');
@@ -2419,15 +1911,7 @@ async function renderListCardModal(){
 /* ── 편집기(WYSIWYG) ── */
 var lcDraft=null, lcTouched=new Set(), lcRaw=false, lcBlobMap={};
 const LC_RICH=[['front',()=>fieldNames[0],3],['hint',()=>fieldNames[1],1],['back',()=>fieldNames[2],3],['explain',()=>explainLabel,3],['note',()=>'메모 (법규·노트)',1]];
-const EDIT_TYPES=['단답형','다답형','선택형','계산형','서술형','완성형'];
-function typeSelectOptions(cur){
-  // cur: 카드의 현재 유형(c.C 값). 빈 값=자동 판정. 목록 밖 값(예: '계산','Y')도 유지해서 보여줌
-  const v=String(cur||'').trim();
-  const list=[...EDIT_TYPES]; if(v&&!list.includes(v)) list.push(v);
-  return '<option value=""'+(v===''?' selected':'')+'>(자동 판정)</option>'+
-    list.map(t=>{const e=lcEsc(t);return '<option value="'+e+'"'+(t===v?' selected':'')+'>'+e+'</option>';}).join('');
-}
-const LC_META=[['분류','분류','예: A-Ⅰ·21'],['star','출제빈도','예: ★★★']]; // 출제연도(year)는 편집창에서 제외(값은 그대로 보존)
+const LC_META=[['분류','분류','예: A-Ⅰ·21'],['star','출제빈도','예: ★★★'],['year','출제연도','예: 2023-1']];
 async function lcResolve(html){
   if(!html||!zipRef) return html||'';
   const tags=html.match(/src="([^"]+)"/g)||[];
@@ -2463,15 +1947,15 @@ async function lcRenderEdit(c){
       tb('removeFormat','서식 지우기','선택 영역 서식 지우기'))+
     `<button type="button" class="lc-tb lc-tb-raw ${lcRaw?'on':''}" onmousedown="event.preventDefault()" onclick="lcToggleRaw()" title="HTML 원본으로 편집">&lt;/&gt; HTML</button>`+
     `</div>`;
-  const richHtml=([k,lbl,rows])=>{
+  for(const [k,lbl,rows] of LC_RICH){
     const label=lcEsc(lbl());
-    if(lcRaw) return `<label class="lc-f">${label}<textarea data-k="${k}" class="lc-raw" rows="${rows+1}">${lcEsc(lcDraft[k])}</textarea></label>`;
-    return `<div class="lc-f"><div>${label}</div><div class="lc-rte" data-k="${k}" contenteditable="true" style="min-height:${rows*1.7+1}em"></div></div>`;
-  };
-  // 메모(note)는 문제유형·분류·출제빈도 줄 아래에 배치
-  for(const f of LC_RICH){ if(f[0]!=='note') html+=richHtml(f); }
-  html+=`<div class="lc-row3"><label class="lc-f">문제유형<select data-m="C" style="display:block;width:100%;margin-top:4px;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;background:#fff;">${typeSelectOptions(lcDraft.C)}</select></label>`+LC_META.map(([k,l,ph])=>`<label class="lc-f">${l}<input data-m="${k}" type="text" value="${lcEsc(lcDraft[k])}" placeholder="${ph}"></label>`).join('')+`</div>`;
-  for(const f of LC_RICH){ if(f[0]==='note') html+=richHtml(f); }
+    if(lcRaw){
+      html+=`<label class="lc-f">${label}<textarea data-k="${k}" class="lc-raw" rows="${rows+1}">${lcEsc(lcDraft[k])}</textarea></label>`;
+    } else {
+      html+=`<div class="lc-f"><div>${label}</div><div class="lc-rte" data-k="${k}" contenteditable="true" style="min-height:${rows*1.7+1}em"></div></div>`;
+    }
+  }
+  html+=`<div class="lc-row3">`+LC_META.map(([k,l,ph])=>`<label class="lc-f">${l}<input data-m="${k}" type="text" value="${lcEsc(lcDraft[k])}" placeholder="${ph}"></label>`).join('')+`</div>`;
   html+=`<div style="font-size:11px;color:#bbb;">${lcRaw?'HTML 원본 편집 중 · 이미지 태그(&lt;img&gt;)는 건드리지 마세요':'붙여넣기는 글자만 들어갑니다 · 수식은 \\( \\) 형식 그대로 입력하세요'}</div>`;
   body.innerHTML=html;
   if(!lcRaw){
@@ -2504,28 +1988,27 @@ function lcCollect(){
   const body=document.getElementById('lc-body');
   body.querySelectorAll('.lc-rte').forEach(el=>{ if(lcTouched.has(el.dataset.k)) lcDraft[el.dataset.k]=lcCleanHtml(el.innerHTML); });
   body.querySelectorAll('.lc-raw').forEach(t=>{ if(lcTouched.has(t.dataset.k)) lcDraft[t.dataset.k]=t.value.trim(); });
-  body.querySelectorAll('input[data-m],select[data-m]').forEach(i=>{ lcDraft[i.dataset.m]=i.value.trim(); });
+  body.querySelectorAll('input[data-m]').forEach(i=>{ lcDraft[i.dataset.m]=i.value.trim(); });
 }
 function lcToggleRaw(){ lcCollect(); lcRaw=!lcRaw; lcRenderEdit(lcCard()); }
 function lcDirty(){
   const c=lcCard(); if(!c||!lcDraft) return false;
   lcCollect();
-  return [...LC_RICH.map(x=>x[0]),...LC_META.map(x=>x[0]),'C'].some(k=>String(lcDraft[k]||'').trim()!==String(c[k]||'').trim());
+  return [...LC_RICH.map(x=>x[0]),...LC_META.map(x=>x[0])].some(k=>String(lcDraft[k]||'').trim()!==String(c[k]||'').trim());
 }
 function lcStartEdit(){
   const c=lcCard(); if(!c) return;
-  lcDraft={}; [...LC_RICH.map(x=>x[0]),...LC_META.map(x=>x[0]),'C'].forEach(k=>lcDraft[k]=c[k]||'');
+  lcDraft={}; [...LC_RICH.map(x=>x[0]),...LC_META.map(x=>x[0])].forEach(k=>lcDraft[k]=c[k]||'');
   lcTouched=new Set(); lcRaw=false;
   lcMode='edit'; renderListCardModal();
 }
 function lcCancelEdit(){
   if(lcDirty() && !confirm('수정한 내용을 취소할까요?')) return;
-  if(lcFromStudy){ closeListCardModal(true); return; }
   lcMode='view'; renderListCardModal();
 }
 function lcSaveEdit(){
   const c=lcCard(); if(!c) return;
-  if(!lcDirty()){ if(lcFromStudy){ closeListCardModal(true); return; } lcMode='view'; renderListCardModal(); return; }
+  if(!lcDirty()){ lcMode='view'; renderListCardModal(); return; }
   const vals={...lcDraft};
   Object.assign(c,vals);
   (filteredCards||[]).forEach(fc=>{ if(fc!==c && fc.id===c.id) Object.assign(fc,vals); });
@@ -2534,9 +2017,8 @@ function lcSaveEdit(){
   const scroll=document.getElementById('card-list').scrollTop;
   renderList(); updateListSaveBtn();
   document.getElementById('card-list').scrollTop=scroll;
-  if(lcFromStudy){ closeListCardModal(true); loadCard(); showToast('수정 완료 · 파일에 남기려면 학습목록 화면의 [덱 저장]을 누르세요'); return; }
   renderListCardModal();
-  showToast('수정 완료 · 파일에 남기려면 학습목록 화면의 [덱 저장]을 누르세요');
+  showToast('수정 완료 · 파일에 남기려면 💾 저장을 누르세요');
 }
 function lcToggleSelect(){
   const c=lcCard(); if(!c) return;
@@ -2575,7 +2057,7 @@ function jumpToCard(cardId){
 
 // ── 카드 목록 화면 관련 ──
 let listFilter='all'; // 하위 호환
-let listDropFilters={star:new Set(), type:new Set(), category:''}; // star: 선택된 구간들의 Set('5+'|'4'|'3'|'2'|'1-')
+let listDropFilters={star:new Set(), type:'', category:''}; // star: 선택된 구간들의 Set('5+'|'4'|'3'|'2'|'1-')
 function starBucket(n){ n=n||0; if(n>=5) return '5+'; if(n<=1) return '1-'; return String(n); }
 let listSort='order'; // 'order'|'star'|'alpha'|'cat'
 let selectedCards=new Set();
@@ -2632,19 +2114,7 @@ const CATEGORY_NAME={
 
 // 문제 유형 감지 — tags 또는 C 필드 기반 + 텍스트 휴리스틱
 function detectCardType(c){
-  // 1순위: 필드 매핑의 "문제유형"(c.C) 값 — Y는 계산 표시, 그 외 유형명은 그대로 반영
-  const cv=String(c.C||'').trim();
-  if(cv){
-    const lv=cv.toLowerCase();
-    if(lv==='y'||lv==='계산'||lv==='계산형'||lv==='calc'||lv==='calculation') return '계산';
-    if(!/^(n|no|x|-|0|없음|해당없음)$/i.test(cv)){
-      if(lv.includes('빈칸')||lv.includes('fill')||lv.includes('cloze')) return '빈칸';
-      if(lv.includes('서술')||lv.includes('essay')) return '서술형';
-      if(lv.includes('단답')||lv.includes('short')) return '단답형';
-      return cv.length>12 ? cv.slice(0,12) : cv; // 그 외(객관식 등)는 덱의 값을 그대로 유형으로 사용
-    }
-  }
-  // 2순위: 태그 / 3순위: 텍스트 휴리스틱
+  if(c.C==='Y') return '계산';
   const t=(c.tags||'').toLowerCase();
   if(t.includes('빈칸')||t.includes('fill')) return '빈칸';
   if(t.includes('서술')||t.includes('essay')) return '서술형';
@@ -2657,8 +2127,8 @@ function detectCardType(c){
 }
 
 function openListScreen(){
-  abortTurnIfActive();
-  if(listFiltersDeck!==deckFileName){ listDropFilters={star:new Set(), type:new Set(), category:''}; listSort='order'; listFiltersDeck=deckFileName; }
+  listDropFilters={star:new Set(), type:'', category:''};
+  listSort='order';
   selectedCards.clear();
   document.getElementById('list-deck-name').textContent=deckFileName;
   document.getElementById('search-input').value='';
@@ -2666,7 +2136,7 @@ function openListScreen(){
   // 정렬 버튼 초기화
   ['ls-order','ls-star','ls-alpha','ls-cat'].forEach(id=>{
     const el=document.getElementById(id);
-    if(el) el.classList.toggle('active', id==='ls-'+listSort);
+    if(el) el.classList.toggle('active', id==='ls-order');
   });
 
   // 분류 셀렉트 동적 생성 — 대분류(가운뎃점 앞, 예: A-Ⅰ)를 한 묶음으로,
@@ -2699,15 +2169,16 @@ function openListScreen(){
     if(top) catHtml+='</optgroup>';
   });
   catSel.innerHTML=catHtml;
-  catSel.value=listDropFilters.category||'';
-  if(catSel.value!==(listDropFilters.category||'')){ listDropFilters.category=''; catSel.value=''; }
+  catSel.value='';
 
-  // 문제유형 칩 동적 생성 (다중 선택)
-  const types=sortTypes([...new Set(allCards.filter(c=>!isHeart(c.star)).map(c=>detectCardType(c)))]);
+  // 문제유형 셀렉트 동적 생성
+  const typeSel=document.getElementById('lf-type');
+  const types=[...new Set(allCards.filter(c=>!isHeart(c.star)).map(c=>detectCardType(c)))].sort();
   const typeCount={};
   allCards.filter(c=>!isHeart(c.star)).forEach(c=>{const t=detectCardType(c);typeCount[t]=(typeCount[t]||0)+1;});
-  _typeList=types; _typeCount=typeCount;
-  renderTypeChips();
+  typeSel.innerHTML='<option value="">문제유형 전체</option>'+
+    types.map(t=>`<option value="${t}">${t} (${typeCount[t]||0}장)</option>`).join('');
+  typeSel.value='';
 
   // 출제빈도 버튼 그룹 — 구간별 카드 수 갱신 + 선택 상태 초기화
   updateStarBucketButtons();
@@ -2730,33 +2201,12 @@ function toggleStarBucket(bucket){
   else listDropFilters.star.add(bucket);
   selectedCards.clear();
   updateStarBucketButtons();
-  renderList();settingsChanged();
-}
-let _typeList=[], _typeCount={};
-const TYPE_ORDER=['단답형','다답형','선택형','계산형','계산','서술형','완성형'];
-function sortTypes(arr){ const r=t=>{const i=TYPE_ORDER.indexOf(t);return i<0?999:i;}; return arr.sort((x,y)=>r(x)-r(y)||x.localeCompare(y,'ko')); }
-function renderTypeChips(){
-  const box=document.getElementById('lf-type-chips'); if(!box) return;
-  const sel=listDropFilters.type;
-  const mk=(label,on,fn,extra)=>`<button type="button" class="list-filter-btn${on?' active':''}" onclick="${fn}" style="${extra||''}">${label}</button>`;
-  const esc=v=>String(v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/'/g,'&#39;');
-  let h=mk('유형 전체 ('+_typeList.reduce((n,t)=>n+(_typeCount[t]||0),0)+')',sel.size===0,"clearTypeFilter()");
-  _typeList.forEach(t=>{ h+=mk(esc(t)+' ('+(_typeCount[t]||0)+')',sel.has(t),"toggleTypeFilter('"+esc(t).replace(/\\/g,'\\\\')+"')"); });
-  box.innerHTML=h;
-}
-function toggleTypeFilter(t){
-  const s=listDropFilters.type;
-  if(s.has(t)) s.delete(t); else s.add(t);
-  selectedCards.clear(); renderTypeChips(); renderList();settingsChanged();
-}
-function clearTypeFilter(){
-  listDropFilters.type=new Set();
-  selectedCards.clear(); renderTypeChips(); renderList();settingsChanged();
+  renderList();
 }
 function setListDropFilter(key, val){
   listDropFilters[key]=val;
   selectedCards.clear();
-  renderList();settingsChanged();
+  renderList();
 }
 
 function setListFilter(f){ /* 하위호환 — 사용 안 함 */ }
@@ -2767,7 +2217,7 @@ function setListSort(s){
     const el=document.getElementById(id);
     if(el) el.classList.toggle('active', id==='ls-'+s);
   });
-  renderList();settingsChanged();
+  renderList();
 }
 
 function toggleCardSelect(id, checked, event){
@@ -2809,35 +2259,23 @@ function isRandomMode(){ return document.getElementById('chk-random')?.checked||
 
 function startSelectedCards(){
   if(selectedCards.size===0) return;
-  abortTurnIfActive();
   // 현재 리스트 DOM 순서에서 선택된 것만 추출 → 정렬 순서 보존
   const items=[...document.querySelectorAll('.list-card-item')];
   let cards=items
     .map(el=>allCards.find(c=>c.id===el.dataset.id))
     .filter(c=>c&&selectedCards.has(c.id));
   filteredCards=isRandomMode()?shuffle(cards):[...cards];
-  _todaySession=false;
   cur=0;passCount=0;failCount=0;sessionLog=[];failedCards=[];studyStartTime=new Date();
   showScreen('screen-study');initCanvas();loadCard();
 }
 
-function startDueReview(){
-  abortTurnIfActive();
-  const cards=allCards.filter(c=>matchTodayFilters(c)&&!isNewCard(c.id)&&isDueToday(c.id));
-  if(!cards.length){ showToast('기한이 된 복습 카드가 없습니다'); return; }
-  filteredCards=isRandomMode()?shuffle(cards):cards;
-  _todaySession=false;
-  cur=0;passCount=0;failCount=0;sessionLog=[];failedCards=[];studyStartTime=new Date();
-  showScreen('screen-study');initCanvas();loadCard();
-}
 function startAllCards(){
-  abortTurnIfActive();
   // 현재 리스트에 보이는 순서대로 (필터+정렬 반영), 랜덤 여부 적용
   const kw=(document.getElementById('search-input')?.value||'').trim().toLowerCase();
   let source=allCards.filter(c=>!isHeart(c.star));
   const {star:sf,type:tf,category:cf}=listDropFilters;
   if(sf&&sf.size>0) source=source.filter(c=>sf.has(starBucket(countStars(c.star))));
-  if(tf&&tf.size>0) source=source.filter(c=>tf.has(detectCardType(c)));
+  if(tf) source=source.filter(c=>detectCardType(c)===tf);
   if(cf) source=source.filter(c=>catMatch(c.분류,cf));
   if(kw) source=source.filter(c=>{
     const f=stripHtml(c.front).toLowerCase(),h=stripHtml(c.hint).toLowerCase(),b=stripHtml(c.back).toLowerCase(),x=stripHtml(c.explain||'').toLowerCase();
@@ -2847,7 +2285,6 @@ function startAllCards(){
   else if(listSort==='alpha') source.sort((a,b)=>stripHtml(a.front).localeCompare(stripHtml(b.front),'ko'));
   else if(listSort==='cat') source.sort((a,b)=>catCompare(a.분류,b.분류));
   filteredCards=isRandomMode()?shuffle(source):[...source];
-  _todaySession=false;
   cur=0;passCount=0;failCount=0;sessionLog=[];failedCards=[];studyStartTime=new Date();
   showScreen('screen-study');initCanvas();loadCard();
 }
@@ -2855,7 +2292,7 @@ function startAllCards(){
 function loadProgressFile(file){
   if(!file)return;
   const r=new FileReader();
-  r.onload=e=>{try{const d=JSON.parse(e.target.result);if(applyProgressObj(d)){document.getElementById('progress-file-name').textContent='✓ '+file.name;}else alert('올바른 진도 파일이 아닙니다.');}catch(err){alert('파일 읽기 오류: '+err.message);}};
+  r.onload=e=>{try{const d=JSON.parse(e.target.result);if(d.cards){progressData=d.cards;document.getElementById('progress-file-name').textContent='✓ '+file.name;}else alert('올바른 진도 파일이 아닙니다.');}catch(err){alert('파일 읽기 오류: '+err.message);}};
   r.readAsText(file);
 }
 
@@ -2864,7 +2301,7 @@ async function loadCard(){
   ttsStop();
   stopTimer();clearNotepad();cardPhase='question';autoTimerCard=false;updateQuotaBar();
   const c=filteredCards[cur];
-  const prog=peekProgress(c.id)||{level:1,nextReview:today()}; // 화면에 띄우기만 해서는 진도를 만들지 않음 (답변해야 신규→학습 처리)
+  const prog=getProgress(c.id);
   document.getElementById('content-front').innerHTML=await resolveMedia(c.front);
   document.getElementById('content-hint').innerHTML=await resolveMedia(c.hint);
   document.getElementById('content-hint2').innerHTML=await resolveMedia(c.hint); // backhint 모드용
@@ -2881,8 +2318,6 @@ async function loadCard(){
   levelEl.textContent=isNewCard(c.id)?'신규':`${prog.level}단계`;
   levelEl.style.color=isNewCard(c.id)?'#1D9E75':'#aaa';
   const starOnly=(c.star.match(/★+/g)||[]).join('');
-  const ftEl=document.getElementById('footer-type');if(ftEl){const tv=detectCardType(c);ftEl.textContent=tv;ftEl.style.display=tv?'inline-block':'none';}
-  const fcEl2=document.getElementById('footer-cat');if(fcEl2){const cv=stripHtml(c.분류||'');fcEl2.textContent=cv;fcEl2.style.display=cv?'inline-block':'none';}
   const fsEl=document.getElementById('footer-star');fsEl.textContent=starOnly;fsEl.style.display=starOnly?'inline':'none';
   const btn=document.getElementById('main-btn');btn.classList.remove('hidden');
   if(studyOrder==='nohint'){
@@ -3015,35 +2450,21 @@ function toggleExplain(){
 }
 function scrollBottom(){const s=document.getElementById('card-scroll');setTimeout(()=>s.scrollTo({top:s.scrollHeight,behavior:'smooth'}),60);}
 
-function skipCard(){
-  if(turn.active&&filteredCards[cur]){ autoTimerCard=true; handleResult(false); return; } // 시간초과 = 모르는 카드
-  cur++;loadCard();
-}
+function skipCard(){cur++;loadCard();}
 
 let failedCards = []; // 틀린 카드 누적
 
 function handleResult(pass){
   ttsStop();
-  const c=filteredCards[cur];
-  if(turn.active&&autoTimerCard){ pass=false; autoTimerCard=false; } /* v14: 시간초과(정답이 자동 공개된 카드)는 모르는 카드 */
-  const wasNew=!progressData[c.id];const prog=getProgress(c.id);
+  const c=filteredCards[cur];const prog=getProgress(c.id);
   if(!autoTimerCard){
     if(pass){prog.level=Math.min(5,prog.level+1);prog.nextReview=addDays(today(),LEITNER_DAYS[prog.level]);passCount++;}
     else{prog.level=1;prog.nextReview=addDays(today(),LEITNER_DAYS[1]);failCount++;failedCards.push(c);}
-    prog.last=today();
     progressData[c.id]=prog;
-    // v11: 일별 기록 — 카드당 하루 1회, 같은 날 여러 번 풀면 마지막(최종) 결과로 덮어씀
-    const dt=today();const day=dailyLog[dt]||(dailyLog[dt]={r:{},nw:{}});
-    day.r[c.id]=pass?1:0;if(wasNew)day.nw[c.id]=1;
     // v9: 세션 로그 기록
     sessionLog.push({card:c, pass:pass, level:prog.level});
-    if(turn.active) turn.res[c.id]=pass?1:0;
-    persistProgress();
   }
-  autoTimerCard=false;cur++;
-  // v14: ∞ 턴은 20장마다 자동 저장(커밋)
-  if(turn.active&&turn.all&&cur<filteredCards.length&&cur%20===0) commitTurn(cur,false);
-  loadCard();
+  autoTimerCard=false;cur++;loadCard();
 }
 let studyStartTime=null;
 function showDone(){
@@ -3051,30 +2472,8 @@ function showDone(){
   const endTime=new Date();
   document.getElementById('pass-count').textContent=passCount;
   document.getElementById('fail-count').textContent=failCount;
-  const total=filteredCards.length;
-  const pct=total?Math.round((passCount/total)*100):0;
-  const dsDone=dayStats();
-  const subEl=document.getElementById('done-sub'), titleEl=document.getElementById('done-title');
-  const nextBtn=document.getElementById('btn-next-turn'), restartBtn=document.getElementById('btn-restart');
-  const isTurn=turn.active;
-  if(isTurn){
-    const no=turnState.no;
-    commitTurn(total,true); // 턴 종료 → 진도 자동 저장
-    const size=turnSizeVal(), nc=turnState.carry.length;
-    const newAvail=allCards.filter(c=>matchTodayFilters(c)&&isNewCard(c.id)).length;
-    const takeC=size?Math.min(nc,size):nc, takeN=Math.min(newAvail,size?Math.max(0,size-takeC):newAvail);
-    if(titleEl) titleEl.textContent=no+'턴 완료!';
-    if(subEl) subEl.innerHTML=`<strong style="font-size:20px;">${pct}점</strong> (${passCount}/${total}장 · ✕${failCount})<br>진도가 자동 저장되었습니다<br><span style="color:#6a1b9a;">다음 턴: 모르는 카드 ${takeC}장 + 신규 ${takeN}장</span>`;
-    if(nextBtn){ nextBtn.style.display=(takeC+takeN>0)?'block':'none'; nextBtn.textContent='▶ '+turnState.no+'턴 시작 ('+(takeC+takeN)+'장)'; }
-    if(restartBtn) restartBtn.style.display='none';
-    _turnSummary={no:no,total:total,ok:passCount,score:pct,next:takeC+takeN};
-  }else{
-    if(titleEl) titleEl.textContent='학습 완료!';
-    if(subEl) subEl.textContent=`${total}장 완료 · 정답률 ${pct}% · 오늘 누적 ${dsDone.n}문제 (○${dsDone.p} / ✕${dsDone.f}, 신규 ${dsDone.nw})`;
-    if(nextBtn) nextBtn.style.display='none';
-    if(restartBtn) restartBtn.style.display='block';
-    persistProgress();
-  }
+  const pct=Math.round((passCount/filteredCards.length)*100);
+  document.getElementById('done-sub').textContent=`${filteredCards.length}장 완료 · 정답률 ${pct}%`;
   // 시간 표시
   const fmt=d=>`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
   const diffMs=endTime-(studyStartTime||endTime);
@@ -3087,11 +2486,10 @@ function showDone(){
   }
   document.getElementById('progress-fill').style.width='100%';
   const retryBtn=document.getElementById('btn-retry-fail');
-  if(retryBtn) retryBtn.style.display=(!isTurn&&failedCards.length>0)?'block':'none';
+  if(retryBtn) retryBtn.style.display=failedCards.length>0?'block':'none';
   // v9: 세션 결과 리스트 렌더링
   renderDoneList();
   showScreen('screen-done');
-  if(_turnSummary){ const sm=_turnSummary; _turnSummary=null; showTurnPopup(sm); } // v15: 턴 종료 팝업
 }
 
 
@@ -3102,76 +2500,8 @@ function retryFailed(){
   cur=0;passCount=0;failCount=0;
   showScreen('screen-study');loadCard();
 }
-/* ═══ v15: 턴 종료 팝업 — 점수대별 격려 + 다음 턴 확인 + 종료 인사 ═══ */
-const TURN_MSGS={
-  100:['만점이에요! 정말 대단해요 👏','한 문제도 놓치지 않았어요. 오늘 집중력 최고예요!','완벽한 한 턴이었어요. 꾸준함이 합격을 만듭니다.'],
-  90:['거의 다 맞혔어요! 아주 훌륭해요.','탄탄하게 쌓이고 있어요. 이 페이스 그대로 가요!','틀린 한두 개만 잡으면 완벽해요. 잘하고 계세요.'],
-  80:['좋은 성적이에요. 차근차근 잘 쌓이고 있어요.','충분히 잘하고 있어요. 모르는 카드는 다음 턴에 다시 만나요.','꾸준히 하면 점수는 반드시 올라요. 수고하셨어요.'],
-  70:['괜찮아요, 70점도 잘하고 있는 거예요.','모르는 카드는 반복할수록 내 것이 돼요. 조금만 더 힘내요!','절반을 훌쩍 넘겼어요. 한 턴만 더 하면 훨씬 단단해질 거예요.'],
-  60:['오늘은 조금 어려웠죠? 괜찮아요, 틀린 만큼 배운 거예요.','처음엔 누구나 그래요. 모르는 카드가 곧 합격 카드예요.','포기하지 않고 끝까지 푼 것만으로도 충분히 대단해요.']
-};
-function turnBand(score){return score>=100?100:score>=90?90:score>=80?80:score>=70?70:60;}
-function pickRand(a){return a[Math.floor(Math.random()*a.length)];}
-function farewellMsg(){
-  const h=new Date().getHours();
-  if(h>=21||h<5) return pickRand(['늦은 시간까지 정말 고생하셨어요. 푹 쉬시고 내일 봅시다! 🌙','오늘 하루 수고 많으셨어요. 내일 다시 만나요, 좋은 꿈 꾸세요!']);
-  if(h>=17) return pickRand(['오늘도 고생 많으셨어요. 저녁 챙겨 드시고, 빠른 시간 안에 다시 봐요!','수고하셨어요. 잠시 쉬었다가 시간 나실 때 다시 봐요!']);
-  if(h>=11) return pickRand(['수고하셨어요. 잠시 숨 돌리고 빠른 시간 안에 다시 봐요!','잘하셨어요. 조금 쉬었다가 금방 다시 만나요!']);
-  return pickRand(['좋은 아침 공부였어요. 잠깐 쉬었다가 빠른 시간 안에 다시 봐요!','일찍부터 수고하셨어요. 시간 나실 때 곧 다시 만나요!']);
-}
-async function flushProgress(){
-  persistProgress();
-  try{ if(studyDir&&await dirPerm(false)) await writeDirProgress(buildProgressObj()); }catch(e){}
-}
-function closeTurnPopup(){const o=document.getElementById('turn-popup');if(o)o.remove();}
-function showTurnPopup(sm){
-  closeTurnPopup();
-  const band=turnBand(sm.score), msg=pickRand(TURN_MSGS[band]);
-  const o=document.createElement('div');o.id='turn-popup';
-  o.style.cssText='position:fixed;inset:0;background:rgba(15,17,23,.55);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;';
-  const box=document.createElement('div');
-  box.style.cssText='background:#fff;border-radius:16px;max-width:380px;width:100%;padding:24px 22px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.3);font-family:inherit;';
-  o.appendChild(box);document.body.appendChild(o);
-  const btn=(id,label,bg,color)=>`<button id="${id}" style="flex:1;padding:12px;border-radius:10px;border:${bg==='#fff'?'1.5px solid #ccc':'none'};background:${bg};color:${color};font-size:14px;font-weight:700;cursor:pointer;">${label}</button>`;
-  const stage1=()=>{
-    const canNext=sm.next>0;
-    box.innerHTML=`<div style="font-size:13px;color:#888;margin-bottom:4px;">${sm.no}턴 결과</div>
-      <div style="font-size:15px;color:#333;margin-bottom:6px;"><strong>${sm.total}개 중 ${sm.ok}개</strong>를 맞았습니다</div>
-      <div style="font-size:44px;font-weight:800;color:${band>=80?'#1D9E75':band>=70?'#f9a825':'#e65100'};line-height:1.1;margin:4px 0 10px;">${sm.score}점</div>
-      <div style="font-size:14px;color:#555;line-height:1.6;margin-bottom:16px;">${msg}</div>
-      <div style="font-size:12px;color:#888;margin-bottom:14px;">진도가 자동 저장되었습니다${canNext?'<br>다음 턴: '+sm.next+'장':''}</div>
-      <div style="font-size:15px;font-weight:700;color:#222;margin-bottom:12px;">${canNext?'다음 턴으로 진행하겠습니까?':'오늘 풀 카드를 모두 마쳤어요 🎉'}</div>
-      <div style="display:flex;gap:8px;">${canNext?btn('tp-yes','네, 계속합니다','#1D9E75','#fff')+btn('tp-no','아니요','#fff','#555'):btn('tp-ok','확인','#1D9E75','#fff')}</div>`;
-    const y=box.querySelector('#tp-yes'), n=box.querySelector('#tp-no'), k=box.querySelector('#tp-ok');
-    if(y) y.onclick=async()=>{ await flushProgress(); closeTurnPopup(); startNextTurn(); };
-    if(n) n.onclick=stage2;
-    if(k) k.onclick=async()=>{ await flushProgress(); closeTurnPopup(); };
-  };
-  const stage2=()=>{
-    box.innerHTML=`<div style="font-size:34px;margin-bottom:6px;">🤔</div>
-      <div style="font-size:16px;font-weight:700;color:#222;margin-bottom:6px;">정말 그만두시겠습니까?</div>
-      <div style="font-size:13px;color:#777;line-height:1.6;margin-bottom:16px;">지금까지의 진도는 저장되어 있어요.<br>조금만 더 하면 모르는 카드가 내 것이 됩니다.</div>
-      <div style="display:flex;gap:8px;">${btn('tp-back','계속할게요','#1D9E75','#fff')+btn('tp-quit','그래도 그만둘게요','#fff','#555')}</div>`;
-    box.querySelector('#tp-back').onclick=async()=>{ await flushProgress(); closeTurnPopup(); startNextTurn(); };
-    box.querySelector('#tp-quit').onclick=async()=>{ await flushProgress(); stage3(); };
-  };
-  const stage3=()=>{
-    box.innerHTML=`<div style="font-size:34px;margin-bottom:8px;">👋</div>
-      <div style="font-size:15px;color:#333;line-height:1.7;margin-bottom:18px;">${farewellMsg()}</div>
-      <div style="display:flex;gap:8px;">${btn('tp-close','확인','#1D9E75','#fff')}</div>`;
-    box.querySelector('#tp-close').onclick=()=>closeTurnPopup();
-  };
-  stage1();
-}
-
-function startNextTurn(){
-  sessionLog=[];failedCards=[];applyFilter();
-  if(filteredCards.length===0){ showToast('다음 턴에 풀 카드가 없습니다 (신규·모르는 카드 없음)',4000); showScreen('screen-list');openListScreen(); return; }
-  cur=0;passCount=0;failCount=0;studyStartTime=new Date();
-  showScreen('screen-study');initCanvas();loadCard();
-}
 function restartStudy(){sessionLog=[];failedCards=[];applyFilter();cur=0;passCount=0;failCount=0;studyStartTime=new Date();showScreen('screen-study');loadCard();}
-function goImport(){abortTurnIfActive();stopTimer();ttsStop();sessionLog=[];failedCards=[];cardEdited=false;try{lcEditedIds.clear();}catch(e){}allCards=[];filteredCards=[];zipRef=null;mediaMap={};_maxNew=0;_maxReview=0;updateQuotaLabels();setStatus('','');showScreen('screen-import');try{apkgStoreRefreshUI();}catch(e){}}
+function goImport(){stopTimer();ttsStop();sessionLog=[];failedCards=[];cardEdited=false;try{lcEditedIds.clear();}catch(e){}allCards=[];filteredCards=[];zipRef=null;mediaMap={};_maxNew=0;_maxReview=0;updateQuotaLabels();setStatus('','');showScreen('screen-import');}
 
 function startTimer(sec,onEnd){
   stopTimer();timerSec=sec;timerPaused=false;updateTimerUI(timerSec,sec);
@@ -3196,8 +2526,6 @@ document.addEventListener('keydown',(e)=>{
   if(!document.getElementById('screen-study').classList.contains('active'))return;
   const tag=document.activeElement?.tagName?.toLowerCase();
   if(tag==='input'||tag==='textarea'||tag==='select')return;
-  if(document.activeElement&&document.activeElement.isContentEditable)return;
-  const _lcm=document.getElementById('lc-modal'); if(_lcm&&_lcm.style.display==='flex')return;
   if(e.key==='ArrowLeft'){e.preventDefault();if(cardPhase==='answer'||cardPhase==='hint2')handleResult(false);}
   else if(e.key==='ArrowRight'){e.preventDefault();if(cardPhase==='answer'||cardPhase==='hint2')handleResult(true);}
   else if(e.key===' '){e.preventDefault();const btn=document.getElementById('main-btn');if(!btn.classList.contains('hidden'))btn.click();}
@@ -3451,16 +2779,14 @@ window.addEventListener('resize',resizeCanvas);
 
 
 /* ── v9: ZIP 저장본 불러오기 ── */
-async function handleZip(file, keepProgress=false){
+async function handleZip(file){
   try{
     setStatus('저장 파일 불러오는 중...','loading');
     if(!SQL){setStatus('초기화 중...','loading');SQL=await initSqlJs({wasmBinary:window.__sqlWasmBinary});}
-    importIdx=null;
     const zip=await JSZip.loadAsync(file);zipRef=zip;mediaMap={};
-    apkgStoreSave(file).then(apkgStoreRefreshUI); // 다음 실행 시 자동 불러오기용 (수정 내용이 담긴 ZIP도 기억)
-    // 진도 복원 — 외부에서 이미 진도를 지정(진도 JSON/자동 복원)했으면 ZIP 안의 진도는 쓰지 않음
+    // 진도 복원
     const pf=zip.file('progress.json');
-    if(pf&&!keepProgress){const pd=JSON.parse(await pf.async('string'));if(applyProgressObj(pd)){document.getElementById('progress-file-name').textContent='✓ 진도 복원됨';}}
+    if(pf){const pd=JSON.parse(await pf.async('string'));if(pd.cards){progressData=pd.cards;document.getElementById('progress-file-name').textContent='✓ 진도 복원됨';}}
     // 수정 카드 로드
     let editedMap={};
     const ef=zip.file('cards_edited.json');
@@ -3501,8 +2827,6 @@ async function handleZip(file, keepProgress=false){
     db.close();setStatus('','');
     deckFileName=file.name.replace(/_saved_\d{4}-\d{2}-\d{2}\.zip$/,'').replace(/\.zip$/,'');
     document.getElementById('deck-name').textContent=deckFileName;
-    if(keepProgress&&studyDir) await pullDirProgress();
-    progressDeckBase=progressBase();
     applyFilter();cur=0;passCount=0;failCount=0;
     showScreen('screen-study');initCanvas();loadCard();
   }catch(err){setStatus('오류: '+err.message,'error');}
@@ -3512,7 +2836,7 @@ async function handleZip(file, keepProgress=false){
 async function handleFile(file, hasProgress=false){
   if(!file)return;
   if(file.name.endsWith('.zip')){
-    await handleZip(file, hasProgress);
+    await handleZip(file);
   } else {
     await handleApkg(file, hasProgress);
   }
@@ -3543,13 +2867,18 @@ function updatePrevBtn(){
 
 /* 카드 편집 모달 */
 function openEditModal(){
-  // 학습 화면 ✏️ : 목록 화면과 같은 서식 편집기(WYSIWYG)로 현재 카드를 편집 (HTML 원본은 편집기 안의 </> HTML 버튼)
   if(!filteredCards||filteredCards.length===0)return;
   const idx=Math.min(cur,filteredCards.length-1);
   const c=filteredCards[idx];if(!c)return;
-  lcFromStudy=true; lcIds=[c.id]; lcIdx=0;
-  document.getElementById('lc-modal').style.display='flex';
-  lcStartEdit();
+  // 원본 HTML 그대로 표시 (이미지 태그 등 보존)
+  document.getElementById('edit-front').value=c.front||'';
+  document.getElementById('edit-hint').value=c.hint||'';
+  document.getElementById('edit-explain').value=c.explain||'';
+  document.getElementById('edit-back').value=c.back||'';
+  document.getElementById('edit-note').value=c.note||'';
+  const modal=document.getElementById('edit-modal');
+  modal.style.display='flex';
+  setTimeout(()=>document.getElementById('edit-front').focus(),100);
 }
 function closeEditModal(){
   document.getElementById('edit-modal').style.display='none';
@@ -3564,9 +2893,8 @@ function saveEditModal(){
   const nx=document.getElementById('edit-explain').value.trim();
   const nb=document.getElementById('edit-back').value.trim();
   const nn=document.getElementById('edit-note').value.trim();
-  const nt=document.getElementById('edit-type').value.trim();
-  if(target){target.front=nf;target.hint=nh;target.back=nb;target.explain=nx;target.note=nn;target.C=nt;}
-  c.front=nf;c.hint=nh;c.back=nb;c.explain=nx;c.note=nn;c.C=nt;
+  if(target){target.front=nf;target.hint=nh;target.back=nb;target.explain=nx;target.note=nn;}
+  c.front=nf;c.hint=nh;c.back=nb;c.explain=nx;c.note=nn;
   cardEdited=true;
   lcEditedIds.add(c.id);
   closeEditModal();
@@ -3897,10 +3225,19 @@ window.addEventListener('DOMContentLoaded',()=>{
 
   apkgStoreRefreshUI();
 
-  // v11: 이전에 불러온 덱 + 진도 + 필드 매핑을 복원해 바로 학습 화면으로 (폴더 연결 시에는 버튼 한 번)
-  // 암호 게이트가 열려 있을 때만 실행 (잠긴 상태에서는 해제 직후 실행)
-  if(window.__gateUnlocked) autoResume();
-  else (window.__onGateUnlock=window.__onGateUnlock||[]).push(autoResume);
+  // 이전에 불러온 apkg가 있으면 자동으로 우선 불러오기
+  (async ()=>{
+    const rec=await apkgStoreLoad();
+    if(rec && rec.buffer && rec.buffer.byteLength>0){
+      setStatus('이전에 불러온 파일 자동 불러오는 중: '+rec.name,'loading');
+      try{
+        const restoredFile=new File([rec.buffer], rec.name, {type:'application/octet-stream'});
+        await handleFile(restoredFile);
+      }catch(e){
+        setStatus('','');
+      }
+    }
+  })();
 });
 
 </script>

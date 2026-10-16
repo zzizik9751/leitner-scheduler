@@ -656,6 +656,7 @@ window.MathJax = {
             <button onclick="openCalc()" id="btn-calc" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="계산기"><svg width="13" height="15" viewBox="0 0 14 16" fill="none" stroke="#555" stroke-width="1.3" stroke-linejoin="round" style="display:block"><rect x="1" y="0.8" width="12" height="14.4" rx="2"/><rect x="3" y="2.8" width="8" height="3" rx="0.6" fill="#555" fill-opacity=".15"/><g fill="#555" stroke="none"><circle cx="4" cy="8.6" r=".9"/><circle cx="7" cy="8.6" r=".9"/><circle cx="10" cy="8.6" r=".9"/><circle cx="4" cy="12" r=".9"/><circle cx="7" cy="12" r=".9"/><circle cx="10" cy="12" r=".9"/></g></svg></button>
             <button onclick="saveProgress()" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="진도 저장">💾</button>
             <button id="btn-fullscreen" onclick="toggleFullscreen()" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="전체화면 (F11)">⛶</button>
+            <button id="btn-mini" onclick="openMini()" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="미니 창 — 문제·힌트·정답을 작은 창에서 자동 순환 (진도 기록 없음)">🗗</button>
             <button id="btn-tts" onclick="toggleTTS()" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="TTS 음성 읽기 켜기/끄기">🔇</button>
             <div class="timer-ring" id="timer-ring" onclick="togglePause()" title="클릭 = 일시정지/재개">
               <svg width="34" height="34" viewBox="0 0 34 34">
@@ -790,6 +791,7 @@ window.MathJax = {
           style="padding:8px 16px;border-radius:9px;border:none;background:#1D9E75;font-size:13px;font-weight:700;color:#fff;cursor:pointer;display:none;flex-shrink:0;">
           ▶ 선택 학습
         </button>
+        <button onclick="openMini()" title="선택한 카드(없으면 목록 전체)를 작은 창에서 문제→힌트→정답 자동 순환" style="padding:8px 12px;border-radius:9px;border:1px solid #1D9E75;background:#fff;font-size:13px;font-weight:700;color:#1D9E75;cursor:pointer;flex-shrink:0;">🗗 미니</button>
         <button onclick="startAllCards()"
           style="padding:8px 16px;border-radius:9px;border:none;background:#1565c0;font-size:13px;font-weight:700;color:#fff;cursor:pointer;flex-shrink:0;">
           전체 학습
@@ -3927,4 +3929,209 @@ window.addEventListener('DOMContentLoaded',()=>{
 });
 
 </script>
+<script>
+/* ═══ v17: 미니 로테이션 모드 — 작은 떠 있는 창(Document PiP, 미지원 시 팝업)에서 문제→힌트→정답 자동 순환. 진도는 기록하지 않음 ═══ */
+(function(){
+  const KEY='mh_mini_v1';
+  const S={t:{q:8,h:6,a:8},mode:'acc',loop:true,ex:false,font:16};
+  try{
+    const j=JSON.parse(localStorage.getItem(KEY)||'null');
+    if(j){
+      if(j.t) ['q','h','a'].forEach(k=>{const v=+j.t[k]; if(v>=2&&v<=60) S.t[k]=v;});
+      if(j.mode==='one'||j.mode==='acc') S.mode=j.mode;
+      if(typeof j.loop==='boolean') S.loop=j.loop;
+      if(typeof j.ex==='boolean') S.ex=j.ex;
+      const f=+j.font; if(f>=10&&f<=40) S.font=f;
+    }
+  }catch(e){}
+  function save(){ try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){} }
+
+  let W=null, cards=[], idx=0, phase=0, left=1, dur=1, paused=false, busy=false, tmr=null, tok=0, cd=null, el={};
+  const PH=['q','h','a'], COL={q:'#1565c0',h:'#e65100',a:'#1D9E75'};
+  function labels(){ return {q:fieldNames[0]||'문제', h:fieldNames[1]||'힌트', a:fieldNames[2]||'정답'}; }
+
+  const CSS=`*{box-sizing:border-box;margin:0;padding:0}html,body{height:100%}
+body{font-family:-apple-system,'Segoe UI','Malgun Gothic',sans-serif;background:#fff;color:#1a1a1a;display:flex;flex-direction:column;overflow:hidden}
+#bar{position:relative;display:flex;align-items:center;gap:5px;padding:4px 6px 7px;background:#263238;color:#fff;flex-shrink:0}
+.chip{font-size:11px;font-weight:800;padding:2px 9px;border-radius:10px;background:#1565c0;white-space:nowrap}
+#cnt{font-size:11px;opacity:.75;white-space:nowrap}.sp{flex:1}
+#bar button{border:1px solid rgba(255,255,255,.28);background:transparent;color:#fff;border-radius:5px;padding:2px 8px;font-size:12px;cursor:pointer;line-height:1.3}
+#bar button:hover{background:rgba(255,255,255,.18)}
+#tm{position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(255,255,255,.15)}
+#tf{display:block;height:100%;width:100%;background:#4fc3f7;transition:width .1s linear}
+#set{background:#eceff1;padding:5px 8px;display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;align-items:center;border-bottom:1px solid #cfd8dc;flex-shrink:0}
+#set.hide{display:none}#set .g{display:flex;align-items:center;gap:3px;white-space:nowrap}
+#set button{border:1px solid #b0bec5;background:#fff;border-radius:5px;padding:1px 7px;font-size:12px;cursor:pointer;color:#333}
+#set button.on{background:#1D9E75;color:#fff;border-color:#1D9E75}
+#body{flex:1;min-height:0;overflow-y:auto;padding:8px 12px;font-size:var(--fs,16px);line-height:1.55;cursor:pointer}
+section{padding:4px 0}section+section{border-top:1px dashed #ddd;margin-top:4px;padding-top:6px}section[hidden]{display:none}
+section:not([hidden]){animation:fi .25s}@keyframes fi{from{opacity:0}to{opacity:1}}
+.lb{display:block;font-size:10px;font-weight:800;letter-spacing:.08em;margin-bottom:2px}
+#s-q .lb{color:#1565c0}#s-h .lb{color:#e65100}#s-a .lb{color:#1D9E75}
+.bd img{max-width:100%;height:auto}.bd table{border-collapse:collapse}.bd td,.bd th{border:1px solid #ccc;padding:2px 5px}
+.bd ul,.bd ol{padding-left:1.4em}.ex{margin-top:6px;padding:5px 8px;background:#f1f8f5;border-left:3px solid #1D9E75;font-size:.92em}
+.end{padding:18px 6px;text-align:center;color:#777}`;
+  const HTML=`<div id="bar"><span class="chip" id="ph">문제</span><span id="cnt"></span><span class="sp"></span>
+<button data-a="prev" title="이전 카드 (←)">◀</button><button data-a="pp" id="pp" title="일시정지/재생 (Space)">⏸</button><button data-a="next" title="다음 카드 (→)">▶</button><button data-a="set" title="설정">⚙</button>
+<div id="tm"><i id="tf"></i></div></div>
+<div id="set" class="hide"></div>
+<div id="body"><section id="s-q"><b class="lb"></b><div class="bd"></div></section><section id="s-h" hidden><b class="lb"></b><div class="bd"></div></section><section id="s-a" hidden><b class="lb"></b><div class="bd"></div></section><div class="end" id="end" hidden></div></div>`;
+
+  function listCards(){
+    const study=document.getElementById('screen-study').classList.contains('active');
+    if(study&&filteredCards&&filteredCards.length) return {cards:[...filteredCards],start:Math.min(cur,filteredCards.length-1)};
+    let list;
+    if(selectedCards&&selectedCards.size>0){
+      list=[...document.querySelectorAll('.list-card-item')].map(e=>allCards.find(c=>c.id===e.dataset.id)).filter(c=>c&&selectedCards.has(c.id));
+    }else{
+      const kw=(document.getElementById('search-input')?.value||'').trim().toLowerCase();
+      list=allCards.filter(c=>!isHeart(c.star));
+      const {star:sf,type:tf,category:cf}=listDropFilters;
+      if(sf&&sf.size>0) list=list.filter(c=>sf.has(starBucket(countStars(c.star))));
+      if(tf&&tf.size>0) list=list.filter(c=>tf.has(detectCardType(c)));
+      if(cf) list=list.filter(c=>catMatch(c.분류,cf));
+      if(kw) list=list.filter(c=>[c.front,c.hint,c.back,c.explain||''].some(x=>stripHtml(x).toLowerCase().includes(kw)));
+      if(listSort==='star') list.sort((a,b)=>countStars(b.star)-countStars(a.star));
+      else if(listSort==='alpha') list.sort((a,b)=>stripHtml(a.front).localeCompare(stripHtml(b.front),'ko'));
+      else if(listSort==='cat') list.sort((a,b)=>catCompare(a.분류,b.분류));
+      if(isRandomMode()) shuffle(list);
+    }
+    return {cards:list,start:0};
+  }
+
+  async function typeset(box){
+    for(let i=0;i<25&&!(window.MathJax&&MathJax.typesetPromise);i++) await new Promise(r=>setTimeout(r,200));
+    if(!(window.MathJax&&MathJax.typesetPromise)) return;
+    try{ await MathJax.typesetPromise([box]); }catch(e){}
+  }
+  async function prep(c){
+    const [q,h,a,e]=await Promise.all([resolveMedia(c.front),resolveMedia(c.hint),resolveMedia(c.back),resolveMedia(c.explain||'')]);
+    const parts=[q||'',h||'',a||'',e||''];
+    const box=document.createElement('div');
+    box.style.cssText='position:fixed;left:-99999px;top:0;width:460px;visibility:hidden;pointer-events:none;';
+    box.innerHTML=parts.map(p=>`<div>${p}</div>`).join('');
+    document.body.appendChild(box);
+    try{ if(/\$|\\\(|\\\[|<math/i.test(parts.join(''))) await typeset(box); }catch(err){}
+    const out={q:box.children[0].innerHTML,h:box.children[1].innerHTML,a:box.children[2].innerHTML,e:box.children[3].innerHTML,
+      hasH:!!(c.hint&&stripHtml(c.hint).trim()||/<img/i.test(c.hint||'')), hasE:!!(c.explain&&c.explain.trim())};
+    box.remove();
+    return out;
+  }
+  function syncStyles(){
+    if(!W) return; const d=W.document;
+    document.querySelectorAll('style[id^="MJX"]').forEach(s=>{
+      let t=d.getElementById(s.id);
+      if(!t){t=d.createElement('style');t.id=s.id;d.head.appendChild(t);}
+      if(t.textContent!==s.textContent) t.textContent=s.textContent;
+    });
+  }
+
+  function paint(){
+    if(!W||W.closed) return;
+    const L=labels(), p=PH[phase];
+    el.ph.textContent=L[p]; el.ph.style.background=COL[p]; el.tf.style.background=COL[p];
+    el.cnt.textContent=(idx+1)+' / '+cards.length;
+    el.pp.textContent=paused?'▶':'⏸';
+    const vis={q:S.mode==='one'?phase===0:true, h:cd&&cd.hasH&&(S.mode==='one'?phase===1:phase>=1), a:S.mode==='one'?phase===2:phase>=2};
+    PH.forEach(k=>{ el.s[k].hidden=!vis[k]; el.s[k].firstChild.textContent=L[k]; });
+    el.end.hidden=true;
+  }
+  function paintSet(){
+    const L=labels(), d=W.document;
+    const step=(k,n)=>`<span class="g">${n}<button data-a="dec" data-k="${k}">−</button><b>${S.t[k]}</b><button data-a="inc" data-k="${k}">+</button>초</span>`;
+    el.set.innerHTML=step('q',L.q)+step('h',L.h)+step('a',L.a)+
+      `<span class="g"><button data-a="mode">${S.mode==='acc'?'누적 표시':'단계별 표시'}</button><button data-a="ex" class="${S.ex?'on':''}">해설 ${S.ex?'ON':'OFF'}</button><button data-a="loop" class="${S.loop?'on':''}">반복 ${S.loop?'ON':'OFF'}</button></span>`+
+      `<span class="g">글자<button data-a="fdec">A−</button><button data-a="finc">A+</button><button data-a="shuf">🔀 섞기</button></span>`;
+    d.documentElement.style.setProperty('--fs',S.font+'px');
+  }
+  function startPhase(p){
+    if(p===1&&!(cd&&cd.hasH)) p=2;
+    phase=p; dur=left=S.t[PH[p]];
+    paint();
+    const s=el.s[PH[p]];
+    if(p===0) el.body.scrollTop=0; else { try{s.scrollIntoView({block:'nearest',behavior:'smooth'});}catch(e){} }
+  }
+  async function loadAt(i){
+    const my=++tok; busy=true; idx=i;
+    let d;
+    try{ d=await prep(cards[idx]); }catch(e){ d={q:'(카드를 불러오지 못했습니다)',h:'',a:'',e:'',hasH:false,hasE:false}; }
+    if(my!==tok||!W||W.closed) return;
+    cd=d; syncStyles();
+    el.s.q.lastChild.innerHTML=d.q; el.s.h.lastChild.innerHTML=d.h;
+    el.s.a.lastChild.innerHTML=d.a+((S.ex&&d.hasE)?`<div class="ex"><b>${explainLabel||'해설'}</b><br>${d.e}</div>`:'');
+    busy=false; startPhase(0);
+  }
+  function nextCard(){
+    if(idx+1<cards.length) return loadAt(idx+1);
+    if(S.loop) return loadAt(0);
+    paused=true; paint(); el.end.hidden=false; el.end.textContent='마지막 카드입니다 — ◀ 로 되돌아가거나 ▶ 로 처음부터';
+  }
+  function prevCard(){ return loadAt(idx>0?idx-1:(S.loop?cards.length-1:0)); }
+  function advance(){ if(busy) return; if(phase<2) startPhase(phase+1); else nextCard(); }
+  function tick(){
+    if(!W||W.closed){ cleanup(); return; }
+    if(paused||busy) return;
+    left-=0.1; el.tf.style.width=Math.max(0,left/dur*100)+'%';
+    if(left<=0) advance();
+  }
+  function act(a,k){
+    if(a==='pp'){ paused=!paused; if(!paused&&el.end.hidden===false&&idx+1>=cards.length&&!S.loop){ loadAt(0); } paint(); }
+    else if(a==='next'){ paused=false; nextCard(); }
+    else if(a==='prev'){ paused=false; prevCard(); }
+    else if(a==='set'){ el.set.classList.toggle('hide'); if(!el.set.classList.contains('hide')) paintSet(); }
+    else if(a==='dec'||a==='inc'){ S.t[k]=Math.max(2,Math.min(60,S.t[k]+(a==='inc'?1:-1))); save(); paintSet(); }
+    else if(a==='mode'){ S.mode=S.mode==='acc'?'one':'acc'; save(); paintSet(); paint(); }
+    else if(a==='ex'){ S.ex=!S.ex; save(); paintSet(); loadAt(idx); }
+    else if(a==='loop'){ S.loop=!S.loop; save(); paintSet(); }
+    else if(a==='fdec'||a==='finc'){ S.font=Math.max(10,Math.min(40,S.font+(a==='finc'?1:-1))); save(); paintSet(); }
+    else if(a==='shuf'){ const c=cards[idx]; const rest=cards.filter((x,i)=>i!==idx); shuffle(rest); cards=[c,...rest]; idx=0; paused=false; el.cnt.textContent='1 / '+cards.length; if(el.set) paintSet(); paint(); }
+  }
+  function cleanup(){
+    try{ if(W&&tmr) W.clearInterval(tmr); }catch(e){}
+    tmr=null; W=null; tok++; busy=false;
+  }
+  window.closeMini=function(){ try{ if(W) W.close(); }catch(e){} cleanup(); };
+  window.addEventListener('pagehide',()=>{ try{ if(W) W.close(); }catch(e){} });
+
+  window.openMini=async function(){
+    if(W&&!W.closed){ try{W.focus();}catch(e){} return; }
+    if(typeof allCards==='undefined'||!allCards.length){ showToast('먼저 덱을 불러오세요',3000); return; }
+    const src=listCards();
+    if(!src.cards.length){ showToast('미니 모드로 돌릴 카드가 없습니다',3000); return; }
+    cards=src.cards; idx=src.start; phase=0; paused=false; cd=null;
+    let w=null;
+    if(window.documentPictureInPicture&&documentPictureInPicture.requestWindow){
+      try{ w=await documentPictureInPicture.requestWindow({width:480,height:270}); }catch(e){ w=null; }
+    }
+    if(!w){ try{ w=window.open('','mh_mini','popup=yes,width=500,height=300'); }catch(e){ w=null; } }
+    if(!w){ showToast('미니 창을 열 수 없습니다 (팝업 차단을 확인하세요)',4000); return; }
+    // 메인 학습 화면의 타이머/음성은 멈춰 둠 (자동 ✕ 처리 방지)
+    try{ if(typeof timerInterval!=='undefined'&&timerInterval&&!timerPaused) togglePause(); ttsStop(); }catch(e){}
+    W=w; const d=w.document;
+    d.title='MH 미니';
+    d.head.innerHTML='<meta charset="utf-8"><style>'+CSS+'</style>';
+    d.body.innerHTML=HTML;
+    el={ph:d.getElementById('ph'),cnt:d.getElementById('cnt'),pp:d.getElementById('pp'),tf:d.getElementById('tf'),set:d.getElementById('set'),body:d.getElementById('body'),end:d.getElementById('end'),
+        s:{q:d.getElementById('s-q'),h:d.getElementById('s-h'),a:d.getElementById('s-a')}};
+    d.documentElement.style.setProperty('--fs',S.font+'px');
+    d.addEventListener('click',e=>{
+      const b=e.target.closest&&e.target.closest('button');
+      if(b){ act(b.dataset.a,b.dataset.k); return; }
+      if(e.target.closest&&e.target.closest('#body')){ const sel=w.getSelection&&String(w.getSelection()); if(sel) return; paused=false; advance(); }
+    });
+    d.addEventListener('keydown',e=>{
+      const k=e.key;
+      if(k===' '||k==='k'){ e.preventDefault(); act('pp'); }
+      else if(k==='ArrowRight'){ e.preventDefault(); act('next'); }
+      else if(k==='ArrowLeft'){ e.preventDefault(); act('prev'); }
+      else if(k==='Enter'||k==='ArrowDown'){ e.preventDefault(); paused=false; advance(); }
+      else if(k==='Escape'){ window.closeMini(); }
+    });
+    w.addEventListener('pagehide',cleanup);
+    tmr=w.setInterval(tick,100);
+    await loadAt(idx);
+  };
+})();
+</script>
+
 </body>

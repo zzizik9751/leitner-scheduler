@@ -139,6 +139,20 @@ body {
 }
 .footer a { color: rgba(255,255,255,.85); text-decoration: none; }
 .footer a:hover { text-decoration: underline; }
+/* 하단 한 줄: 왼쪽 = 전기계산기 · 가운데 = 크레딧 · 오른쪽 = 웹유틸 */
+.footer {
+  width: 100%; max-width: 1100px;
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px;
+}
+.footer .fl { justify-self: start; text-align: left; }
+.footer .fr { justify-self: end; text-align: right; }
+.footer .fl, .footer .fr { font-weight: 700; }
+@media (max-width: 560px) {
+  .footer { grid-template-columns: 1fr 1fr; grid-template-areas: "mid mid" "l r"; row-gap: 12px; }
+  .footer .fm { grid-area: mid; }
+  .footer .fl { grid-area: l; }
+  .footer .fr { grid-area: r; }
+}
 
 @media (max-width: 480px) {
   body { padding: 32px 16px; }
@@ -208,7 +222,9 @@ body {
 </main>
 
 <footer class="footer">
-  Created by <a href="https://blog.naver.com/zzizik" target="_blank" rel="noopener">zzizik</a> using Claude
+  <a class="fl" href="https://zzizik9751.github.io/calculatior" target="_blank" rel="noopener">전기계산기</a>
+  <span class="fm">Created by <a href="https://blog.naver.com/zzizik" target="_blank" rel="noopener">zzizik</a> using Claude</span>
+  <a class="fr" href="https://zzizik9751.github.io/webutil/" target="_blank" rel="noopener">웹유틸</a>
 </footer>
 
 </body>

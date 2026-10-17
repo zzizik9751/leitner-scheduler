@@ -436,7 +436,7 @@ window.MathJax = {
     <button id="gate-btn" style="width:100%;padding:12px;border-radius:10px;border:none;background:#0f1117;color:#fff;font-size:15px;font-weight:700;cursor:pointer;">입장하기</button>
   </div>
   <div style="position:absolute;bottom:14px;left:0;right:0;text-align:center;font-size:11px;color:#aaa;">
-    Created by <a href="https://blog.naver.com/zzizik" target="_blank" rel="noopener" style="color:#aaa;text-decoration:none;">zzizik</a>, with Claude AI · rev. 261016
+    Created by <a href="https://blog.naver.com/zzizik" target="_blank" rel="noopener" style="color:#aaa;text-decoration:none;">zzizik</a>, with Claude AI · rev. 261017
   </div>
 </div>
 <script>
@@ -1847,7 +1847,7 @@ function updateQuotaBar(){
   const bar=document.getElementById('quota-bar');if(!bar)return;
   const total=(filtersActive()&&_filteredTotal!=null)?_filteredTotal:allCards.filter(c=>!isHeart(c.star)).length;
   const ds=dayStats();
-  bar.innerHTML=`<span class="quota-chip" style="background:#e8eaf6;color:#3949ab;">${filtersActive()?'선택':'전체'} ${total}장</span><span class="quota-chip" style="background:#f3e5f5;color:#6a1b9a;">${turnState.no}턴째 · ${_reviewFirst?'모름→신규':'신규→모름'}</span><span class="quota-chip quota-review">모름 ${todayReviewCount}장</span><span class="quota-chip quota-new">신규 ${todayNewCount}장</span><span class="quota-chip quota-done">진행 ${cur}/${todayDeck.length}</span><span class="quota-chip" style="background:#fff3e0;color:#e65100;" title="오늘 푼 문제(카드당 1회, 최종 결과 기준)">오늘 ${ds.n}문제 ○${ds.p} ✕${ds.f}</span>`;
+  bar.innerHTML=`<span class="quota-chip" style="background:#e8eaf6;color:#3949ab;">${filtersActive()?'선택':'전체'} ${total}장</span><span class="quota-chip" style="background:#f3e5f5;color:#6a1b9a;">${turnState.no}턴째 · ${_reviewFirst?'모름→신규':'신규→모름'}</span><span class="quota-chip quota-review">모름 ${todayReviewCount}장</span><span class="quota-chip quota-new">신규 ${todayNewCount}장</span><span class="quota-chip quota-done">진행 ${cur}/${todayDeck.length}</span>`;
 }
 function applyFilter(){
   abortTurnIfActive();

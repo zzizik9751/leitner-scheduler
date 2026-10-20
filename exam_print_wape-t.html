@@ -985,7 +985,7 @@ async function postField(html,opt){
 }
 function openPost(){
   if(!S.picks.length) return;
-  const t=$('post-title'); if(!t.value) t.value=`전기철도기사 실기 기출문제 ${S.picks.length}선`;
+  const t=$('post-title'); if(!t.value) t.value=`전기철도기사 실기 문제 ${S.picks.length}선`;
   showScreen('post'); genPost();
 }
 async function genPost(){

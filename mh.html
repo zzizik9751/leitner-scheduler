@@ -155,7 +155,7 @@ body {
 .block-body { font-size: 15px; color: #1a1a1a; line-height: 1.75; }
 .block-body img { max-width: 100%; border-radius: 8px; margin-top: 8px; }
 /* 전역 reset(padding:0)으로 사라진 리스트 들여쓰기 복원 — 불릿이 박스 밖으로 나가는 문제 방지 */
-.block-body ul, .block-body ol { padding-left: 1.5em; margin: 6px 0; list-style-position: outside; }
+:where(.block-body) ul, :where(.block-body) ol { padding-left: 1.5em; margin: 6px 0; list-style-position: outside; }
 .block-body li { margin: 3px 0; }
 .c-divider { height: 1px; background: #f0f0ee; flex-shrink: 0; }
 .card-footer {
@@ -411,6 +411,61 @@ body {
 #lc-modal .lc-btn.primary { background:#1D9E75; border-color:#1D9E75; color:#fff; flex:1; }
 #lc-modal .lc-btn.sel-on { border-color:#1D9E75; color:#1D9E75; }
 @media (max-width:480px){ #lc-modal{padding:0;align-items:flex-end;} #lc-modal .lc-box{max-height:94vh;border-radius:16px 16px 0 0;} #lc-modal .lc-row3{grid-template-columns:1fr;} }
+
+/* ===== v20: 목록(ul/ol) 스타일 — 대시·가운뎃점·원숫자·원한글 (2026-10-20) ===== */
+/* 기본 ul, ol 스타일 설정 */
+ul, ol {
+  padding-left: 20px;
+  line-height: 1.6;
+  margin-left: 10px;
+}
+
+/* 기본 li 스타일 설정 */
+li {
+  line-height: 1.6;
+}
+
+ol {
+  list-style-type: circle-num;
+}
+
+/* 1. 대시 목록 */
+.dash {
+  list-style-type: "- ";
+  padding-left: 2px; /* 하위 ul의 들여쓰기 폭을 살짝 줄여서 정렬 개선 */
+  margin-left: 0;    /* 부모 요소와 시작 위치를 깔끔하게 맞춤 */
+}
+
+/* 2. 가운뎃점 목록 */
+.middle-dot {
+  list-style-type: "· ";
+}
+
+/* 3. 원숫자 목록 */
+@counter-style circle-num {
+  system: fixed;
+  symbols: ➀ ➁ ➂ ➃ ➄ ➅ ➆ ➇ ➈ ➉;
+  suffix: " ";
+}
+.circle-number {
+  list-style-type: circle-num;
+}
+
+/* 5. 원한글 목록 */
+@counter-style circle-txt {
+  system: fixed;
+  symbols: ㉠ ㉡ ㉢ ㉣ ㉤ ㉥ ㉦ ㉧ ㉨ ㉩ ㉪ ㉫ ㉬ ㉭;
+  suffix: " ";
+}
+
+.circle-txt {
+  list-style-type: circle-txt;
+}
+
+/* 6. 기존 type="circle" 속성을 가진 ul을 대시(-)로 강제 전환 */
+ul[type="circle"] {
+  list-style-type: "- ";
+}
 </style>
 <script>
 window.MathJax = {

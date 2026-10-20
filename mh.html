@@ -436,7 +436,7 @@ window.MathJax = {
     <button id="gate-btn" style="width:100%;padding:12px;border-radius:10px;border:none;background:#0f1117;color:#fff;font-size:15px;font-weight:700;cursor:pointer;">입장하기</button>
   </div>
   <div style="position:absolute;bottom:14px;left:0;right:0;text-align:center;font-size:11px;color:#aaa;">
-    Created by <a href="https://blog.naver.com/zzizik" target="_blank" rel="noopener" style="color:#aaa;text-decoration:none;">zzizik</a>, with Claude AI · rev. 261017
+    Created by <a href="https://blog.naver.com/zzizik" target="_blank" rel="noopener" style="color:#aaa;text-decoration:none;">zzizik</a>, with Claude AI · rev. 261020
   </div>
 </div>
 <script>
@@ -658,6 +658,7 @@ window.MathJax = {
             <button id="btn-fullscreen" onclick="toggleFullscreen()" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="전체화면 (F11)">⛶</button>
             <button id="btn-mini" onclick="openMini()" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="미니 창 — 문제·힌트·정답을 작은 창에서 자동 순환 (진도 기록 없음)">🗗</button>
             <button id="btn-tts" onclick="toggleTTS()" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="TTS 음성 읽기 켜기/끄기">🔇</button>
+            <button id="btn-timer-set" onclick="toggleTimerPop(event)" style="padding:5px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;line-height:1;" title="타이머 시간 조정 (자동/고정, 배율)">⏱</button>
             <div class="timer-ring" id="timer-ring" onclick="togglePause()" title="클릭 = 일시정지/재개">
               <svg width="34" height="34" viewBox="0 0 34 34">
                 <circle class="timer-bg" cx="17" cy="17" r="14"/>
@@ -815,12 +816,13 @@ window.MathJax = {
           <div style="display:none;"><input type="number" id="daily-review" value="9999"><span id="lbl-max-review"></span></div>
           <div style="width:1px;height:20px;background:#eee;"></div>
           <label style="font-size:12px;color:#777;display:flex;align-items:center;gap:5px;">⏱ 타이머
-            <select id="timer-select-import" onchange="_userTimerSec=+this.value;changeTimerSec(+this.value);settingsChanged()"
+            <select id="timer-select-import" onchange="setTimerMode(this.value)"
               style="padding:3px 6px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:#fff;cursor:pointer;">
               <option value="10">10초</option>
               <option value="20" selected>20초</option>
               <option value="30">30초</option>
               <option value="60">60초</option>
+              <option value="auto">자동(글자수)</option>
               <option value="0">끄기</option>
             </select>
           </label>
@@ -1328,6 +1330,7 @@ let pendingImport=null; // apkg 파싱 후 필드매핑 확인을 기다리는 �
 let sessionLog=[], cardEdited=false, ttsRate=1.1, ttsVoiceIdx=-1;
 let cur=0,passCount=0,failCount=0,deckFileName='';
 let timerInterval=null,timerSec=0,timerPaused=false,TIMER_SEC=20;
+let TIMER_AUTO=false,TIMER_MULT=1,_userTimerAuto=false,_userTimerMult=1,_tOn=false,_tEnd=null,_tKind='front',_tTotal=20,_tpEl=null,_tpWasOn=false;
 let cardPhase='question',starFilter=0;
 let studyOrder='hint'; // 'hint' | 'backhint' | 'nohint'
 function setStudyOrder(val){ studyOrder=val; }
@@ -1528,6 +1531,8 @@ function collectSettings(){
   return {
     newGoal:parseInt(g('daily-new')?.value)||0,
     timer:_userTimerSec,
+    timerAuto:_userTimerAuto,
+    timerMult:_userTimerMult,
     order:g('start-order')?.value||'auto',
     random:!!g('chk-random')?.checked,
     sort:listSort,
@@ -1542,7 +1547,9 @@ function applySettings(s){
   if(!s) return;
   const g=id=>document.getElementById(id);
   if(g('daily-new')) g('daily-new').value=(+s.newGoal>0)?(+s.newGoal):'';
-  if([0,10,20,30,60].includes(+s.timer)){ _userTimerSec=+s.timer; const sel=g('timer-select-import'); if(sel) sel.value=String(_userTimerSec); changeTimerSec(_userTimerSec); }
+  if(+s.timerMult>=0.5&&+s.timerMult<=3) setTimerMult(+s.timerMult,true);
+  if(s.timerAuto) setTimerMode('auto',true);
+  else if([0,10,20,30,60].includes(+s.timer)) setTimerMode(String(+s.timer),true);
   if(g('start-order')) g('start-order').value=(s.order==='review')?'review':'new';
   if(g('chk-random')) g('chk-random').checked=!!s.random;
   const types=new Set(allCards.map(c=>detectCardType(c)));
@@ -2908,9 +2915,9 @@ async function loadCard(){
       ? ()=>showHint(true)
       : ()=>showAnswer(true);
     if(ttsEnabled){
-      ttsRead(c.front, ()=>{ ttsPendingTimer=setTimeout(()=>startTimer(TIMER_SEC, timerTarget),300); }, 'front');
+      ttsRead(c.front, ()=>{ ttsPendingTimer=setTimeout(()=>startTimer(phaseSec('front'), timerTarget,'front'),300); }, 'front');
     } else {
-      startTimer(TIMER_SEC, timerTarget);
+      startTimer(phaseSec('front'), timerTarget,'front');
     }
   } else {
     updateTimerUI(0,1);
@@ -2931,10 +2938,10 @@ function showHint(autoByTimer){
   if(ttsEnabled){
     ttsRead(c.hint, ()=>{
       if(autoByTimer&&TIMER_SEC>0)
-        ttsPendingTimer=setTimeout(()=>startTimer(TIMER_SEC,()=>showAnswer(true)),300);
+        ttsPendingTimer=setTimeout(()=>startTimer(phaseSec('hint'),()=>showAnswer(true),'hint'),300);
     }, 'hint');
   } else {
-    if(autoByTimer&&TIMER_SEC>0) startTimer(TIMER_SEC,()=>showAnswer(true));
+    if(autoByTimer&&TIMER_SEC>0) startTimer(phaseSec('hint'),()=>showAnswer(true),'hint');
   }
 }
 function showHintAfterAnswer(autoByTimer){
@@ -2950,10 +2957,10 @@ function showHintAfterAnswer(autoByTimer){
   if(ttsEnabled){
     ttsRead(c.hint, ()=>{
       if(autoByTimer&&TIMER_SEC>0)
-        ttsPendingTimer=setTimeout(()=>startTimer(TIMER_SEC,()=>skipCard()),300);
+        ttsPendingTimer=setTimeout(()=>startTimer(phaseSec('hint'),()=>skipCard(),'hint'),300);
     }, 'hint');
   } else {
-    if(autoByTimer&&TIMER_SEC>0) startTimer(TIMER_SEC,()=>skipCard());
+    if(autoByTimer&&TIMER_SEC>0) startTimer(phaseSec('hint'),()=>skipCard(),'hint');
   }
 }
 function showAnswer(autoByTimer){
@@ -2973,10 +2980,10 @@ function showAnswer(autoByTimer){
     if(ttsEnabled){
       ttsRead(c.back, ()=>{
         if(autoByTimer&&TIMER_SEC>0)
-          ttsPendingTimer=setTimeout(()=>startTimer(TIMER_SEC,()=>showHintAfterAnswer(true)),300);
+          ttsPendingTimer=setTimeout(()=>startTimer(phaseSec('back'),()=>showHintAfterAnswer(true),'back'),300);
       }, 'back');
     } else {
-      if(autoByTimer&&TIMER_SEC>0) startTimer(TIMER_SEC,()=>showHintAfterAnswer(true));
+      if(autoByTimer&&TIMER_SEC>0) startTimer(phaseSec('back'),()=>showHintAfterAnswer(true),'back');
     }
   } else {
     // nohint 또는 hint(힌트 없는 카드): 정답 공개 후 바로 ○/✕
@@ -2987,10 +2994,10 @@ function showAnswer(autoByTimer){
     if(ttsEnabled){
       ttsRead(c.back, ()=>{
         if(autoByTimer&&TIMER_SEC>0)
-          ttsPendingTimer=setTimeout(()=>startTimer(TIMER_SEC,()=>skipCard()),300);
+          ttsPendingTimer=setTimeout(()=>startTimer(phaseSec('back'),()=>skipCard(),'back'),300);
       }, 'back');
     } else {
-      if(autoByTimer&&TIMER_SEC>0) startTimer(TIMER_SEC,()=>skipCard());
+      if(autoByTimer&&TIMER_SEC>0) startTimer(phaseSec('back'),()=>skipCard(),'back');
     }
   }
 }
@@ -3198,15 +3205,16 @@ function startNextTurn(){
 function restartStudy(){sessionLog=[];failedCards=[];applyFilter();cur=0;passCount=0;failCount=0;studyStartTime=new Date();showScreen('screen-study');loadCard();}
 function goImport(){abortTurnIfActive();stopTimer();ttsStop();sessionLog=[];failedCards=[];cardEdited=false;try{lcEditedIds.clear();}catch(e){}allCards=[];filteredCards=[];zipRef=null;mediaMap={};_maxNew=0;_maxReview=0;updateQuotaLabels();setStatus('','');showScreen('screen-import');try{apkgStoreRefreshUI();}catch(e){}}
 
-function startTimer(sec,onEnd){
-  stopTimer();timerSec=sec;timerPaused=false;updateTimerUI(timerSec,sec);
+function startTimer(sec,onEnd,kind){
+  stopTimer();timerSec=sec;timerPaused=false;_tOn=true;_tEnd=onEnd;_tKind=kind||'front';_tTotal=sec;updateTimerUI(timerSec,sec);
   timerInterval=setInterval(()=>{if(timerPaused)return;timerSec--;updateTimerUI(timerSec,sec);if(timerSec<=0){stopTimer();onEnd();}},1000);
 }
-function stopTimer(){if(timerInterval){clearInterval(timerInterval);timerInterval=null;}timerPaused=false;if(TIMER_SEC>0)updateTimerUI(TIMER_SEC,TIMER_SEC);else updateTimerUI(0,1);}
-function togglePause(){if(!timerInterval)return;timerPaused=!timerPaused;updateTimerUI(timerSec,TIMER_SEC);}
+function stopTimer(){if(timerInterval){clearInterval(timerInterval);timerInterval=null;}timerPaused=false;_tOn=false;if(TIMER_SEC>0)updateTimerUI(TIMER_SEC,TIMER_SEC);else updateTimerUI(0,1);}
+function togglePause(){if(!timerInterval)return;timerPaused=!timerPaused;updateTimerUI(timerSec,_tTotal);}
 function updateTimerUI(remaining,total){
   const arc=document.getElementById('timer-arc'),label=document.getElementById('timer-label');
   if(TIMER_SEC===0){arc.style.stroke='#ddd';arc.style.strokeDashoffset=0;label.textContent='—';label.style.color='#ccc';return;}
+  if(TIMER_AUTO&&!_tOn){arc.style.stroke='#1D9E75';arc.style.strokeDashoffset=0;label.style.color='#555';label.textContent='A';return;}
   const ratio=Math.max(0,remaining/total);
   arc.style.strokeDashoffset=CIRCUMFERENCE*(1-ratio);
   if(timerPaused){arc.style.stroke='#aaa';label.style.color='#aaa';label.textContent='⏸';}
@@ -3214,6 +3222,95 @@ function updateTimerUI(remaining,total){
   else if(remaining<=Math.floor(total*0.4)){arc.style.stroke='#EF9F27';label.style.color='#EF9F27';label.textContent=Math.max(0,remaining);}
   else{arc.style.stroke='#1D9E75';label.style.color='#555';label.textContent=Math.max(0,remaining);}
 }
+
+/* ── v19: 자동(글자수) 타이머 · 학습화면 즉시 조정 · 입력 중 타이머 재시작 ──
+   자동 시간 = (공백 제외 글자수 × 0.2초 + 3초) × 배율 (+ 이미지 있으면 5초), 5~60초로 제한. 단계(문제/힌트/정답)별로 그 단계 글자수 기준 */
+function phaseSec(kind){
+  if(!TIMER_AUTO) return TIMER_SEC;
+  const c=filteredCards[cur]; if(!c) return 20;
+  const html=(kind==='hint')?c.hint:(kind==='back'?c.back:c.front);
+  const chars=stripHtml(html||'').replace(/\s+/g,'').length;
+  const sec=(chars*0.2+3)*TIMER_MULT+(hasImage(html||'')?5:0);
+  return Math.max(5,Math.min(60,Math.round(sec)));
+}
+function restartPhaseTimer(){
+  if(!_tEnd) return;
+  startTimer(phaseSec(_tKind),_tEnd,_tKind);
+  if(_tpEl){ timerPaused=true; updateTimerUI(timerSec,_tTotal); } // 조정창이 열려 있는 동안은 정지 유지
+}
+function setTimerMode(v,quiet){
+  const was=_tOn, auto=(String(v)==='auto');
+  TIMER_AUTO=auto; _userTimerAuto=auto;
+  if(!auto) _userTimerSec=+v;
+  changeTimerSec(auto?20:+v);
+  ['timer-select-import','tp-mode'].forEach(id=>{ const e=document.getElementById(id); if(e) e.value=auto?'auto':String(+v); });
+  if(!quiet) settingsChanged();
+  if(was&&TIMER_SEC>0) restartPhaseTimer();
+  if(_tpEl) tpRefresh();
+}
+function setTimerMult(m,quiet){
+  m=Math.max(0.5,Math.min(3,Math.round(m*10)/10));
+  _userTimerMult=TIMER_MULT=m;
+  if(!quiet) settingsChanged();
+  if(TIMER_AUTO&&_tOn) restartPhaseTimer();
+  if(_tpEl) tpRefresh();
+}
+function bumpTimer(){ // 연습장에 입력·필기 중이면 현재 단계 시간을 처음부터 다시 센다
+  if(_tOn&&!timerPaused&&!_tpEl&&TIMER_SEC>0&&_tEnd) startTimer(phaseSec(_tKind),_tEnd,_tKind);
+}
+function tpRefresh(){
+  if(!_tpEl) return;
+  const m=document.getElementById('tp-mode'); if(m) m.value=TIMER_AUTO?'auto':String(TIMER_SEC);
+  document.getElementById('tp-multrow').style.display=TIMER_AUTO?'flex':'none';
+  document.getElementById('tp-mult').textContent=TIMER_MULT.toFixed(1);
+  const c=filteredCards[cur]; let t='';
+  if(TIMER_SEC===0) t='타이머 꺼짐';
+  else if(!TIMER_AUTO) t='모든 단계 '+TIMER_SEC+'초';
+  else if(c){ t='이 카드 → 문제 '+phaseSec('front')+'초'+(c.hint?' · 힌트 '+phaseSec('hint')+'초':'')+' · 정답 '+phaseSec('back')+'초'; }
+  document.getElementById('tp-prev').textContent=t;
+}
+function closeTimerPop(){
+  if(!_tpEl) return;
+  _tpEl.remove(); _tpEl=null;
+  document.removeEventListener('mousedown',_tpOutside,true);
+  document.removeEventListener('keydown',_tpKey,true);
+  if(_tpWasOn&&timerInterval&&timerPaused){ timerPaused=false; updateTimerUI(timerSec,_tTotal); }
+  _tpWasOn=false;
+}
+function _tpOutside(e){ if(_tpEl&&!_tpEl.contains(e.target)&&!(e.target.closest&&e.target.closest('#btn-timer-set'))) closeTimerPop(); }
+function _tpKey(e){ if(e.key==='Escape'){ e.preventDefault(); closeTimerPop(); } }
+function toggleTimerPop(ev){
+  if(ev) ev.stopPropagation();
+  if(_tpEl){ closeTimerPop(); return; }
+  _tpWasOn=!!(_tOn&&!timerPaused);
+  if(_tpWasOn){ timerPaused=true; updateTimerUI(timerSec,_tTotal); }
+  const p=document.createElement('div'); p.id='timer-pop';
+  p.style.cssText='position:fixed;z-index:5000;background:#fff;border:1px solid #ccc;border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.18);padding:12px 14px;width:236px;font-size:13px;color:#333;display:flex;flex-direction:column;gap:9px';
+  p.innerHTML='<div style="font-weight:700;color:#0F6E56">⏱ 타이머 조정</div>'+
+    '<label style="display:flex;align-items:center;justify-content:space-between;gap:8px">방식 <select id="tp-mode" style="padding:3px 6px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:#fff"><option value="10">10초</option><option value="20">20초</option><option value="30">30초</option><option value="60">60초</option><option value="auto">자동(글자수)</option><option value="0">끄기</option></select></label>'+
+    '<div id="tp-multrow" style="align-items:center;justify-content:space-between;gap:8px">배율'+
+      '<span style="display:flex;align-items:center;gap:6px"><button type="button" id="tp-m-dec" style="width:28px;height:26px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer">−</button><b id="tp-mult" style="min-width:32px;text-align:center">1.0</b><button type="button" id="tp-m-inc" style="width:28px;height:26px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer">+</button>×</span></div>'+
+    '<div id="tp-prev" style="font-size:11.5px;color:#888;line-height:1.5"></div>'+
+    '<div style="font-size:11px;color:#aaa;line-height:1.4">열려 있는 동안 타이머는 일시정지됩니다. 변경은 바로 적용·저장됩니다.</div>';
+  document.body.appendChild(p); _tpEl=p;
+  const r=document.getElementById('btn-timer-set').getBoundingClientRect();
+  p.style.top=(r.bottom+6)+'px';
+  p.style.left=Math.max(8,Math.min(window.innerWidth-244,r.right-236))+'px';
+  document.getElementById('tp-mode').onchange=function(){ setTimerMode(this.value); this.blur(); };
+  document.getElementById('tp-m-dec').onclick=()=>setTimerMult(TIMER_MULT-0.1);
+  document.getElementById('tp-m-inc').onclick=()=>setTimerMult(TIMER_MULT+0.1);
+  document.addEventListener('mousedown',_tpOutside,true);
+  document.addEventListener('keydown',_tpKey,true);
+  tpRefresh();
+}
+(function(){
+  function init(){
+    const ta=document.getElementById('notepad-textarea'), cv=document.getElementById('notepad-canvas');
+    if(ta) ta.addEventListener('input',bumpTimer);
+    if(cv) ['mousedown','touchstart','mouseup','touchend'].forEach(ev=>cv.addEventListener(ev,bumpTimer,{passive:true}));
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
+})();
 
 document.addEventListener('keydown',(e)=>{
   if(e.key==='F11'){e.preventDefault();toggleFullscreen();return;}
@@ -3245,7 +3342,7 @@ function toggleTTS(){
     btn.classList.add('btn-tts-active');
     btn.title = 'TTS 켜짐 (클릭하면 끄기)';
     // 타이머가 5초 초과면 자동으로 5초로 줄이기
-    if(TIMER_SEC === 0 || TIMER_SEC > TTS_TIMER_SEC){
+    if(!TIMER_AUTO && (TIMER_SEC === 0 || TIMER_SEC > TTS_TIMER_SEC)){
       ttsTimerBackup = TIMER_SEC;
       changeTimerSec(TTS_TIMER_SEC);
       // import 화면 select도 동기화
@@ -3257,7 +3354,7 @@ function toggleTTS(){
     btn.classList.remove('btn-tts-active');
     btn.title = 'TTS 음성 읽기 켜기/끄기';
     ttsStop();
-    if(ttsTimerBackup !== TIMER_SEC){
+    if(!TIMER_AUTO && ttsTimerBackup !== TIMER_SEC){
       changeTimerSec(ttsTimerBackup);
       const sel = document.getElementById('timer-select-import');
       if(sel) sel.value = ttsTimerBackup;
@@ -3608,7 +3705,7 @@ function onTTSImportToggle(checked){
   opts.style.display=checked?'flex':'none';
   if(checked){
     populateTTSVoices();
-    if(TIMER_SEC===0||TIMER_SEC>TTS_TIMER_SEC){
+    if(!TIMER_AUTO&&(TIMER_SEC===0||TIMER_SEC>TTS_TIMER_SEC)){
       ttsTimerBackup=TIMER_SEC;
       changeTimerSec(TTS_TIMER_SEC);
       const sel=document.getElementById('timer-select-import');
@@ -3618,7 +3715,7 @@ function onTTSImportToggle(checked){
     if(btn){btn.textContent='🔊';btn.classList.add('btn-tts-active');}
   } else {
     ttsStop();
-    if(ttsTimerBackup!==TIMER_SEC){changeTimerSec(ttsTimerBackup);const sel=document.getElementById('timer-select-import');if(sel)sel.value=ttsTimerBackup;}
+    if(!TIMER_AUTO&&ttsTimerBackup!==TIMER_SEC){changeTimerSec(ttsTimerBackup);const sel=document.getElementById('timer-select-import');if(sel)sel.value=ttsTimerBackup;}
     const btn=document.getElementById('btn-tts');
     if(btn){btn.textContent='🔇';btn.classList.remove('btn-tts-active');}
   }

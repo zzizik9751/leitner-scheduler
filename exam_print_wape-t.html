@@ -326,7 +326,8 @@ body{font-family:'맑은 고딕','Apple SD Gothic Neo','Malgun Gothic',Dotum,san
         <div>
           <div class="row"><label class="l">구성</label>
             <label><input type="checkbox" id="post-hint" checked onchange="genPost()"> 힌트</label>
-            <label><input type="checkbox" id="post-exp" checked onchange="genPost()"> 해설</label></div>
+            <label><input type="checkbox" id="post-exp" checked onchange="genPost()"> 해설</label>
+            <label title="문제·정답·해설을 복사하고 Claude.ai를 여는 버튼 (JS 사용)"><input type="checkbox" id="post-ai" checked onchange="genPost()"> ✦ AI 버튼</label></div>
           <div class="row"><label class="l">표시</label>
             <label><input type="checkbox" id="post-pts" onchange="genPost()"> 배점</label>
             <label><input type="checkbox" id="post-cls" onchange="genPost()"> 분류 코드</label>
@@ -916,10 +917,15 @@ const ZQ_CSS = String.raw`
 .zq-btn{border:1px solid #bbb;background:#f7f7f7;border-radius:6px;padding:6px 14px;font-size:14px;cursor:pointer;font-family:inherit;color:#222}
 .zq-btn:hover{background:#eee}
 .zq-btn.on{background:#1D9E75;border-color:#1D9E75;color:#fff}
+.zq-btn.zq-ai{background:#f0faf6;border-color:#c8eed8;color:#0F6E56;font-weight:600}
+.zq-btn.zq-ai:hover{background:#e0f4ea}
+.zq-btn.zq-ai.done{background:#1D9E75;border-color:#1D9E75;color:#fff}
+.zq-aibtns{display:none;margin:0 0 8px}
+.zq-aion .zq-aibtns{display:block}
 .zq-p{margin:6px 0 0;padding:10px 12px;border-radius:6px;font-size:15px;overflow-x:auto}
 .zq-js .zq-p{display:none}
 .zq-js .zq-p.show{display:block}
-.zq-lb{display:inline-block;margin-right:6px;font-size:12px;padding:0 6px;border-radius:4px;color:#fff;font-weight:700}
+.zq-lb{display:inline-block;margin:0 6px 4px 0;font-size:12px;padding:0 6px;border-radius:4px;color:#fff;font-weight:700}
 .zq-hint{background:#fff8e1}.zq-hint .zq-lb{background:#f0a500}
 .zq-ans{background:#e8f5f0}.zq-ans .zq-lb{background:#1D9E75}
 .zq-exp{background:#eef3fb}.zq-exp .zq-lb{background:#3b6fd4}
@@ -935,11 +941,68 @@ const ZQ_JS = String.raw`
 (function(){
 var W=document.querySelectorAll('.zq-wrap');
 function mj(el){ if(window.MathJax&&MathJax.typesetPromise&&!el.getAttribute('data-m')){ el.setAttribute('data-m','1'); MathJax.typesetPromise([el]).catch(function(){}); } }
+var AI_URL='https://claude.ai/new';
+function ptxt(el){
+  var c=el.cloneNode(true),n,i;
+  n=c.querySelectorAll('.zq-lb'); for(i=0;i<n.length;i++) n[i].parentNode.removeChild(n[i]);
+  n=c.querySelectorAll('img'); for(i=0;i<n.length;i++) n[i].parentNode.replaceChild(document.createTextNode(' [이미지 참조] '),n[i]);
+  n=c.querySelectorAll('br'); for(i=0;i<n.length;i++) n[i].parentNode.replaceChild(document.createTextNode('\n'),n[i]);
+  n=c.querySelectorAll('p,div,li,tr'); for(i=0;i<n.length;i++) n[i].appendChild(document.createTextNode('\n'));
+  return c.textContent.replace(/[ \t ]+/g,' ').replace(/ *\n */g,'\n').replace(/\n{2,}/g,'\n').trim();
+}
+function grab(card){
+  var o={}, k=['q','hint','ans','exp'], i, e;
+  for(i=0;i<k.length;i++){
+    e=k[i]==='q'?card.querySelector('.zq-q'):card.querySelector('[data-p="'+k[i]+'"],.zq-'+k[i]+'.zq-p');
+    o[k[i]]=e?ptxt(e):''; if(e&&e.querySelector('img')) o.img=true;
+  }
+  return o;
+}
+function mkPrompt(d){
+  var t='다음 문제를 이해하기 쉽게 해설해 주세요.\n\n';
+  if(d.img) t+='※ 이 문제에는 이미지가 포함되어 있습니다. Claude.ai에 이 텍스트를 붙여넣은 뒤 이미지를 직접 첨부해 주세요.\n\n';
+  t+='【문제】\n'+d.q+'\n\n';
+  if(d.hint) t+='【힌트】\n'+d.hint+'\n\n';
+  if(d.ans) t+='【정답】\n'+d.ans+'\n\n';
+  if(d.exp) t+='【해설】\n'+d.exp+'\n\n';
+  return t+'위 내용을 바탕으로 핵심 개념과 정답 이유를 설명해 주세요.';
+}
+function copyTxt(t,ok,fail){
+  function fb(){ try{ var x=document.createElement('textarea'); x.value=t; x.style.cssText='position:fixed;left:-9999px;top:0'; document.body.appendChild(x); x.select(); var r=document.execCommand('copy'); document.body.removeChild(x); if(r) ok(); else fail(); }catch(er){ fail(); } }
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(ok,fb); } else fb();
+}
+function aiModal(t){
+  var o=document.createElement('div');
+  o.style.cssText='position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
+  o.innerHTML='<div style="background:#fff;border-radius:12px;padding:16px;width:100%;max-width:520px;display:flex;flex-direction:column;gap:8px"><b style="color:#0F6E56;font-size:14px">아래 텍스트를 복사해 Claude.ai에 붙여넣으세요</b><textarea readonly style="min-height:200px;font-size:12px;line-height:1.6;padding:8px;border:1px solid #ddd;border-radius:6px"></textarea><div style="display:flex;gap:8px"><button type="button" class="zq-x" style="flex:1;padding:8px;border:1px solid #ccc;border-radius:6px;background:#f5f5f5;cursor:pointer">닫기</button><button type="button" class="zq-o" style="flex:1;padding:8px;border:0;border-radius:6px;background:#1D9E75;color:#fff;font-weight:700;cursor:pointer">Claude.ai 열기</button></div></div>';
+  var ta=o.querySelector('textarea'); ta.value=t;
+  o.querySelector('.zq-x').onclick=function(){ document.body.removeChild(o); };
+  o.querySelector('.zq-o').onclick=function(){ window.open(AI_URL,'_blank'); };
+  o.onclick=function(e){ if(e.target===o) document.body.removeChild(o); };
+  document.body.appendChild(o); ta.select();
+}
+function askAI(b){
+  var card=b; while(card&&!(card.classList&&card.classList.contains('zq-card'))) card=card.parentNode; if(!card) return;
+  var t=mkPrompt(card.__zq||grab(card));
+  copyTxt(t,function(){
+    var o=b.getAttribute('data-o'); if(o===null){ o=b.textContent; b.setAttribute('data-o',o); }
+    b.textContent='✓ 복사됨'; b.classList.add('done');
+    setTimeout(function(){ b.textContent=o; b.classList.remove('done'); },2500);
+    window.open(AI_URL,'_blank');
+  },function(){ aiModal(t); });
+}
 Array.prototype.forEach.call(W,function(w){
+  if(w.getAttribute('data-ai')==='1'){
+    w.classList.add('zq-aion');
+    Array.prototype.forEach.call(w.querySelectorAll('.zq-card'),function(c){ c.__zq=grab(c); });
+    w.addEventListener('click',function(e){
+      var b=e.target.closest?e.target.closest('.zq-ai'):null; if(b) askAI(b);
+    });
+  }
   if(w.getAttribute('data-zq')==='A'){
     w.classList.add('zq-js');
     w.addEventListener('click',function(e){
-      var b=e.target.closest?e.target.closest('.zq-btn'):null; if(!b) return;
+      var b=e.target.closest?e.target.closest('.zq-btn'):null; if(!b||b.classList.contains('zq-ai')) return;
       var card=b.parentNode.parentNode, p=card.querySelector('[data-p="'+b.getAttribute('data-t')+'"]'); if(!p) return;
       var on=p.classList.toggle('show'); b.classList.toggle('on',on); if(on) mj(p);
     });
@@ -985,7 +1048,6 @@ async function postField(html,opt){
 }
 function openPost(){
   if(!S.picks.length) return;
-  const t=$('post-title'); if(!t.value) t.value=`전기철도기사 실기 문제 ${S.picks.length}선`;
   showScreen('post'); genPost();
 }
 async function genPost(){
@@ -993,7 +1055,7 @@ async function genPost(){
   showLoading('포스팅 HTML 생성 중...');
   try{
     const opt={ style:$('post-style').value, img:$('post-img').value, maxW:parseInt($('post-maxw').value)||800,
-      hint:$('post-hint').checked, exp:$('post-exp').checked, pts:$('post-pts').checked, cls:$('post-cls').checked, brand:$('post-brand').checked };
+      hint:$('post-hint').checked, exp:$('post-exp').checked, ai:$('post-ai').checked, pts:$('post-pts').checked, cls:$('post-cls').checked, brand:$('post-brand').checked };
     const I=S.idx; let cards='', hasMath=false;
     for(let i=0;i<P.length;i++){
       const p=P[i], f=p.card.note.f;
@@ -1008,20 +1070,22 @@ async function genPost(){
       if(opt.cls) head+=`<span>${esc(p.card.clsRaw||p.card.cls)} ${esc(clsName(p.card))}</span>`;
       let inner=`<div class="zq-head">${head}</div><div class="zq-q">${q}</div>`;
       if(opt.style==='A'){
-        inner+=`<div class="zq-btns">${panels.map(x=>`<button type="button" class="zq-btn" data-t="${x[0]}">${x[1]}</button>`).join('')}</div>`;
-        inner+=panels.map(x=>`<div class="zq-p zq-${x[0]}" data-p="${x[0]}"><b class="zq-lb">${x[2]}</b>${x[3]}</div>`).join('');
+        inner+=`<div class="zq-btns">${panels.map(x=>`<button type="button" class="zq-btn" data-t="${x[0]}">${x[1]}</button>`).join('')+(opt.ai?'<button type="button" class="zq-btn zq-ai" title="문제·정답·해설을 복사하고 Claude.ai 열기">✦ AI</button>':'')}</div>`;
+        inner+=panels.map(x=>`<div class="zq-p zq-${x[0]}" data-p="${x[0]}"><b class="zq-lb">${x[2]}</b><br>${x[3]}</div>`).join('');
       } else {
-        inner+=panels.map(x=>`<details><summary>${x[1]}</summary><div class="zq-p zq-${x[0]}"><b class="zq-lb">${x[2]}</b>${x[3]}</div></details>`).join('');
+        if(opt.ai) inner+='<div class="zq-aibtns"><button type="button" class="zq-btn zq-ai" title="문제·정답·해설을 복사하고 Claude.ai 열기">✦ AI</button></div>';
+        inner+=panels.map(x=>`<details><summary>${x[1]}</summary><div class="zq-p zq-${x[0]}"><b class="zq-lb">${x[2]}</b><br>${x[3]}</div></details>`).join('');
       }
       cards+=`<div class="zq-card">${inner}</div>\n`;
     }
     const title=esc($('post-title').value.trim());
     const guide = opt.style==='A' ? '문제를 풀어 본 뒤 <b>힌트 · 정답 · 해설</b> 버튼을 눌러 확인하세요.' : '문제를 풀어 본 뒤 <b>힌트 · 정답 · 해설</b>을 눌러 펼쳐 확인하세요.';
-    const body=`<div class="zq-wrap" data-zq="${opt.style}">\n`+
+    const aiNote = opt.ai ? ' <b>✦ AI</b>는 문제·정답·해설을 복사하고 Claude.ai를 엽니다.' : '';
+    const body=`<div class="zq-wrap" data-zq="${opt.style}"${opt.ai?' data-ai="1"':''}>\n`+
       (title?`<div class="zq-title">${title}</div>\n`:'')+
-      `<div class="zq-meta">총 ${P.length}문항 · ${guide}</div>\n`+cards+
-      (opt.brand?`<div class="zq-brand">Created by zzizik, with Claude AI. / Thanks to HWJY Co., Ltd.</div>\n`:'')+`</div>`;
-    const needJs = opt.style==='A' || hasMath;
+      `<div class="zq-meta">총 ${P.length}문항 · ${guide}${aiNote}</div>\n`+cards+
+      (opt.brand?`<div class="zq-brand">Created by zzizik, with Claude AI.</div>\n`:'')+`</div>`;
+    const needJs = opt.style==='A' || hasMath || opt.ai;
     const js = ZQ_JS.replace('/*MATH*/',()=>hasMath?ZQ_MATHJS:'');
     postHtml='<!-- ===== 티스토리 HTML 모드: 여기부터 복사 ===== -->\n<style>'+ZQ_CSS+'</style>\n'+body+'\n'+
       (needJs?'<scr'+'ipt>'+js+'</scr'+'ipt>\n':'')+'<!-- ===== 여기까지 ===== -->';

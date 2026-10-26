@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!--CRV exam_print r2 20261026 h:824876c3 f:기출문제순,회차묶음,티스토리포스팅HTML,nid붙여넣기,주관식요약형,정답텍스트복구-->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -147,6 +148,19 @@ body{font-family:'맑은 고딕','Apple SD Gothic Neo','Malgun Gothic',Dotum,san
 .q-block:last-child{border-bottom:none;margin-bottom:0}
 .q-headline{display:flex;align-items:baseline;gap:5px;margin-bottom:3px}
 .q-num{font-weight:900;font-size:12px;color:#111}
+.q-subj{font-size:11px;color:#888}
+
+/* 티스토리 포스팅 화면 */
+#screen-post{background:#e4e8f0}
+.post-wrap{max-width:1000px;margin:0 auto;padding:20px 16px}
+.post-card{background:#fff;border-radius:12px;padding:22px 26px;margin-bottom:16px;box-shadow:0 2px 16px rgba(0,0,0,.1)}
+.post-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px}
+.post-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;font-size:13px}
+.post-row .l{font-weight:bold;color:#444;min-width:96px}
+.post-row select,.post-row input[type=text]{padding:6px 9px;border:1.5px solid #ccc;border-radius:6px;font-size:13px}
+.post-actions{display:flex;gap:10px;margin-top:8px;flex-wrap:wrap}
+@media(max-width:760px){.post-grid{grid-template-columns:1fr}}
+
 .q-freq{font-size:12px;color:#888;font-family:monospace}
 .q-front{margin:2px 0 6px;color:#111;word-break:keep-all;font-size:12px}
 .q-opts{display:flex;flex-direction:column;gap:2px;padding-left:2px;margin-bottom:8px}
@@ -342,6 +356,34 @@ body{font-family:'맑은 고딕','Apple SD Gothic Neo','Malgun Gothic',Dotum,san
     </div>
 
     <div class="setup-section">
+      <div class="section-title">📑 출제 순서</div>
+      <div class="doctype-grid" id="order-grid">
+        <label class="doctype-opt sel">
+          <input type="radio" name="order-mode" value="subject" checked onchange="onOrderChange()">
+          <div>
+            <div class="doctype-label">과목별 (기본)</div>
+            <div class="doctype-desc">전기철도 → 구조 → 전기자기 → 전력 과목 순으로 묶어서 출제</div>
+          </div>
+        </label>
+        <label class="doctype-opt">
+          <input type="radio" name="order-mode" value="exam" onchange="onOrderChange()">
+          <div>
+            <div class="doctype-label">기출문제순</div>
+            <div class="doctype-desc">출처/회차 필드 기준으로 회차별로 묶어 회차 순서대로 출제 (아래 과목 선택·출제 수는 그대로 적용, 문제마다 과목 표시)</div>
+          </div>
+        </label>
+      </div>
+      <div id="order-exam-opt" style="display:none;margin-top:10px;font-size:13px">
+        회차 정렬:
+        <select id="order-dir" style="padding:5px 8px;border:1.5px solid #ccc;border-radius:6px;font-size:13px">
+          <option value="asc">오래된 회차 → 최신 회차</option>
+          <option value="desc">최신 회차 → 오래된 회차</option>
+        </select>
+        <div id="order-info" style="margin-top:8px;font-size:12px;color:#888"></div>
+      </div>
+    </div>
+
+    <div class="setup-section">
       <div class="section-title">📝 폰트 선택</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <label style="display:flex;align-items:center;gap:8px;padding:12px;border:1.5px solid #ddd;border-radius:7px;cursor:pointer;transition:.15s;" onchange="updateFontPreview()">
@@ -401,6 +443,7 @@ body{font-family:'맑은 고딕','Apple SD Gothic Neo','Malgun Gothic',Dotum,san
 
     <div class="setup-actions">
       <button class="btn-secondary" onclick="showScreen('fieldmap')">← 이전</button>
+      <button class="btn-secondary" onclick="openPost()">📝 티스토리 포스팅용 HTML</button>
       <button class="btn-primary" onclick="generateDocument()">📄 문서 생성 →</button>
     </div>
   </div>
@@ -420,6 +463,54 @@ body{font-family:'맑은 고딕','Apple SD Gothic Neo','Malgun Gothic',Dotum,san
   <div id="measure-box" style="position:absolute;left:-9999px;top:0;visibility:hidden"></div>
 </div>
 
+<!-- ===== SCREEN 5: TISTORY POST ===== -->
+<div class="screen" id="screen-post">
+  <div class="preview-toolbar no-print">
+    <div class="tb-title">📝 티스토리 포스팅용 HTML</div>
+    <div class="tb-hint">티스토리 글쓰기 → <b>HTML 모드</b>로 전환 → 아래 코드를 붙여넣기. 옵션을 바꾸면 자동으로 다시 생성됩니다.</div>
+    <div class="tb-actions"><button class="tb-btn back" onclick="showScreen('setup')">← 설정으로</button></div>
+  </div>
+  <div class="post-wrap">
+    <div class="post-card">
+      <div class="section-title">포스팅 옵션</div>
+      <div class="post-grid">
+        <div>
+          <div class="post-row"><label class="l">글 제목(상단 표시)</label><input type="text" id="post-title" style="flex:1;min-width:200px" onchange="genPost()"></div>
+          <div class="post-row"><label class="l">방식</label>
+            <select id="post-style" onchange="genPost()"><option value="A" selected>A. 버튼 클릭 (힌트·정답·해설 토글, JS)</option><option value="B">B. 펼치기 (&lt;details&gt;, JS 없음)</option></select></div>
+          <div class="post-row"><label class="l">이미지</label>
+            <select id="post-img" onchange="genPost()"><option value="embed" selected>글에 내장 (압축 JPEG, base64)</option><option value="none">제외 ([이미지 생략] 표시)</option></select>
+            <select id="post-maxw" onchange="genPost()"><option value="600">최대폭 600px</option><option value="800" selected>최대폭 800px</option><option value="1000">최대폭 1000px</option></select></div>
+        </div>
+        <div>
+          <div class="post-row"><label class="l">구성</label>
+            <label><input type="checkbox" id="post-hint" checked onchange="genPost()"> 힌트</label>
+            <label><input type="checkbox" id="post-exp" checked onchange="genPost()"> 해설</label>
+            <label title="문제·정답·해설을 복사하고 Claude.ai를 여는 버튼 (JS 사용)"><input type="checkbox" id="post-ai" checked onchange="genPost()"> ✦ AI 버튼</label></div>
+          <div class="post-row"><label class="l">표시</label>
+            <label><input type="checkbox" id="post-subj" checked onchange="genPost()"> 과목</label>
+            <label><input type="checkbox" id="post-src" onchange="genPost()"> 출처/회차</label>
+            <label><input type="checkbox" id="post-freq" onchange="genPost()"> 빈도</label>
+            <label><input type="checkbox" id="post-brand" checked onchange="genPost()"> 제작 표기</label></div>
+        </div>
+      </div>
+      <div class="post-actions">
+        <button class="btn-primary" onclick="copyPost()">📋 코드 복사</button>
+        <button class="btn-secondary" onclick="downloadPost()">💾 .html 파일로 저장</button>
+        <span id="post-info" style="align-self:center;font-size:12.5px;color:#666"></span>
+      </div>
+    </div>
+    <div class="post-card">
+      <div class="section-title">생성된 HTML</div>
+      <textarea id="post-out" readonly style="width:100%;height:220px;font-family:Consolas,monospace;font-size:12px;border:1px solid #ccc;border-radius:6px;padding:8px" onclick="this.select()"></textarea>
+    </div>
+    <div class="post-card">
+      <div class="section-title">미리보기</div>
+      <iframe id="post-prev" style="width:100%;height:720px;border:1px solid #ddd;border-radius:6px;background:#fff"></iframe>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ================================================================
    인쇄용 문제집 생성기 (Anki .apkg → 2단 시험지/해설지 PDF)
@@ -432,7 +523,8 @@ const S = {
   deckGroups: [],
   selectedProblemIds: null,
   docSet: [],      // [{label, name, notes:[...]}]
-  docType: 'exam'
+  docType: 'exam',
+  subjOf: null     // 기출문제순일 때 노트ID → 과목명
 };
 
 let selectedFont = localStorage.getItem('examPrintFont') || 'noto-sans';
@@ -834,6 +926,7 @@ function renderSetup() {
     tbody.appendChild(tr);
   });
   updateTotal();
+  updateOrderInfo();
 }
 
 function updateTotal() {
@@ -856,6 +949,57 @@ function setAllMax() {
   updateTotal();
 }
 
+/* ---------- 출제 순서: 과목별 / 기출문제순(회차 순) ---------- */
+function getOrderMode() {
+  const el = document.querySelector('input[name="order-mode"]:checked');
+  return el ? el.value : 'subject';
+}
+function onOrderChange() {
+  document.getElementById('order-exam-opt').style.display = getOrderMode()==='exam' ? 'block' : 'none';
+  updateOrderInfo();
+}
+function roundRaw(n) {
+  if (S.fm.src < 0) return '';
+  return cleanText(n.fields[S.fm.src] || '').replace(/\s+/g, ' ').trim();
+}
+/* 회차 값 끝의 문항번호(예: "2023-1-15" → "2023-1")를 뗀 값 */
+function stripNum(s) {
+  return s.replace(/[\s\-_·.,\/]*\d+\s*번?\s*$/, '').trim() || s;
+}
+/* 숫자 덩어리 단위 자연정렬 (2022-1 < 2022-2 < 2023-1, 2회 < 10회) */
+function cmpRound(a, b) {
+  const ta = (a.match(/\d+/g) || []).map(Number), tb = (b.match(/\d+/g) || []).map(Number);
+  const len = Math.min(ta.length, tb.length);
+  for (let i = 0; i < len; i++) if (ta[i] !== tb[i]) return ta[i] - tb[i];
+  if (ta.length !== tb.length) return ta.length - tb.length;
+  return a.localeCompare(b, 'ko');
+}
+/* 값이 거의 문제마다 다르면(문항번호가 섞인 형식) 끝 숫자를 떼어 회차로 묶음 */
+function roundInfo(notes) {
+  const raw = notes.map(roundRaw);
+  const filled = raw.filter(Boolean);
+  const strip = filled.length >= 10 && new Set(filled).size / filled.length > 0.5;
+  const keys = raw.map(r => r ? (strip ? stripNum(r) : r) : '');
+  return { raw, keys, strip, empty: raw.length - filled.length, groups: new Set(keys.filter(Boolean)).size };
+}
+function updateOrderInfo() {
+  const box = document.getElementById('order-info');
+  if (!box) return;
+  if (getOrderMode() !== 'exam') { box.textContent = ''; return; }
+  if (S.fm.src < 0) {
+    box.style.color = '#c0392b';
+    box.textContent = '⚠️ 출처/회차 필드가 지정되지 않았습니다. 이전 화면(필드 매핑)에서 "출처/회차 필드"를 지정하세요.';
+    return;
+  }
+  const all = S.deckGroups.flatMap(g => g.notes);
+  const info = roundInfo(all);
+  const mid = document.getElementById('nt-select').value;
+  const fname = (S.dbData.modelMap[mid] && S.dbData.modelMap[mid].fields[S.fm.src]) || '';
+  box.style.color = info.groups ? '#145a14' : '#c0392b';
+  box.textContent = `회차 필드 [${S.fm.src}] ${fname} · 회차 ${info.groups}종 · 회차 값이 비어 있는 문제 ${info.empty}개(맨 뒤 "회차 미상")` +
+    (info.strip ? ' · 값에 문항번호가 섞인 것으로 보여 끝 숫자를 뗀 앞부분으로 묶음' : '');
+}
+
 /* ---------- 교시(과목) 순서 정의 ---------- */
 const SUBJECT_ORDER = ['전기철도', '구조', '전기자기', '전력'];
 function subjectOrder(name) {
@@ -866,12 +1010,8 @@ function subjectOrder(name) {
   return SUBJECT_ORDER.length;
 }
 
-/* ---------- 문서 생성 ---------- */
-function generateDocument() {
-  const docTypeEl = document.querySelector(docKind==='sa' ? 'input[name="doctype-sa"]:checked' : 'input[name="doctype-mc"]:checked');
-  if (!docTypeEl) { showModal('알림','시험지 유형을 선택하세요.',[{label:'확인',cls:'btn-primary'}]); return; }
-  S.docType = docTypeEl.value;
-
+/* ---------- 선택된 과목/출제 수/출제 순서 → S.docSet 구성 (인쇄용·티스토리용 공용) ---------- */
+function buildDocSet() {
   const subs=[];
   S.deckGroups.forEach((g,i)=>{
     const cb=document.getElementById(`dk-cb-${i}`);
@@ -882,10 +1022,47 @@ function generateDocument() {
     const sel=[...g.notes].slice(0,Math.min(cnt,g.notes.length));
     subs.push({ label:lbl, name:g.name, notes:sel });
   });
-  if (!subs.length) { showModal('알림','최소 하나의 과목을 선택하세요.',[{label:'확인',cls:'btn-primary'}]); return; }
+  if (!subs.length) { showModal('알림','최소 하나의 과목을 선택하세요.',[{label:'확인',cls:'btn-primary'}]); return false; }
 
   subs.sort((a,b)=>subjectOrder(a.name)-subjectOrder(b.name));
-  S.docSet = subs;
+
+  if (getOrderMode()==='exam') {
+    if (S.fm.src < 0) { showModal('알림','기출문제순은 출처/회차 필드가 필요합니다.\n이전 화면(필드 매핑)에서 "출처/회차 필드"를 지정하세요.',[{label:'확인',cls:'btn-primary'}]); return false; }
+    // 과목 선택·출제 수 적용 결과를 모아 회차별로 다시 묶음(회차 안에서는 과목순 → 덱 순서 유지)
+    S.subjOf = new Map();
+    const all = [];
+    subs.forEach(s=>s.notes.forEach(n=>{ S.subjOf.set(n.id, s.label); all.push(n); }));
+    const info = roundInfo(all);
+    const buckets = new Map();
+    all.forEach((n,i)=>{
+      const k = info.keys[i];
+      if (!buckets.has(k)) buckets.set(k, []);
+      buckets.get(k).push({ n, raw: info.raw[i] });
+    });
+    const dir = document.getElementById('order-dir').value;
+    let keys = [...buckets.keys()].filter(k=>k!=='').sort(cmpRound);
+    if (dir==='desc') keys.reverse();
+    const groups = keys.map(k=>{
+      const items = buckets.get(k);
+      if (info.strip) items.sort((a,b)=>cmpRound(a.raw, b.raw)); // 같은 회차 안에서는 문항번호 오름차순(안정 정렬)
+      return { label:k, name:k, notes:items.map(x=>x.n) };
+    });
+    if (buckets.has('')) groups.push({ label:'회차 미상', name:'회차 미상', notes:buckets.get('').map(x=>x.n) });
+    S.docSet = groups;
+  } else {
+    S.subjOf = null;
+    S.docSet = subs;
+  }
+  return true;
+}
+
+/* ---------- 문서 생성 ---------- */
+function generateDocument() {
+  const docTypeEl = document.querySelector(docKind==='sa' ? 'input[name="doctype-sa"]:checked' : 'input[name="doctype-mc"]:checked');
+  if (!docTypeEl) { showModal('알림','시험지 유형을 선택하세요.',[{label:'확인',cls:'btn-primary'}]); return; }
+  S.docType = docTypeEl.value;
+
+  if (!buildDocSet()) return;
 
   showScreen('preview');
   showLoading('페이지 나누는 중...');
@@ -920,13 +1097,15 @@ async function renderDocument() {
     'sa-qah':'주관식·요약형(문제+정답+힌트)', 'sa-qahe':'주관식·요약형(문제+정답+힌트+해설)',
     'sa-qa':'주관식·요약형(문제+정답)', 'sa-exp':'주관식·요약형(문제+해설)'
   };
-  const docLabel = `전기철도기사 필기 문제집 — ${typeLabelMap[S.docType]}`;
+  const docLabel = `전기철도기사 필기 문제집 — ${typeLabelMap[S.docType]}${S.subjOf?' · 기출문제순':''}`;
   document.getElementById('pv-title').textContent = `미리보기 — ${typeLabelMap[S.docType]}`;
 
   /* 1) 각 문제/과목헤더를 실제 DOM 요소로 생성 */
   function buildQNode(n, qNum) {
     const correct = parseAns(n.fields[fm.ans]);
     const freqTxt = fm.freq>=0 ? cleanText(n.fields[fm.freq]) : '';
+    const correctTxt = (correct>=1&&correct<=4) ? cleanText(n.fields[fm[['o1','o2','o3','o4'][correct-1]]]) : '';
+    const subjTxt = S.subjOf ? (S.subjOf.get(n.id)||'') : '';
 
     // 주관식·요약형은 보기(①②③④) 목록을 표시하지 않음
     const optsHtml = isSA ? '' : ['o1','o2','o3','o4'].map((k,i)=>{
@@ -955,7 +1134,7 @@ async function renderDocument() {
     const div = document.createElement('div');
     div.className = 'q-block';
     div.innerHTML = `
-      <div class="q-headline"><span class="q-num">${qNum}.</span>${freqTxt?`<span class="q-freq">[${freqTxt}]</span>`:''}</div>
+      <div class="q-headline"><span class="q-num">${qNum}.</span>${subjTxt?`<span class="q-subj">${subjTxt}</span>`:''}${freqTxt?`<span class="q-freq">[${freqTxt}]</span>`:''}</div>
       <div class="q-front">${cleanHtml(n.fields[fm.q]||'(문제 없음)')}</div>
       ${optsHtml?`<div class="q-opts">${optsHtml}</div>`:''}
       ${ansLine}${hintHtml}${expHtml}`;
@@ -1098,6 +1277,258 @@ function cleanText(html) {
   if (!html) return '';
   const d=document.createElement('div'); d.innerHTML=html;
   return (d.textContent||d.innerText||'').trim();
+}
+
+/* ================================================================
+   티스토리 포스팅용 HTML 생성 (S.docSet → 문제 / 힌트 / 정답 / 해설 토글 카드)
+   - exam_print_wape-t.html 의 포스팅 기능을 이식. 방식 A: 버튼 토글(JS), 방식 B: <details>
+================================================================ */
+const ZQ_CSS = String.raw`
+.zq-wrap{font-family:'Noto Sans KR','Malgun Gothic',sans-serif;max-width:760px;margin:20px auto;color:#222;line-height:1.7;font-size:15px}
+.zq-wrap *{box-sizing:border-box}
+.zq-title{font-size:20px;font-weight:800;color:#1a3263;margin:0 0 4px}
+.zq-meta{font-size:13px;color:#777;margin:0 0 16px}
+.zq-card{border:1px solid #d9d9d9;border-radius:10px;padding:16px 18px;margin:0 0 16px;background:#fff}
+.zq-head{margin:0 0 8px;font-size:13px;color:#666}
+.zq-no{display:inline-block;background:#1D9E75;color:#fff;border-radius:5px;padding:0 9px;margin-right:6px;font-size:14px;font-weight:700}
+.zq-pts{color:#b0362b;font-weight:700;margin-right:6px}
+.zq-q{font-size:16px;font-weight:500;margin:0 0 12px}
+.zq-q img,.zq-p img{max-width:100%;height:auto}
+.zq-btns{display:none;gap:6px;flex-wrap:wrap;margin:0 0 8px}
+.zq-js .zq-btns{display:flex}
+.zq-btn{border:1px solid #bbb;background:#f7f7f7;border-radius:6px;padding:6px 14px;font-size:14px;cursor:pointer;font-family:inherit;color:#222}
+.zq-btn:hover{background:#eee}
+.zq-btn.on{background:#1D9E75;border-color:#1D9E75;color:#fff}
+.zq-btn.zq-ai{background:#f0faf6;border-color:#c8eed8;color:#0F6E56;font-weight:600}
+.zq-btn.zq-ai:hover{background:#e0f4ea}
+.zq-btn.zq-ai.done{background:#1D9E75;border-color:#1D9E75;color:#fff}
+.zq-aibtns{display:none;margin:0 0 8px}
+.zq-aion .zq-aibtns{display:block}
+.zq-p{margin:6px 0 0;padding:10px 12px;border-radius:6px;font-size:15px;overflow-x:auto}
+.zq-js .zq-p{display:none}
+.zq-js .zq-p.show{display:block}
+.zq-lb{display:inline-block;margin:0 6px 4px 0;font-size:12px;padding:0 6px;border-radius:4px;color:#fff;font-weight:700}
+.zq-hint{background:#fff8e1}.zq-hint .zq-lb{background:#f0a500}
+.zq-ans{background:#e8f5f0}.zq-ans .zq-lb{background:#1D9E75}
+.zq-exp{background:#eef3fb}.zq-exp .zq-lb{background:#3b6fd4}
+.zq-card details{margin:6px 0 0}
+.zq-card summary{cursor:pointer;font-size:14px;padding:6px 12px;border:1px solid #bbb;border-radius:6px;background:#f7f7f7;display:inline-block;color:#222}
+.zq-card details[open] summary{background:#1D9E75;color:#fff;border-color:#1D9E75}
+.zq-js .zq-card details .zq-p,.zq-card details .zq-p{display:block}
+.zq-noimg{color:#999;font-size:13px}
+.zq-sec{font-size:15px;font-weight:800;color:#fff;background:#1a3263;border-radius:6px;padding:6px 12px;margin:22px 0 12px}
+.zq-sub{font-size:12px;color:#888;margin-right:6px}
+.zq-opts{margin:8px 0 0}
+.zq-opt{display:flex;gap:6px;font-size:15px;margin:2px 0}
+.zq-opt>span:first-child{flex-shrink:0}
+.zq-brand{font-size:12px;color:#999;text-align:right;margin-top:6px}
+@media(max-width:480px){.zq-btn{flex:1}.zq-card{padding:14px}}
+`;
+const ZQ_JS = String.raw`
+(function(){
+var W=document.querySelectorAll('.zq-wrap');
+function mj(el){ if(window.MathJax&&MathJax.typesetPromise&&!el.getAttribute('data-m')){ el.setAttribute('data-m','1'); MathJax.typesetPromise([el]).catch(function(){}); } }
+var AI_URL='https://claude.ai/new';
+function ptxt(el){
+  var c=el.cloneNode(true),n,i;
+  n=c.querySelectorAll('.zq-lb'); for(i=0;i<n.length;i++) n[i].parentNode.removeChild(n[i]);
+  n=c.querySelectorAll('img'); for(i=0;i<n.length;i++) n[i].parentNode.replaceChild(document.createTextNode(' [이미지 참조] '),n[i]);
+  n=c.querySelectorAll('br'); for(i=0;i<n.length;i++) n[i].parentNode.replaceChild(document.createTextNode('\n'),n[i]);
+  n=c.querySelectorAll('p,div,li,tr'); for(i=0;i<n.length;i++) n[i].appendChild(document.createTextNode('\n'));
+  return c.textContent.replace(/[ \t ]+/g,' ').replace(/ *\n */g,'\n').replace(/\n{2,}/g,'\n').trim();
+}
+function grab(card){
+  var o={}, k=['q','hint','ans','exp'], i, e;
+  for(i=0;i<k.length;i++){
+    e=k[i]==='q'?card.querySelector('.zq-q'):card.querySelector('[data-p="'+k[i]+'"],.zq-'+k[i]+'.zq-p');
+    o[k[i]]=e?ptxt(e):''; if(e&&e.querySelector('img')) o.img=true;
+  }
+  return o;
+}
+function mkPrompt(d){
+  var t='다음 문제를 이해하기 쉽게 해설해 주세요.\n\n';
+  if(d.img) t+='※ 이 문제에는 이미지가 포함되어 있습니다. Claude.ai에 이 텍스트를 붙여넣은 뒤 이미지를 직접 첨부해 주세요.\n\n';
+  t+='【문제】\n'+d.q+'\n\n';
+  if(d.hint) t+='【힌트】\n'+d.hint+'\n\n';
+  if(d.ans) t+='【정답】\n'+d.ans+'\n\n';
+  if(d.exp) t+='【해설】\n'+d.exp+'\n\n';
+  return t+'위 내용을 바탕으로 핵심 개념과 정답 이유를 설명해 주세요.';
+}
+function copyTxt(t,ok,fail){
+  function fb(){ try{ var x=document.createElement('textarea'); x.value=t; x.style.cssText='position:fixed;left:-9999px;top:0'; document.body.appendChild(x); x.select(); var r=document.execCommand('copy'); document.body.removeChild(x); if(r) ok(); else fail(); }catch(er){ fail(); } }
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(ok,fb); } else fb();
+}
+function aiModal(t){
+  var o=document.createElement('div');
+  o.style.cssText='position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
+  o.innerHTML='<div style="background:#fff;border-radius:12px;padding:16px;width:100%;max-width:520px;display:flex;flex-direction:column;gap:8px"><b style="color:#0F6E56;font-size:14px">아래 텍스트를 복사해 Claude.ai에 붙여넣으세요</b><textarea readonly style="min-height:200px;font-size:12px;line-height:1.6;padding:8px;border:1px solid #ddd;border-radius:6px"></textarea><div style="display:flex;gap:8px"><button type="button" class="zq-x" style="flex:1;padding:8px;border:1px solid #ccc;border-radius:6px;background:#f5f5f5;cursor:pointer">닫기</button><button type="button" class="zq-o" style="flex:1;padding:8px;border:0;border-radius:6px;background:#1D9E75;color:#fff;font-weight:700;cursor:pointer">Claude.ai 열기</button></div></div>';
+  var ta=o.querySelector('textarea'); ta.value=t;
+  o.querySelector('.zq-x').onclick=function(){ document.body.removeChild(o); };
+  o.querySelector('.zq-o').onclick=function(){ window.open(AI_URL,'_blank'); };
+  o.onclick=function(e){ if(e.target===o) document.body.removeChild(o); };
+  document.body.appendChild(o); ta.select();
+}
+function askAI(b){
+  var card=b; while(card&&!(card.classList&&card.classList.contains('zq-card'))) card=card.parentNode; if(!card) return;
+  var t=mkPrompt(card.__zq||grab(card));
+  copyTxt(t,function(){
+    var o=b.getAttribute('data-o'); if(o===null){ o=b.textContent; b.setAttribute('data-o',o); }
+    b.textContent='✓ 복사됨'; b.classList.add('done');
+    setTimeout(function(){ b.textContent=o; b.classList.remove('done'); },2500);
+    window.open(AI_URL,'_blank');
+  },function(){ aiModal(t); });
+}
+Array.prototype.forEach.call(W,function(w){
+  if(w.getAttribute('data-ai')==='1'){
+    w.classList.add('zq-aion');
+    Array.prototype.forEach.call(w.querySelectorAll('.zq-card'),function(c){ c.__zq=grab(c); });
+    w.addEventListener('click',function(e){
+      var b=e.target.closest?e.target.closest('.zq-ai'):null; if(b) askAI(b);
+    });
+  }
+  if(w.getAttribute('data-zq')==='A'){
+    w.classList.add('zq-js');
+    w.addEventListener('click',function(e){
+      var b=e.target.closest?e.target.closest('.zq-btn'):null; if(!b||b.classList.contains('zq-ai')) return;
+      var card=b.parentNode.parentNode, p=card.querySelector('[data-p="'+b.getAttribute('data-t')+'"]'); if(!p) return;
+      var on=p.classList.toggle('show'); b.classList.toggle('on',on); if(on) mj(p);
+    });
+  } else {
+    w.addEventListener('toggle',function(e){ var d=e.target; if(d.open){ var p=d.querySelector('.zq-p'); if(p) mj(p); } },true);
+  }
+});
+/*MATH*/
+})();
+`;
+const ZQ_MATHJS = String.raw`
+if(!window.MathJax){
+  window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']]},startup:{typeset:false}};
+  var s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js'; s.async=true;
+  s.onload=function(){ MathJax.startup.promise.then(function(){
+    Array.prototype.forEach.call(document.querySelectorAll('.zq-q,.zq-p.show,details[open] .zq-p'),mj); }); };
+  document.head.appendChild(s);
+}
+`;
+
+const $ = id => document.getElementById(id);
+function esc(t){ return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function hasContent(html){
+  if (!html) return false;
+  if (/<img\b/i.test(html)) return true;
+  return cleanText(html).length > 0;
+}
+
+let postHtml='', postToken=0;
+const imgCache=new Map();
+function loadImg(src){ return new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=rej; im.src=src; }); }
+async function shrinkImg(url,maxW){
+  const key=url+'|'+maxW; if(imgCache.has(key)) return imgCache.get(key);
+  const im=await loadImg(url); const sc=Math.min(1,maxW/(im.naturalWidth||maxW));
+  const w=Math.max(1,Math.round(im.naturalWidth*sc)), h=Math.max(1,Math.round(im.naturalHeight*sc));
+  const c=document.createElement('canvas'); c.width=w; c.height=h;
+  const g=c.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,w,h); g.drawImage(im,0,0,w,h);
+  const d=c.toDataURL('image/jpeg',0.82); imgCache.set(key,d); return d;
+}
+async function postField(html,opt){
+  if(!hasContent(html)) return '';
+  const d=document.createElement('div'); d.innerHTML=cleanHtml(html);
+  for(const im of [...d.querySelectorAll('img')]){
+    if(opt.img==='none'){ const s=document.createElement('span'); s.className='zq-noimg'; s.textContent='[이미지 생략]'; im.replaceWith(s); continue; }
+    const src=im.getAttribute('src')||'';
+    try{ if(/^blob:/.test(src)) im.setAttribute('src', await shrinkImg(src,opt.maxW)); }catch(e){}
+    im.removeAttribute('width'); im.removeAttribute('height');
+    im.setAttribute('style','max-width:100%;height:auto;display:block;margin:6px 0');
+  }
+  return d.innerHTML;
+}
+function openPost(){
+  readFm();
+  if (!buildDocSet()) return;
+  const t=$('post-title');
+  if (!t.value.trim()) t.value = '전기철도기사 필기 문제집' + (S.subjOf ? ' · 기출문제순' : '');
+  showScreen('post'); genPost();
+}
+async function genPost(){
+  if(!S.docSet.length) return; const tk=++postToken;
+  showLoading('포스팅 HTML 생성 중...');
+  try{
+    const fm=S.fm, isSA = docKind==='sa', FILLED=['❶','❷','❸','❹'], CIRCLES=['①','②','③','④'];
+    const OK=['o1','o2','o3','o4'];
+    const opt={ style:$('post-style').value, img:$('post-img').value, maxW:parseInt($('post-maxw').value)||800,
+      hint:$('post-hint').checked, exp:$('post-exp').checked, ai:$('post-ai').checked,
+      subj:$('post-subj').checked, src:$('post-src').checked, freq:$('post-freq').checked, brand:$('post-brand').checked };
+    let cards='', hasMath=false, qNum=0;
+    for(const sub of S.docSet){
+      const startNum=qNum+1;
+      cards+=`<div class="zq-sec">${esc(sub.label)} (${sub.notes.length}문제, ${startNum}~${startNum+sub.notes.length-1}번)</div>\n`;
+      for(const n of sub.notes){
+        qNum++;
+        const f=n.fields;
+        const q=await postField(f[fm.q],opt);
+        let optsHtml='', ansHtml='', math=q;
+        if(isSA){
+          ansHtml=await postField(f[fm.ans],opt);
+        } else {
+          const correct=parseAns(f[fm.ans]);
+          let rows='';
+          for(let k=0;k<4;k++){
+            const ot=await postField(f[fm[OK[k]]],opt);
+            math+=ot;
+            rows+=`<div class="zq-opt"><span>${CIRCLES[k]}</span><span>${ot}</span></div>`;
+          }
+          optsHtml=`<div class="zq-opts">${rows}</div>`;
+          if(correct>=1&&correct<=4) ansHtml=`${FILLED[correct-1]} `+await postField(f[fm[OK[correct-1]]],opt);
+          else ansHtml='?';
+        }
+        const h=(opt.hint&&fm.hint>=0)?await postField(f[fm.hint],opt):'';
+        const e=(opt.exp&&fm.exp>=0)?await postField(f[fm.exp],opt):'';
+        if(tk!==postToken) return;
+        if(/\\\(|\\\[/.test(math+ansHtml+h+e)) hasMath=true;
+        const panels=[['hint','💡 힌트','힌트',h],['ans','✅ 정답','정답',ansHtml],['exp','📖 해설','해설',e]].filter(x=>x[3]);
+        let head=`<span class="zq-no">${qNum}</span>`;
+        if(opt.subj && S.subjOf) head+=`<span class="zq-sub">${esc(S.subjOf.get(n.id)||'')}</span>`;
+        if(opt.src && fm.src>=0){ const sv=cleanText(f[fm.src]||''); if(sv) head+=`<span class="zq-sub">${esc(sv)}</span>`; }
+        if(opt.freq && fm.freq>=0){ const fv=cleanText(f[fm.freq]||''); if(fv) head+=`<span class="zq-sub">[${esc(fv)}]</span>`; }
+        let inner=`<div class="zq-head">${head}</div><div class="zq-q">${q}</div>${optsHtml}`;
+        if(opt.style==='A'){
+          inner+=`<div class="zq-btns">${panels.map(x=>`<button type="button" class="zq-btn" data-t="${x[0]}">${x[1]}</button>`).join('')+(opt.ai?'<button type="button" class="zq-btn zq-ai" title="문제·정답·해설을 복사하고 Claude.ai 열기">✦ AI</button>':'')}</div>`;
+          inner+=panels.map(x=>`<div class="zq-p zq-${x[0]}" data-p="${x[0]}"><b class="zq-lb">${x[2]}</b><br>${x[3]}</div>`).join('');
+        } else {
+          if(opt.ai) inner+='<div class="zq-aibtns"><button type="button" class="zq-btn zq-ai" title="문제·정답·해설을 복사하고 Claude.ai 열기">✦ AI</button></div>';
+          inner+=panels.map(x=>`<details><summary>${x[1]}</summary><div class="zq-p zq-${x[0]}"><b class="zq-lb">${x[2]}</b><br>${x[3]}</div></details>`).join('');
+        }
+        cards+=`<div class="zq-card">${inner}</div>\n`;
+      }
+    }
+    const title=esc($('post-title').value.trim());
+    const guide = opt.style==='A' ? '문제를 풀어 본 뒤 <b>힌트 · 정답 · 해설</b> 버튼을 눌러 확인하세요.' : '문제를 풀어 본 뒤 <b>힌트 · 정답 · 해설</b>을 눌러 펼쳐 확인하세요.';
+    const aiNote = opt.ai ? ' <b>✦ AI</b>는 문제·정답·해설을 복사하고 Claude.ai를 엽니다.' : '';
+    const body=`<div class="zq-wrap" data-zq="${opt.style}"${opt.ai?' data-ai="1"':''}>\n`+
+      (title?`<div class="zq-title">${title}</div>\n`:'')+
+      `<div class="zq-meta">총 ${qNum}문항 · ${guide}${aiNote}</div>\n`+cards+
+      (opt.brand?`<div class="zq-brand">Created by zzizik, with Claude AI.</div>\n`:'')+`</div>`;
+    const needJs = opt.style==='A' || hasMath || opt.ai;
+    const js = ZQ_JS.replace('/*MATH*/',()=>hasMath?ZQ_MATHJS:'');
+    postHtml='<!-- ===== 티스토리 HTML 모드: 여기부터 복사 ===== -->\n<style>'+ZQ_CSS+'</style>\n'+body+'\n'+
+      (needJs?'<scr'+'ipt>'+js+'</scr'+'ipt>\n':'')+'<!-- ===== 여기까지 ===== -->';
+    $('post-out').value=postHtml;
+    const kb=Math.round(new Blob([postHtml]).size/1024);
+    $('post-info').innerHTML=`${qNum}문항 · ${kb.toLocaleString()} KB`+(kb>1500?' <span style="color:#c62828">⚠ 용량이 큽니다 — 이미지 최대폭을 줄이거나 이미지 제외를 고려하세요</span>':'')+(hasMath?' · 수식(MathJax) 포함':'');
+    $('post-prev').srcdoc='<!doctype html><meta charset="utf-8"><body style="margin:12px;font-family:sans-serif">'+postHtml.replace(/<\/body>/gi,'');
+  }catch(err){ console.error(err); showModal('생성 오류',err.message||String(err),[{label:'확인',cls:'btn-primary'}]); }
+  finally{ if(tk===postToken) hideLoading(); }
+}
+async function copyPost(){
+  if(!postHtml) return;
+  try{ await navigator.clipboard.writeText(postHtml); }
+  catch(e){ const t=$('post-out'); t.select(); document.execCommand('copy'); }
+  showModal('복사 완료','HTML 코드가 클립보드에 복사되었습니다.\n티스토리 글쓰기에서 HTML 모드로 전환한 뒤 붙여넣으세요.',[{label:'확인',cls:'btn-primary'}]);
+}
+function downloadPost(){
+  if(!postHtml) return;
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([postHtml],{type:'text/html'}));
+  const d=new Date(), z=x=>String(x).padStart(2,'0');
+  a.download=`tistory_post_${d.getFullYear()}${z(d.getMonth()+1)}${z(d.getDate())}.html`; a.click();
 }
 
 /* ---------- INIT ---------- */

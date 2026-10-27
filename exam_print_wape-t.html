@@ -127,6 +127,9 @@ body{font-family:'맑은 고딕','Apple SD Gothic Neo','Malgun Gothic',Dotum,san
 .ans-space{margin-top:6px;border:1px solid #bbb;border-radius:3px;background-image:repeating-linear-gradient(to bottom,transparent 0,transparent 7.4mm,#e2e2e2 7.4mm,#e2e2e2 7.7mm)}
 .ans-line{margin-top:4px;padding:6px 9px;border:1.5px solid #c0392b;border-radius:4px;color:#c0392b;font-size:12px;line-height:1.55}
 .ans-line .lb{font-weight:bold;margin-right:4px}
+.ans-space.work{position:relative;border:none;border-radius:0;margin-top:8px;background-image:repeating-linear-gradient(to bottom,transparent 0,transparent calc(9mm - 0.35mm),#555 calc(9mm - 0.35mm),#555 9mm)}
+.ans-space .wlab{position:absolute;left:2px;top:3mm;font-size:12.5px;font-weight:bold;color:#222}
+.ans-final{height:9mm;display:flex;align-items:flex-end;padding:0 2px 1.2mm;font-size:12.5px;font-weight:bold;color:#222;border-bottom:.35mm solid #555;break-inside:avoid}
 .hint-box,.exp-box{margin-top:6px;padding:6px 9px;border-radius:5px;font-size:11.5px;line-height:1.55;overflow:hidden}
 .hint-box{border:1.3px solid #e6b800;color:#6b5600}
 .exp-box{border:1.3px solid #7fb3f0;color:#1a3a63}
@@ -850,7 +853,12 @@ async function buildPages(kind){
     let body=`<div class="q-front">${cleanHtml(f[I.q])}</div>`;
     if(kind==='exam'){
       const h=Math.round((ANS_SPACE_MM[p.card.type]||20)*spaceScale);
-      if(h>0) body+=`<div class="ans-space" style="height:${h}mm"></div>`;
+      if(h>0){
+        if(p.card.type==='계산형'){
+          const rows=Math.max(Math.floor((h-9)/9),2); // 풀이 줄 수(9mm) + 정답 1줄(9mm)
+          body+=`<div class="ans-space work" style="height:${rows*9}mm"><span class="wlab">풀이 :</span></div><div class="ans-final">답 :</div>`;
+        } else body+=`<div class="ans-space" style="height:${h}mm"></div>`;
+      }
     } else {
       body+=`<div class="ans-line"><span class="lb">정답</span>${cleanHtml(f[I.ans])}</div>`;
       if(showHint && I.hint>=0 && hasContent(f[I.hint])) body+=`<div class="hint-box">${cleanHtml(f[I.hint])}</div>`;

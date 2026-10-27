@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!--CRV exam_print r2 20261026 h:824876c3 f:기출문제순,회차묶음,티스토리포스팅HTML,nid붙여넣기,주관식요약형,정답텍스트복구-->
+<!--CRV exam_print r5 20261027 h:e04b5c5b f:기출문제순,회차묶음,티스토리포스팅HTML,nid붙여넣기,주관식요약형,정답텍스트복구,주관식시험용답란,계산형풀이칸-->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -182,6 +182,15 @@ body{font-family:'맑은 고딕','Apple SD Gothic Neo','Malgun Gothic',Dotum,san
 .font-malgun{font-family:'맑은 고딕','Malgun Gothic',sans-serif !important}
 .font-noto-mono{font-family:'Noto Sans Mono KR',monospace !important}
 
+/* 주관식 시험용: 답란(괘선/상자) */
+.ans-space{margin:8px 0 2px;break-inside:avoid}
+.ans-space .ans-line{border-bottom:1px solid #8a8a8a;display:flex;align-items:flex-end}
+.ans-space .ans-lab{font-size:10.5px;color:#888;padding:0 0 1px 2px}
+.ans-space.boxed{border:1px solid #8a8a8a;border-radius:3px;position:relative}
+.ans-space.boxed .ans-lab{position:absolute;left:5px;top:2px}
+.ans-space.work{margin-bottom:0}
+.ans-final{border-bottom:1px solid #8a8a8a;display:flex;align-items:flex-end;break-inside:avoid}
+.ans-final .ans-lab{font-size:10.5px;color:#888;padding:0 0 1px 2px}
 .fm-row.mc-only.hidden{display:none}
 @page{size:A4;margin:0}
 @media print{
@@ -325,7 +334,14 @@ body{font-family:'맑은 고딕','Apple SD Gothic Neo','Malgun Gothic',Dotum,san
 
       <div class="doctype-grid" id="doctype-grid-sa" style="display:none">
         <label class="doctype-opt sel">
-          <input type="radio" name="doctype-sa" value="sa-qah" checked>
+          <input type="radio" name="doctype-sa" value="sa-exam" checked>
+          <div>
+            <div class="doctype-label">시험용 — 문제 + 답란(빈 공간)</div>
+            <div class="doctype-desc">문제만 표시하고, 정답 길이에 맞춰 손으로 답을 쓸 수 있는 빈 공간을 둡니다 (모의고사용)</div>
+          </div>
+        </label>
+        <label class="doctype-opt">
+          <input type="radio" name="doctype-sa" value="sa-qah">
           <div>
             <div class="doctype-label">문제 + 정답 + 힌트</div>
             <div class="doctype-desc">보기(①②③④) 없이 문제·정답·힌트만 표시 (요약집용)</div>
@@ -352,6 +368,33 @@ body{font-family:'맑은 고딕','Apple SD Gothic Neo','Malgun Gothic',Dotum,san
             <div class="doctype-desc">정답 표시 없이 문제와 해설만 표시 (개념 복습용)</div>
           </div>
         </label>
+      </div>
+      <div id="sa-exam-opt" style="display:none;margin-top:12px;padding:12px 14px;border:1.5px solid #dee3f0;border-radius:8px;background:#f7f9ff;font-size:13px;line-height:2.1">
+        <b>✍️ 답란 설정</b> <span style="font-size:11.5px;color:#888">(정답 필드의 글자 수·줄 수·이미지를 보고 필요한 공간을 자동 계산합니다)</span><br>
+        답란 크기:
+        <select id="sa-ratio" style="padding:4px 8px;border:1.5px solid #ccc;border-radius:6px;font-size:13px">
+          <option value="0.8">작게 (정답 크기의 약 1배)</option>
+          <option value="1" selected>보통 (손글씨 고려)</option>
+          <option value="1.5">넉넉하게</option>
+          <option value="2">아주 넉넉하게</option>
+        </select>
+        &nbsp; 줄 간격:
+        <select id="sa-lh" style="padding:4px 8px;border:1.5px solid #ccc;border-radius:6px;font-size:13px">
+          <option value="7">7mm</option><option value="8" selected>8mm</option><option value="9">9mm</option><option value="10">10mm</option>
+        </select><br>
+        최소 <input type="number" id="sa-min" value="2" min="1" max="30" style="width:56px;padding:4px 6px;border:1.5px solid #ccc;border-radius:6px"> 줄 ~
+        최대 <input type="number" id="sa-max" value="14" min="1" max="40" style="width:56px;padding:4px 6px;border:1.5px solid #ccc;border-radius:6px"> 줄
+        &nbsp; 모양:
+        <label><input type="radio" name="sa-shape" value="ruled" checked> 줄(밑줄)</label>
+        <label><input type="radio" name="sa-shape" value="boxed"> 빈 상자</label><br>
+        계산형 문제:
+        <select id="sa-calc" style="padding:4px 8px;border:1.5px solid #ccc;border-radius:6px;font-size:13px">
+          <option value="auto" selected>자동 판별 → 풀이 칸 + 맨 아래 답 한 칸</option>
+          <option value="all">모든 문제에 풀이 칸 + 답 한 칸</option>
+          <option value="off">쓰지 않음 (답란만)</option>
+        </select>
+        &nbsp; 풀이 칸 최소 <input type="number" id="sa-work" value="8" min="3" max="30" style="width:56px;padding:4px 6px;border:1.5px solid #ccc;border-radius:6px"> 줄
+        <span style="font-size:11.5px;color:#888">(해설 분량에 맞춰 늘어나며 최대 18줄)</span>
       </div>
     </div>
 
@@ -804,6 +847,13 @@ function updatePreview() {
     </div>`).join('');
 }
 
+function onDocTypeChange() {
+  const el = document.querySelector('input[name="doctype-sa"]:checked');
+  const box = document.getElementById('sa-exam-opt');
+  if (box) box.style.display = (docKind==='sa' && el && el.value==='sa-exam') ? 'block' : 'none';
+}
+document.addEventListener('change', e => { if (e.target && e.target.name==='doctype-sa') onDocTypeChange(); });
+
 let docKind = 'mc'; // 'mc'(객관식 시험지) | 'sa'(주관식·요약형)
 
 function switchDocKind(kind) {
@@ -818,6 +868,7 @@ function switchDocKind(kind) {
   const kb=document.getElementById('kind-badge');
   if (kb) kb.textContent = kind==='sa' ? '· 주관식 (필드 매핑에서 선택됨)' : '· 객관식 (필드 매핑에서 선택됨)';
   if (S.dbData) { autoDetect(document.getElementById('nt-select').value); populateSelectors(document.getElementById('nt-select').value); updatePreview(); }
+  onDocTypeChange();
 }
 
 /* ---------- 문제 세트(nid 목록) 지정: 파일 / 붙여넣기 ---------- */
@@ -1077,6 +1128,73 @@ function generateDocument() {
   });
 }
 
+/* ---------- 주관식 시험용: 정답 크기 → 답란 줄 수 계산 ----------
+   정답 텍스트의 가로 길이(한글=1, 영문·숫자≈0.55, 공백≈0.4)를 한 줄 용량으로 나눠 줄 수를 구하고,
+   줄바꿈/목록 항목은 각각 별도 줄로 계산. 손글씨가 인쇄 글씨보다 크므로 보정계수(1.3)와 사용자 배율을 곱함. */
+const SA_LINE_CAP = 27;      // 12px 글씨 기준 컬럼(88.5mm) 한 줄에 들어가는 전각 글자 수
+const SA_HAND_FACTOR = 1.3;  // 손글씨 크기 보정
+function ansLineCount(html, ratio, minL, maxL) {
+  let t = (html || '')
+    .replace(/<img[^>]*>/gi, '\n[IMG]\n')
+    .replace(/<\/(p|div|li|tr)>|<br\s*\/?>/gi, '\n');
+  const d = document.createElement('div'); d.innerHTML = t;
+  t = (d.textContent || '').replace(/\\[()\[\]]/g, '');
+  let lines = 0, hasImg = false;
+  t.split('\n').forEach(seg => {
+    seg = seg.trim();
+    if (!seg) return;
+    if (seg === '[IMG]') { hasImg = true; return; }
+    let w = 0;
+    for (const ch of seg) {
+      if (/[\u1100-\u11FF\u3130-\u318F\uAC00-\uD7AF\u3400-\u9FFF\uFF00-\uFFEF\u2460-\u24FF]/.test(ch)) w += 1;
+      else if (ch === ' ') w += 0.4;
+      else w += 0.55;
+    }
+    lines += Math.max(1, Math.ceil(w * SA_HAND_FACTOR * ratio / SA_LINE_CAP));
+  });
+  if (hasImg) lines += 4;
+  return Math.max(minL, Math.min(maxL, lines));
+}
+/* 계산형 판별: 문제에 계산 요구 표현이 있고 정답에 숫자가 있거나, 정답이 수식·수치 위주인 경우 */
+function isCalcProblem(n) {
+  const fm = S.fm;
+  const q = cleanText(n.fields[fm.q] || ''), a = cleanText(n.fields[fm.ans] || '');
+  if (!/\d/.test(a)) return false;
+  const kw = /계산|산출|산정|구하시오|구하라|구하여라|구하여|얼마|값은|값을|몇\s*[\[\(%㎾㎸㎿㎐㎃㎷㎜㎝㎡㎥VAWΩ°]/.test(q);
+  const mathCh = (a.match(/[0-9.,+\-×÷=\/^∙·%°\s]/g) || []).length;
+  const numeric = a.length > 0 && mathCh / a.length >= 0.5;
+  return kw || numeric || /=/.test(a);
+}
+function buildAnsSpace(n) {
+  const fm = S.fm;
+  const ansHtml = n.fields[fm.ans];
+  const ratio = parseFloat(document.getElementById('sa-ratio').value) || 1;
+  const lh = parseFloat(document.getElementById('sa-lh').value) || 8;
+  const minL = Math.max(1, parseInt(document.getElementById('sa-min').value) || 2);
+  const maxL = Math.max(minL, parseInt(document.getElementById('sa-max').value) || 14);
+  const boxed = (document.querySelector('input[name="sa-shape"]:checked') || {}).value === 'boxed';
+  const calcMode = document.getElementById('sa-calc').value;
+  const calc = calcMode === 'all' || (calcMode === 'auto' && isCalcProblem(n));
+  const lines = (cnt, label) => {
+    let h = '';
+    for (let i = 0; i < cnt; i++) h += `<div class="ans-line" style="height:${lh}mm">${i===0?`<span class="ans-lab">${label}</span>`:''}</div>`;
+    return h;
+  };
+  if (calc) {
+    // 풀이 칸(해설 분량 기준) + 맨 아래 답 한 칸
+    const minW = Math.max(3, parseInt(document.getElementById('sa-work').value) || 8);
+    const expHtml = fm.exp >= 0 ? (n.fields[fm.exp] || '') : '';
+    const wn = expHtml ? ansLineCount(expHtml, ratio, minW, 18) : minW;
+    const work = boxed
+      ? `<div class="ans-space boxed work" style="height:${wn*lh}mm"><span class="ans-lab">풀이</span></div>`
+      : `<div class="ans-space work">${lines(wn, '풀이 :')}</div>`;
+    return work + `<div class="ans-final" style="height:${lh}mm"><span class="ans-lab">답 :</span></div>`;
+  }
+  const cnt = ansLineCount(ansHtml, ratio, minL, maxL);
+  if (boxed) return `<div class="ans-space boxed" style="height:${cnt*lh}mm"><span class="ans-lab">답</span></div>`;
+  return `<div class="ans-space">${lines(cnt, '답 :')}</div>`;
+}
+
 /* ---------- 실측 기반 A4 페이지 나누기 ----------
    전략: 문제 하나하나를 실제 DOM 요소로 만들어 숨김 측정용 컨테이너에 넣고
    MathJax 렌더링까지 끝낸 뒤 실제 높이를 측정 → 2단 컬럼에 순서대로 채워 넣다가
@@ -1088,14 +1206,16 @@ async function renderDocument() {
   const CIRCLES=['①','②','③','④'];
   const FILLED=['❶','❷','❸','❹'];
   const isSA = S.docType.startsWith('sa-'); // 주관식·요약형: 보기(①②③④) 없이 문제+정답/힌트/해설만 표시
-  const showAnswer = isSA ? (S.docType !== 'sa-exp') : (S.docType !== 'exam');
+  const showAnswer = isSA ? (S.docType !== 'sa-exp' && S.docType !== 'sa-exam') : (S.docType !== 'exam');
+  const isSAExam = S.docType === 'sa-exam'; // 주관식 시험용: 정답 대신 답란(빈 공간) 표시
   const showHint = S.docType==='hint' || S.docType==='hintexp' || S.docType==='sa-qah' || S.docType==='sa-qahe';
   const showExp = S.docType==='exp' || S.docType==='hintexp' || S.docType==='sa-qahe' || S.docType==='sa-exp';
 
   const typeLabelMap = {
     exam:'시험용', hint:'해설용(힌트)', exp:'해설용(해설)', hintexp:'해설용(힌트+해설)',
     'sa-qah':'주관식·요약형(문제+정답+힌트)', 'sa-qahe':'주관식·요약형(문제+정답+힌트+해설)',
-    'sa-qa':'주관식·요약형(문제+정답)', 'sa-exp':'주관식·요약형(문제+해설)'
+    'sa-qa':'주관식·요약형(문제+정답)', 'sa-exp':'주관식·요약형(문제+해설)',
+    'sa-exam':'주관식 시험용(문제+답란)'
   };
   const docLabel = `전기철도기사 필기 문제집 — ${typeLabelMap[S.docType]}${S.subjOf?' · 기출문제순':''}`;
   document.getElementById('pv-title').textContent = `미리보기 — ${typeLabelMap[S.docType]}`;
@@ -1116,6 +1236,7 @@ async function renderDocument() {
       return `<div class="q-opt${isCorrect?' correct':''}"><span class="qc">${circ}</span><span>${cleanHtml(txt)}</span></div>`;
     }).join('');
 
+    const ansSpaceHtml = isSAExam ? buildAnsSpace(n) : '';
     let ansLine = '';
     if (showAnswer) {
       ansLine = isSA
@@ -1137,7 +1258,7 @@ async function renderDocument() {
       <div class="q-headline"><span class="q-num">${qNum}.</span>${subjTxt?`<span class="q-subj">${subjTxt}</span>`:''}${freqTxt?`<span class="q-freq">[${freqTxt}]</span>`:''}</div>
       <div class="q-front">${cleanHtml(n.fields[fm.q]||'(문제 없음)')}</div>
       ${optsHtml?`<div class="q-opts">${optsHtml}</div>`:''}
-      ${ansLine}${hintHtml}${expHtml}`;
+      ${ansSpaceHtml}${ansLine}${hintHtml}${expHtml}`;
     return div;
   }
   function buildHeaderNode(text) {

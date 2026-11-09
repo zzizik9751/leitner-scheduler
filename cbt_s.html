@@ -313,6 +313,8 @@ body{font-family:'맑은 고딕','Apple SD Gothic Neo','Malgun Gothic',Dotum,san
       <div class="fm-row"><label>✅ 정답 필드 <span style="font-weight:normal;color:#aaa">(1~4 숫자)</span></label><select id="fm-ans"></select></div>
       <div class="fm-row"><label>💡 해설 필드 <span style="font-weight:normal;color:#aaa">(선택)</span></label><select id="fm-exp"></select></div>
       <div class="fm-row"><label>📚 과목 필드 <span style="font-weight:normal;color:#e05">(★ 자동분류 핵심)</span></label><select id="fm-subj"></select></div>
+      <div class="fm-row"><label>🔁 빈도 필드 <span style="font-weight:normal;color:#aaa">(중복문제 판별, 선택)</span></label><select id="fm-freq"></select></div>
+      <div class="fm-row"><label>🏷️ 분류 필드 <span style="font-weight:normal;color:#aaa">(분류코드 분산, 선택)</span></label><select id="fm-cls"></select></div>
       <div class="fm-row"><label>📅 출처 필드 <span style="font-weight:normal;color:#aaa">(연도-회차, 선택)</span></label><select id="fm-src"></select></div>
     </div>
     <div class="fm-preview">
@@ -358,9 +360,19 @@ body{font-family:'맑은 고딕','Apple SD Gothic Neo','Malgun Gothic',Dotum,san
       <div class="total-count" id="total-count">총 출제 예정: 0문제</div>
     </div>
     <div class="setup-section">
+      <div class="section-title">출제 옵션</div>
+      <label style="display:block;margin:6px 0"><input type="checkbox" id="qp-dedupe" onchange="qpSave()"> 중복 문제 제외 (같은 문제가 회차만 달리 반복된 경우 1개만 출제)</label>
+      <label style="display:block;margin:6px 0"><input type="checkbox" id="qp-spread" onchange="qpSave()"> 분류코드 분산 (같은 분류 문제가 몰리지 않게)</label>
+      <label style="display:block;margin:6px 0"><input type="checkbox" id="qp-history" onchange="qpSave()"> 이미 출제한 문제 제외 (모의고사 간 이력)
+        <button class="btn-secondary" style="margin-left:8px;padding:2px 8px;font-size:12px" onclick="qpResetHistory()">이력 초기화</button></label>
+      <div id="qp-info" style="font-size:12px;color:#666;margin-top:6px"></div>
+    </div>
+    <div class="setup-section">
       <div class="section-title">시험 시간</div>
+      <div class="setup-field"><label>시험 종류 (과목 순서·과목당 시간)</label>
+        <select id="exam-preset" onchange="setPreset(this.value)"><option value="rail">전기철도기사 (20분/과목)</option><option value="safe">건설안전기사 (30분/과목)</option></select></div>
       <div class="setup-field">
-        <label>제한 시간 (분) — 과목당 20분 자동</label>
+        <label id="time-label">제한 시간 (분) — 과목당 20분 자동</label>
         <input type="number" id="time-limit" value="20" readonly style="background:#f2f4f8;color:#444;cursor:not-allowed">
         <div id="time-note" style="font-size:12px;color:#888;margin-top:6px">과목당 20분 × 1과목 = 20분</div>
       </div>
@@ -544,7 +556,7 @@ body{font-family:'맑은 고딕','Apple SD Gothic Neo','Malgun Gothic',Dotum,san
 const S = {
   dbData: null,   // { notes, deckMap, modelMap }
   imgMap: {},     // { 파일명: blobURL }
-  fm: { q:0, o1:1, o2:2, o3:3, o4:4, ans:5, exp:6, subj:7, src:8, hint:9 },
+  fm: { q:0, o1:1, o2:2, o3:3, o4:4, ans:5, exp:6, subj:7, src:8, hint:9, freq:-1, cls:-1 },
   deckGroups: [], // [{id,name,notes:[]}]
   selectedProblemIds: null,  // 선택된 문제 ID 배열 (JSON 로드 시)
   exam: {
@@ -764,15 +776,17 @@ function autoDetect(mid) {
   fm.src=ri>=0?ri:-1;
   const hi=L.findIndex(f=>/힌트|hint|keyword/.test(f));
   fm.hint=hi>=0?hi:-1;
+  const fqi=L.findIndex(f=>/빈도|frequency|^freq$/.test(f)); fm.freq=fqi>=0?fqi:-1;
+  const cli=L.findIndex(f=>/^분류|classif|^class$/.test(f)); fm.cls=cli>=0?cli:-1;
 }
 
 function populateSelectors(mid) {
   const { modelMap } = S.dbData;
   const m=modelMap[mid];
   const fields=m?m.fields:[];
-  const IDS=['fm-q','fm-o1','fm-o2','fm-o3','fm-o4','fm-ans','fm-exp','fm-subj','fm-src'];
-  const KEYS=['q','o1','o2','o3','o4','ans','exp','subj','src'];
-  const OPTIONAL_IDX=[6,7,8]; // exp, subj, src 는 (없음) 옵션 포함
+  const IDS=['fm-q','fm-o1','fm-o2','fm-o3','fm-o4','fm-ans','fm-exp','fm-subj','fm-src','fm-freq','fm-cls'];
+  const KEYS=['q','o1','o2','o3','o4','ans','exp','subj','src','freq','cls'];
+  const OPTIONAL_IDX=[6,7,8,9,10]; // exp, subj, src 는 (없음) 옵션 포함
   IDS.forEach((sid,i)=>{
     const sel=document.getElementById(sid);
     sel.innerHTML='';
@@ -783,8 +797,8 @@ function populateSelectors(mid) {
 }
 
 function readFm() {
-  const KEYS=['q','o1','o2','o3','o4','ans','exp','subj','src'];
-  const IDS=['fm-q','fm-o1','fm-o2','fm-o3','fm-o4','fm-ans','fm-exp','fm-subj','fm-src'];
+  const KEYS=['q','o1','o2','o3','o4','ans','exp','subj','src','freq','cls'];
+  const IDS=['fm-q','fm-o1','fm-o2','fm-o3','fm-o4','fm-ans','fm-exp','fm-subj','fm-src','fm-freq','fm-cls'];
   KEYS.forEach((k,i)=>{ S.fm[k]=parseInt(document.getElementById(IDS[i]).value); });
 }
 
@@ -811,6 +825,7 @@ function goSetup() {
 
 /* ---------- SETUP ---------- */
 function renderSetup() {
+  { let k='rail'; try{ k=localStorage.getItem('cbt_preset')||'rail'; }catch(e){} if(!EXAM_PRESETS[k]) k='rail'; const ps=document.getElementById('exam-preset'); if(ps) ps.value=k; setPreset(k,true); }
   const { notes } = S.dbData;
   const fm = S.fm;
   const groups = {};
@@ -869,7 +884,20 @@ function renderSetup() {
   updateTotal();
 }
 
-const MIN_PER_SUBJECT = 20; // 과목당 제한시간(분)
+const EXAM_PRESETS = {
+  rail: { name:'전기철도기사', min:20, order:['전기철도','구조','전기자기','전력'] },
+  safe: { name:'건설안전기사', min:30, order:['산업재해','인간공학','건설재료','건설시공','건설공사','안전관리'] }
+};
+let MIN_PER_SUBJECT = 20; // 과목당 제한시간(분) - 시험 종류 프리셋으로 변경
+let SUBJECT_ORDER = EXAM_PRESETS.rail.order;
+function setPreset(k,silent){
+  const p=EXAM_PRESETS[k]||EXAM_PRESETS.rail;
+  MIN_PER_SUBJECT=p.min; SUBJECT_ORDER=p.order;
+  try{ localStorage.setItem('cbt_preset',k); }catch(e){}
+  const lb=document.getElementById('time-label'); if(lb) lb.textContent=`제한 시간 (분) — 과목당 ${p.min}분 자동`;
+  const h=document.querySelector('.cbt-hd-title'); if(h) h.textContent=p.name+' 필기 CBT';
+  if(!silent && S.deckGroups) renderSetup();
+}
 function updateTotal() {
   let t=0, subjCount=0;
   S.deckGroups.forEach((_,i)=>{
@@ -878,6 +906,7 @@ function updateTotal() {
     if(cb?.checked && c>0){ t+=c; subjCount++; }
   });
   document.getElementById('total-count').textContent=`총 출제 예정: ${t}문제`;
+  if (typeof qpRefresh==='function') qpRefresh();
   // ★ 제한시간 = 선택 과목 수 × 20분 (자동)
   const mins = subjCount * MIN_PER_SUBJECT;
   const tl = document.getElementById('time-limit');
@@ -889,7 +918,6 @@ function updateTotal() {
 /* ---------- 교시(과목) 순서 정의 ----------
    1교시 전기철도공학 → 2교시 구조물공학 → 3교시 전기자기학 → 4교시 전력공학.
    과목명 일부만 일치해도 인식(예: '구조물', '구조역학' 등). 미정의 과목은 맨 뒤. */
-const SUBJECT_ORDER = ['전기철도', '구조', '전기자기', '전력'];
 function subjectOrder(name) {
   const s = (name || '').replace(/\s/g, '');
   for (let i = 0; i < SUBJECT_ORDER.length; i++) {
@@ -900,14 +928,16 @@ function subjectOrder(name) {
 
 /* ---------- START EXAM ---------- */
 function startExam() {
-  const subs=[];
+  const subs=[]; const qpMsgs=[];
   S.deckGroups.forEach((g,i)=>{
     const cb=document.getElementById(`dk-cb-${i}`);
     if (!cb?.checked) return;
     const cnt=parseInt(document.getElementById(`dk-cnt-${i}`).value)||0;
     const lbl=document.getElementById(`dk-lbl-${i}`).value.trim()||g.name;
     if (cnt<=0||g.notes.length===0) return;
-    const sel=shuffle([...g.notes]).slice(0,Math.min(cnt,g.notes.length));
+    const pk=QP.pick(g.notes,cnt,S.fm,qpOpts(),g.name);
+    const sel=pk.notes;
+    if(pk.info.recycled) qpMsgs.push(g.name+': 새 문제가 부족해 이미 출제한 문제로 보충');
     subs.push({ label:lbl, name:g.name, notes:sel });
   });
   if (!subs.length) { showModal('알림','최소 하나의 과목을 선택하세요.',[{label:'확인',cls:'btn-primary'}]); return; }
@@ -930,6 +960,7 @@ function startExam() {
   renderQ(0);
   showScreen('exam');
   startTimer();
+  if(qpMsgs.length) setTimeout(()=>showModal('알림',qpMsgs.join('<br>'),[{label:'확인',cls:'btn-primary'}]),300);
 }
 
 /* ---------- EXAM RENDER ---------- */
@@ -1330,6 +1361,115 @@ function cleanText(html) {
   if (!html) return '';
   const d=document.createElement('div'); d.innerHTML=html;
   return (d.textContent||d.innerText||'').trim();
+}
+
+/* ===== 중복 제외 · 분류코드 분산 · 출제 이력 (QP) ===== */
+const QP = {
+  APP: 'cbt',
+  strip(h){ return String(h==null?'':h).replace(/<[^>]*>/g,' ').replace(/&nbsp;/g,' ').replace(/\s+/g,' ').trim(); },
+  /* 동일 문제 그룹 키: 빈도 필드의 회차ID 목록(정렬) → 같은 그룹이면 동일. 없으면 노트 고유 ID */
+  dupKey(n, fm){
+    if (fm.freq >= 0) {
+      const ids = (QP.strip(n.fields[fm.freq]).match(/\d{2}-\d{1,2}-\d{1,3}/g) || []);
+      if (fm.src >= 0) { const own = QP.strip(n.fields[fm.src]).match(/\d{2}-\d{1,2}-\d{1,3}/); if (own && ids.length) ids.push(own[0]); }
+      if (ids.length) return 'F:' + Array.from(new Set(ids)).sort().join(',');
+    }
+    return 'N:' + n.id;
+  },
+  /* 분류코드 키 (예: Ⅱ·A1). 비어 있으면 '(미분류)' */
+  clsKey(n, fm){
+    if (fm.cls < 0) return '(미분류)';
+    const t = QP.strip(n.fields[fm.cls]);
+    if (!t) return '(미분류)';
+    const m = t.match(/[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]+\s*·\s*[A-Za-z]?\d+/);
+    return m ? m[0].replace(/\s/g,'') : t.split(/[\s,;/]/)[0];
+  },
+  opts(defSpread){
+    let o = {};
+    try { o = JSON.parse(localStorage.getItem('qp_opts_' + QP.APP) || '{}'); } catch(e){}
+    return { dedupe: o.dedupe !== false, spread: o.spread === undefined ? defSpread : !!o.spread, history: !!o.history };
+  },
+  saveOpts(o){ try { localStorage.setItem('qp_opts_' + QP.APP, JSON.stringify(o)); } catch(e){} },
+  loadSeen(scope){ try { return new Set(JSON.parse(localStorage.getItem('qp_seen_' + QP.APP + '|' + scope) || '[]')); } catch(e){ return new Set(); } },
+  saveSeen(scope, set){ try { localStorage.setItem('qp_seen_' + QP.APP + '|' + scope, JSON.stringify([...set])); } catch(e){} },
+  resetSeen(scope){ try { localStorage.removeItem('qp_seen_' + QP.APP + '|' + scope); } catch(e){} },
+  resetAllSeen(){ try { Object.keys(localStorage).filter(k => k.indexOf('qp_seen_' + QP.APP + '|') === 0).forEach(k => localStorage.removeItem(k)); } catch(e){} },
+  /* 노트 → 단위(그룹) 목록 */
+  units(notes, fm, dedupe){
+    const map = new Map();
+    shuffle([...notes]).forEach(n => {
+      const k = dedupe ? QP.dupKey(n, fm) : 'N:' + n.id;
+      if (!map.has(k)) map.set(k, { key: dedupe ? k : QP.dupKey(n, fm), note: n, cls: QP.clsKey(n, fm), size: 0 });
+      map.get(k).size++;
+    });
+    return [...map.values()];
+  },
+  /* 분류코드 라운드로빈 선택 (spread=false면 무작위) */
+  take(units, cnt, spread){
+    units = shuffle([...units]);
+    if (!spread) return units.slice(0, cnt);
+    const b = new Map();
+    units.forEach(u => { if (!b.has(u.cls)) b.set(u.cls, []); b.get(u.cls).push(u); });
+    const out = [];
+    while (out.length < cnt && b.size) {
+      const keys = shuffle([...b.keys()]);
+      for (const k of keys) {
+        if (out.length >= cnt) break;
+        const arr = b.get(k); out.push(arr.pop());
+        if (!arr.length) b.delete(k);
+      }
+    }
+    return out;
+  },
+  /* 인접한 같은 분류코드 풀기 */
+  arrange(units){
+    const a = [...units];
+    for (let i = 1; i < a.length; i++) {
+      if (a[i].cls === a[i-1].cls) {
+        for (let j = i + 1; j < a.length; j++) {
+          if (a[j].cls !== a[i-1].cls && (j + 1 >= a.length || a[j].cls !== a[i].cls || true)) { [a[i], a[j]] = [a[j], a[i]]; break; }
+        }
+      }
+    }
+    return a;
+  },
+  /* 메인: notes에서 cnt개 선택. scope=이력 구분(과목명) */
+  pick(notes, cnt, fm, o, scope){
+    const all = QP.units(notes, fm, o.dedupe);
+    const info = { total: notes.length, units: all.length, removed: notes.length - all.length, recycled: false, newLeft: null };
+    let seen = o.history ? QP.loadSeen(scope) : new Set();
+    const fresh = all.filter(u => !seen.has(u.key));
+    const old = all.filter(u => seen.has(u.key));
+    cnt = Math.min(cnt, all.length);
+    let chosen = QP.take(fresh, cnt, o.spread);
+    if (chosen.length < cnt) { // 새 문제 소진 → 이력 초기화 후 이미 푼 문제로 보충
+      info.recycled = true;
+      chosen = chosen.concat(QP.take(old, cnt - chosen.length, o.spread));
+      if (o.history) seen = new Set(chosen.map(u => u.key));
+    } else if (o.history) chosen.forEach(u => seen.add(u.key));
+    if (o.history) { QP.saveSeen(scope, seen); info.newLeft = all.filter(u => !seen.has(u.key)).length; }
+    const ordered = o.spread ? QP.arrange(shuffle([...chosen])) : chosen;
+    return { notes: ordered.map(u => u.note), info };
+  },
+  /* 설정 화면 요약 텍스트 */
+  summary(groups, fm, o){
+    return groups.map(g => {
+      const u = QP.units(g.notes, fm, o.dedupe);
+      let s = `${g.name}: ${g.notes.length}문제` + (o.dedupe ? ` → 중복 제거 ${u.length}` : '');
+      if (o.history) { const sn = QP.loadSeen(g.name); s += ` · 새 문제 ${u.filter(x => !sn.has(x.key)).length}`; }
+      return s;
+    }).join(' / ');
+  }
+};
+
+function qpOpts(){ return QP.opts(false); }
+function qpSave(){ QP.saveOpts({dedupe:document.getElementById('qp-dedupe').checked,spread:document.getElementById('qp-spread').checked,history:document.getElementById('qp-history').checked}); qpRefresh(true); }
+function qpResetHistory(){ QP.resetAllSeen(); qpRefresh(true); }
+function qpRefresh(skipSync){
+  const o=qpOpts();
+  if(!skipSync){ document.getElementById('qp-dedupe').checked=o.dedupe; document.getElementById('qp-spread').checked=o.spread; document.getElementById('qp-history').checked=o.history; }
+  const el=document.getElementById('qp-info');
+  if(el&&S.deckGroups) el.innerHTML=(S.fm.freq<0?'<b style="color:#c00">빈도 필드 미매핑 → 중복 판별 불가</b> · ':'')+(S.fm.cls<0?'<b style="color:#c00">분류 필드 없음 → 분산 불가</b> · ':'')+QP.summary(S.deckGroups,S.fm,o);
 }
 
 function shuffle(arr) {

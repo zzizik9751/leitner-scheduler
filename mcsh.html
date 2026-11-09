@@ -332,6 +332,29 @@ body{font-family:'Nanum Gothic','NanumGothic','나눔고딕','맑은 고딕','Ap
           <button class="quiz-btn" data-shuffle="on" onclick="selectShuffleOpt(true, this);">켜기</button>
         </div>
       </div>
+      <div class="quiz-setting-row">
+        <div class="quiz-setting-label">중복 문제 제외</div>
+        <div class="quiz-setting-options">
+          <button class="quiz-btn" data-qp="dedupe-off" onclick="qpSet('dedupe',false)">끄기</button>
+          <button class="quiz-btn" data-qp="dedupe-on" onclick="qpSet('dedupe',true)">켜기</button>
+        </div>
+      </div>
+      <div class="quiz-setting-row">
+        <div class="quiz-setting-label">분류코드 분산</div>
+        <div class="quiz-setting-options">
+          <button class="quiz-btn" data-qp="spread-off" onclick="qpSet('spread',false)">끄기</button>
+          <button class="quiz-btn" data-qp="spread-on" onclick="qpSet('spread',true)">켜기</button>
+        </div>
+      </div>
+      <div class="quiz-setting-row">
+        <div class="quiz-setting-label">푼 문제 제외(이력)</div>
+        <div class="quiz-setting-options">
+          <button class="quiz-btn" data-qp="history-off" onclick="qpSet('history',false)">끄기</button>
+          <button class="quiz-btn" data-qp="history-on" onclick="qpSet('history',true)">켜기</button>
+          <button class="quiz-btn" onclick="qpResetHistory()">이력 초기화</button>
+        </div>
+      </div>
+      <div class="info-box" id="qp-info" style="font-size:12px"></div>
       <div class="info-box">💡 [1번]: 문제를 1회만 풀고 다음 문제 진행 | [무한]: 틀린 문제가 정답일 때까지 계속 반복<br>💡 보기 섞기 [켜기]: ①②③④ 보기의 순서를 문제마다 무작위로 섞어서 출제 (같은 문제를 다시 볼 때도 섞인 순서 유지)</div>
     </div>
 
@@ -629,7 +652,7 @@ body{font-family:'Nanum Gothic','NanumGothic','나눔고딕','맑은 고딕','Ap
 /* ─ 상태 ─ */
 const S = {
   dbData: null,
-  fm: { q:0, o1:1, o2:2, o3:3, o4:4, ans:5, exp:6, subj:7, src:8, hint:9, freq:-1 },
+  fm: { q:0, o1:1, o2:2, o3:3, o4:4, ans:5, exp:6, subj:7, src:8, hint:9, freq:-1, cls:-1 },
   groups: [],
   imgMap: {},   // { 파일명: blobURL }
   quizConfig: {
@@ -815,6 +838,8 @@ function autoDetect() {
   fm.hint = hi >= 0 ? hi : -1;
   const fi = L.findIndex(f => /빈도|frequency|^freq$/.test(f));
   fm.freq = fi >= 0 ? fi : -1;
+  const ci = L.findIndex(f => /^분류|classif|^class$/.test(f));
+  fm.cls = ci >= 0 ? ci : -1;
 }
 
 /* ─ 설정 화면 ─ */
@@ -858,6 +883,7 @@ function renderSetup() {
     tbody.appendChild(tr);
   });
   updateTotal();
+  if (typeof qpRefresh==='function') qpRefresh();
 }
 
 function updateTotal() {
@@ -984,6 +1010,7 @@ function getFieldConfig() {
 
 /* ─ 퀴즈 시작 ─ */
 function startQuiz(isRetry, retryCards) {
+  var qpNotes = [];
   let cards = [];
   const subStats = {};
 
@@ -1018,7 +1045,9 @@ function startQuiz(isRetry, retryCards) {
         if (!pool.length) pool = [...g.notes]; // 태그 매칭 없으면 전체 사용
       }
 
-      const selected = shuffle(pool).slice(0, Math.min(cnt, pool.length));
+      const pk = QP.pick(pool, cnt, fm, qpOpts(), g.name);
+      const selected = pk.notes;
+      if (pk.info.recycled) qpNotes.push(g.name + ': 새 문제가 부족해 이미 푼 문제로 보충(이력 갱신)');
       selected.forEach(note => {
         const optOrder = makeOptOrder();
         cards.push({ note, subject: g.name, optOrder });
@@ -1047,6 +1076,7 @@ function startQuiz(isRetry, retryCards) {
   S.session = { cards, cur: 0, answered: false, wrongs: [], correct: 0, subStats, isRetry: !!isRetry };
   renderQuizCard();
   showScreen('quiz');
+  if (typeof qpNotes !== 'undefined' && qpNotes.length) setTimeout(() => showModal('알림', qpNotes.join('<br>'), [{ label: '확인', cls: 'btn-primary' }]), 300);
 }
 
 /* ─ 퀴즈 카드 렌더링 ─ */
@@ -1622,6 +1652,115 @@ function cleanText(html) {
   const d = document.createElement('div'); d.innerHTML = html;
   return (d.textContent || d.innerText || '').trim();
 }
+/* ===== 중복 제외 · 분류코드 분산 · 출제 이력 (QP) ===== */
+const QP = {
+  APP: 'quiz',
+  strip(h){ return String(h==null?'':h).replace(/<[^>]*>/g,' ').replace(/&nbsp;/g,' ').replace(/\s+/g,' ').trim(); },
+  /* 동일 문제 그룹 키: 빈도 필드의 회차ID 목록(정렬) → 같은 그룹이면 동일. 없으면 노트 고유 ID */
+  dupKey(n, fm){
+    if (fm.freq >= 0) {
+      const ids = (QP.strip(n.fields[fm.freq]).match(/\d{2}-\d{1,2}-\d{1,3}/g) || []);
+      if (fm.src >= 0) { const own = QP.strip(n.fields[fm.src]).match(/\d{2}-\d{1,2}-\d{1,3}/); if (own && ids.length) ids.push(own[0]); }
+      if (ids.length) return 'F:' + Array.from(new Set(ids)).sort().join(',');
+    }
+    return 'N:' + n.id;
+  },
+  /* 분류코드 키 (예: Ⅱ·A1). 비어 있으면 '(미분류)' */
+  clsKey(n, fm){
+    if (fm.cls < 0) return '(미분류)';
+    const t = QP.strip(n.fields[fm.cls]);
+    if (!t) return '(미분류)';
+    const m = t.match(/[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]+\s*·\s*[A-Za-z]?\d+/);
+    return m ? m[0].replace(/\s/g,'') : t.split(/[\s,;/]/)[0];
+  },
+  opts(defSpread){
+    let o = {};
+    try { o = JSON.parse(localStorage.getItem('qp_opts_' + QP.APP) || '{}'); } catch(e){}
+    return { dedupe: o.dedupe !== false, spread: o.spread === undefined ? defSpread : !!o.spread, history: !!o.history };
+  },
+  saveOpts(o){ try { localStorage.setItem('qp_opts_' + QP.APP, JSON.stringify(o)); } catch(e){} },
+  loadSeen(scope){ try { return new Set(JSON.parse(localStorage.getItem('qp_seen_' + QP.APP + '|' + scope) || '[]')); } catch(e){ return new Set(); } },
+  saveSeen(scope, set){ try { localStorage.setItem('qp_seen_' + QP.APP + '|' + scope, JSON.stringify([...set])); } catch(e){} },
+  resetSeen(scope){ try { localStorage.removeItem('qp_seen_' + QP.APP + '|' + scope); } catch(e){} },
+  resetAllSeen(){ try { Object.keys(localStorage).filter(k => k.indexOf('qp_seen_' + QP.APP + '|') === 0).forEach(k => localStorage.removeItem(k)); } catch(e){} },
+  /* 노트 → 단위(그룹) 목록 */
+  units(notes, fm, dedupe){
+    const map = new Map();
+    shuffle([...notes]).forEach(n => {
+      const k = dedupe ? QP.dupKey(n, fm) : 'N:' + n.id;
+      if (!map.has(k)) map.set(k, { key: dedupe ? k : QP.dupKey(n, fm), note: n, cls: QP.clsKey(n, fm), size: 0 });
+      map.get(k).size++;
+    });
+    return [...map.values()];
+  },
+  /* 분류코드 라운드로빈 선택 (spread=false면 무작위) */
+  take(units, cnt, spread){
+    units = shuffle([...units]);
+    if (!spread) return units.slice(0, cnt);
+    const b = new Map();
+    units.forEach(u => { if (!b.has(u.cls)) b.set(u.cls, []); b.get(u.cls).push(u); });
+    const out = [];
+    while (out.length < cnt && b.size) {
+      const keys = shuffle([...b.keys()]);
+      for (const k of keys) {
+        if (out.length >= cnt) break;
+        const arr = b.get(k); out.push(arr.pop());
+        if (!arr.length) b.delete(k);
+      }
+    }
+    return out;
+  },
+  /* 인접한 같은 분류코드 풀기 */
+  arrange(units){
+    const a = [...units];
+    for (let i = 1; i < a.length; i++) {
+      if (a[i].cls === a[i-1].cls) {
+        for (let j = i + 1; j < a.length; j++) {
+          if (a[j].cls !== a[i-1].cls && (j + 1 >= a.length || a[j].cls !== a[i].cls || true)) { [a[i], a[j]] = [a[j], a[i]]; break; }
+        }
+      }
+    }
+    return a;
+  },
+  /* 메인: notes에서 cnt개 선택. scope=이력 구분(과목명) */
+  pick(notes, cnt, fm, o, scope){
+    const all = QP.units(notes, fm, o.dedupe);
+    const info = { total: notes.length, units: all.length, removed: notes.length - all.length, recycled: false, newLeft: null };
+    let seen = o.history ? QP.loadSeen(scope) : new Set();
+    const fresh = all.filter(u => !seen.has(u.key));
+    const old = all.filter(u => seen.has(u.key));
+    cnt = Math.min(cnt, all.length);
+    let chosen = QP.take(fresh, cnt, o.spread);
+    if (chosen.length < cnt) { // 새 문제 소진 → 이력 초기화 후 이미 푼 문제로 보충
+      info.recycled = true;
+      chosen = chosen.concat(QP.take(old, cnt - chosen.length, o.spread));
+      if (o.history) seen = new Set(chosen.map(u => u.key));
+    } else if (o.history) chosen.forEach(u => seen.add(u.key));
+    if (o.history) { QP.saveSeen(scope, seen); info.newLeft = all.filter(u => !seen.has(u.key)).length; }
+    const ordered = o.spread ? QP.arrange(shuffle([...chosen])) : chosen;
+    return { notes: ordered.map(u => u.note), info };
+  },
+  /* 설정 화면 요약 텍스트 */
+  summary(groups, fm, o){
+    return groups.map(g => {
+      const u = QP.units(g.notes, fm, o.dedupe);
+      let s = `${g.name}: ${g.notes.length}문제` + (o.dedupe ? ` → 중복 제거 ${u.length}` : '');
+      if (o.history) { const sn = QP.loadSeen(g.name); s += ` · 새 문제 ${u.filter(x => !sn.has(x.key)).length}`; }
+      return s;
+    }).join(' / ');
+  }
+};
+
+function qpOpts(){ return QP.opts(true); }
+function qpSet(k,v){ const o=qpOpts(); o[k]=v; QP.saveOpts(o); qpRefresh(); }
+function qpResetHistory(){ QP.resetAllSeen(); qpRefresh(); }
+function qpRefresh(){
+  const o=qpOpts();
+  document.querySelectorAll('[data-qp]').forEach(b=>{ const [k,v]=b.dataset.qp.split('-'); b.classList.toggle('active', (!!o[k])===(v==='on')); });
+  const el=document.getElementById('qp-info');
+  if(el&&S.groups) el.innerHTML='💡 동일 문제는 빈도 필드의 회차ID가 같은 것끼리 묶어 1개만 출제합니다'+(S.fm.freq<0?' <b style="color:#c00">(빈도 필드 미매핑 → 중복 판별 불가)</b>':'')+'. 분류코드 분산은 분류 필드가 있어야 동작합니다'+(S.fm.cls<0?' <b style="color:#c00">(분류 필드 없음)</b>':'')+'.<br>'+QP.summary(S.groups,S.fm,o);
+}
+
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));

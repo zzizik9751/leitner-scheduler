@@ -260,6 +260,49 @@ body{font-family:'Nanum Gothic','NanumGothic','나눔고딕','맑은 고딕','Ap
 </style>
 </head>
 <body>
+<!--GATE-->
+<div id="accessGate" style="position:fixed;inset:0;z-index:9000;background:#0f172a;color:#e5e7eb;display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px;font-family:'Malgun Gothic',system-ui,sans-serif;text-align:center">
+  <div style="color:#ef4444;font-weight:700;font-size:15px;margin-bottom:22px">본 자료는 상업적 이용을 불허합니다.</div>
+  <div style="font-size:22px;font-weight:700;margin-bottom:6px">필기 퀴즈 도우미</div>
+  <div style="font-size:13px;color:#94a3b8;margin-bottom:18px">비밀번호를 입력하세요</div>
+  <input id="gateInput" type="password" autocomplete="off" inputmode="numeric" maxlength="12" style="width:220px;max-width:80vw;padding:10px 12px;font-size:18px;text-align:center;border-radius:8px;border:1px solid #475569;background:#1e293b;color:#fff;outline:none">
+  <button id="gateBtn" type="button" style="margin-top:12px;width:220px;max-width:80vw;padding:10px;font-size:15px;font-weight:700;border:0;border-radius:8px;background:#2563eb;color:#fff;cursor:pointer">입장하기</button>
+  <div id="gateMsg" style="min-height:20px;margin-top:10px;font-size:13px;color:#fca5a5"></div>
+  <div style="position:absolute;bottom:14px;font-size:11px;color:#64748b">Created by zzizik, with Claude AI · rev. 261109</div>
+</div>
+<script>
+(function(){
+  var KEY='mcsh_first_open_v1', GRACE=3*24*3600*1000;
+  var gate=document.getElementById('accessGate'), inp=document.getElementById('gateInput'), msg=document.getElementById('gateMsg');
+  function pw(){ var d=new Date(); return String(d.getFullYear()).slice(2)+('0'+(d.getMonth()+1)).slice(-2); }
+  function grace(){
+    try{
+      var now=Date.now(), v=localStorage.getItem(KEY);
+      if(!v){ localStorage.setItem(KEY,String(now)); v=String(now); }
+      var t=parseInt(v,10);
+      return isFinite(t) && now>=t && now-t<GRACE;
+    }catch(e){ return false; }
+  }
+  var locked=!grace();
+  function unlock(){ locked=false; gate.style.display='none'; }
+  function submit(){
+    if(inp.value.trim()===pw()){ unlock(); }
+    else { msg.textContent='비밀번호가 올바르지 않습니다.'; inp.value=''; inp.focus(); }
+  }
+  if(locked){
+    gate.style.display='flex';
+    document.getElementById('gateBtn').addEventListener('click',submit);
+    document.addEventListener('keydown',function(e){
+      if(!locked) return;
+      if(e.target===inp){ if(e.key==='Enter'){ e.preventDefault(); submit(); } }
+      e.stopPropagation();
+    },true);
+    document.addEventListener('keyup',function(e){ if(locked) e.stopPropagation(); },true);
+    setTimeout(function(){ inp.focus(); },50);
+  }
+})();
+</script>
+
 
 <!-- 로딩 오버레이 -->
 <div class="loading-overlay" id="loading-overlay">
